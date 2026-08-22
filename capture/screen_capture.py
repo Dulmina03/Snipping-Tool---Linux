@@ -19,7 +19,10 @@ class ScreenCapture:
     def __init__(self):
         self.bus = None
         self.session_handle = None
+
         self.pipewire_fd = None
+        self.node_id = None
+
         self.receiver = None
 
     async def connect(self):
@@ -240,6 +243,22 @@ class ScreenCapture:
             streams
         )
 
+        if not streams:
+
+            raise RuntimeError(
+                "ScreenCast returned "
+                "no streams."
+            )
+
+        # First value is the PipeWire node ID.
+        self.node_id = streams[0][0]
+
+        print()
+        print(
+            "ScreenCast node ID:",
+            self.node_id
+        )
+
         return streams
 
     async def open_pipewire_remote(self):
@@ -292,7 +311,21 @@ class ScreenCapture:
             reply.unix_fds
         )
 
+        if not reply.body:
+
+            raise RuntimeError(
+                "OpenPipeWireRemote returned "
+                "an empty body."
+            )
+
         fd_index = reply.body[0]
+
+        if not reply.unix_fds:
+
+            raise RuntimeError(
+                "OpenPipeWireRemote did not "
+                "return a Unix FD."
+            )
 
         self.pipewire_fd = (
             reply.unix_fds[fd_index]
@@ -304,9 +337,18 @@ class ScreenCapture:
             self.pipewire_fd
         )
 
-        os.fstat(
-            self.pipewire_fd
-        )
+        try:
+
+            os.fstat(
+                self.pipewire_fd
+            )
+
+        except OSError as error:
+
+            raise RuntimeError(
+                f"PipeWire FD is invalid: "
+                f"{error}"
+            )
 
         print(
             "PipeWire FD is valid!"
@@ -319,11 +361,17 @@ class ScreenCapture:
         if self.pipewire_fd is None:
 
             raise RuntimeError(
-                "PipeWire FD has not been created."
+                "PipeWire FD is missing."
+            )
+
+        if self.node_id is None:
+
+            raise RuntimeError(
+                "ScreenCast node ID is missing."
             )
 
         receiver_path = (
-            "capture/native/"
+            "./capture/native/"
             "pipewire_receiver"
         )
 
@@ -337,10 +385,16 @@ class ScreenCapture:
             self.pipewire_fd
         )
 
+        print(
+            "Passing node ID:",
+            self.node_id
+        )
+
         self.receiver = subprocess.Popen(
             [
                 receiver_path,
                 str(self.pipewire_fd),
+                str(self.node_id),
             ],
             pass_fds=(
                 self.pipewire_fd,
@@ -374,6 +428,8 @@ class ScreenCapture:
 
                     self.receiver.kill()
 
+                    self.receiver.wait()
+
             self.receiver = None
 
         if self.pipewire_fd is not None:
@@ -393,6 +449,8 @@ class ScreenCapture:
         if self.bus is not None:
 
             self.bus.disconnect()
+
+            self.bus = None
 
 
 async def main():
@@ -421,6 +479,10 @@ async def main():
         print()
         print(
             "Everything is running!"
+        )
+
+        print(
+            "Waiting for actual screen frames..."
         )
 
         print(
