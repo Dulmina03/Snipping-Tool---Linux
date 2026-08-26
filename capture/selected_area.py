@@ -8,6 +8,8 @@ from urllib.parse import unquote
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 
+from utils.clipboard import copy_image_to_clipboard
+
 
 # ============================================================
 # CONFIGURATION
@@ -878,6 +880,16 @@ async def main():
             height
         )
 
+        try:
+            copy_image_to_clipboard(output_path)
+            print("Copied to clipboard.")
+        except Exception as clipboard_error:
+            print(
+                "WARNING: Screenshot saved, but "
+                "clipboard copy failed:"
+            )
+            print(clipboard_error)
+
         print()
 
         print(
@@ -921,6 +933,8 @@ async def main():
 
             pass
 
+        return output_path
+
     except Exception as error:
 
         print()
@@ -932,6 +946,8 @@ async def main():
         print(
             error
         )
+
+        return None
 
 
 # ============================================================

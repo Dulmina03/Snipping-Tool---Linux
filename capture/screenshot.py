@@ -8,6 +8,8 @@ from urllib.parse import unquote, urlparse
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 
+from utils.clipboard import copy_image_to_clipboard
+
 
 PORTAL_BUS = "org.freedesktop.portal.Desktop"
 PORTAL_PATH = "/org/freedesktop/portal/desktop"
@@ -171,6 +173,13 @@ class ScreenshotCapture:
             uri,
             destination,
         )
+
+        try:
+            copy_image_to_clipboard(destination)
+            print("Copied to clipboard.")
+        except Exception as error:
+            print("WARNING: Screenshot saved, but clipboard copy failed:")
+            print(error)
 
         return destination
 
