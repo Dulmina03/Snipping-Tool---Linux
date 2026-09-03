@@ -27,7 +27,16 @@ def extract_text(image_path: str | Path) -> str:
     try:
         with Image.open(path) as image:
             image.load()
-            text = pytesseract.image_to_string(image)
+            text = pytesseract.image_to_string(image).strip()
+
+            # If standard pass found no text and image is small/low-DPI, try preprocessed fallback
+            if not text and (image.width < 1000 or image.height < 1000):
+                gray = image.convert("L")
+                scaled = gray.resize(
+                    (gray.width * 2, gray.height * 2),
+                    Image.Resampling.LANCZOS,
+                )
+                text = pytesseract.image_to_string(scaled, config="--psm 6").strip()
     except UnidentifiedImageError as error:
         raise RuntimeError(f"Image file is invalid or unsupported: {path}") from error
     except pytesseract.TesseractNotFoundError as error:
@@ -38,4 +47,4 @@ def extract_text(image_path: str | Path) -> str:
     except pytesseract.TesseractError as error:
         raise RuntimeError(f"Tesseract OCR failed: {error}") from error
 
-    return text.strip()
+    return text

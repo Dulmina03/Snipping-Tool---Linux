@@ -1,9 +1,10 @@
-"""Image clipboard support backed by PySide6/Qt."""
+"""Clipboard support backed by PySide6/Qt for Wayland and X11."""
 
 import sys
 from pathlib import Path
 
-from PySide6.QtGui import QGuiApplication, QImage
+from PySide6.QtCore import QMimeData
+from PySide6.QtGui import QClipboard, QGuiApplication, QImage
 from PySide6.QtWidgets import QApplication
 
 
@@ -37,17 +38,42 @@ def copy_image_to_clipboard(image_path: str | Path) -> None:
 
     application = _application()
     clipboard = application.clipboard()
-    clipboard.setImage(image)
+
+    mime = QMimeData()
+    mime.setImageData(image)
+    clipboard.setMimeData(mime, QClipboard.Mode.Clipboard)
+
+    if clipboard.supportsSelection():
+        mime_sel = QMimeData()
+        mime_sel.setImageData(image)
+        clipboard.setMimeData(mime_sel, QClipboard.Mode.Selection)
+
     application.processEvents()
 
 
 def copy_text_to_clipboard(text: str) -> None:
-    """Copy extracted text to the system clipboard."""
+    """Copy extracted text to the system clipboard with full MIME type support."""
     if not isinstance(text, str):
         raise TypeError("Clipboard text must be a string.")
 
     application = _application()
-    application.clipboard().setText(text)
+    clipboard = application.clipboard()
+
+    raw_bytes = text.encode("utf-8")
+
+    mime = QMimeData()
+    mime.setText(text)
+    mime.setData("text/plain;charset=utf-8", raw_bytes)
+    mime.setData("UTF8_STRING", raw_bytes)
+    clipboard.setMimeData(mime, QClipboard.Mode.Clipboard)
+
+    if clipboard.supportsSelection():
+        mime_sel = QMimeData()
+        mime_sel.setText(text)
+        mime_sel.setData("text/plain;charset=utf-8", raw_bytes)
+        mime_sel.setData("UTF8_STRING", raw_bytes)
+        clipboard.setMimeData(mime_sel, QClipboard.Mode.Selection)
+
     application.processEvents()
 
 
@@ -57,10 +83,10 @@ def clipboard_contains_image() -> bool:
     clipboard = application.clipboard()
     mime_data = clipboard.mimeData()
 
-    if not mime_data.hasImage():
+    if mime_data is None:
         return False
 
-    return not clipboard.image().isNull()
+    return mime_data.hasImage() and not clipboard.image().isNull()
 
 
 def clipboard_contains_text(expected_text: str | None = None) -> bool:
