@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AI Snipping Tool
+Comment=AI Snipping Tool for Linux
+Exec=/home/dulmina/Projects/ai-snipping-tool/.venv/bin/python /home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py
+Icon=camera-photo
+Terminal=false
+Categories=Utility;Graphics;
+StartupWMClass=com.dulmina.aisnippingtool

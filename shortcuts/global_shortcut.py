@@ -1,6 +1,8 @@
 """Wayland global-shortcut registration through XDG Desktop Portal."""
 
 import asyncio
+import os
+from pathlib import Path
 import threading
 import uuid
 
@@ -12,13 +14,43 @@ from PySide6.QtCore import QObject, Signal
 
 PORTAL_BUS_NAME = "org.freedesktop.portal.Desktop"
 PORTAL_OBJECT_PATH = "/org/freedesktop/portal/desktop"
+REGISTRY_INTERFACE = "org.freedesktop.host.portal.Registry"
 GLOBAL_SHORTCUTS_INTERFACE = "org.freedesktop.portal.GlobalShortcuts"
 REQUEST_INTERFACE = "org.freedesktop.portal.Request"
 SESSION_INTERFACE = "org.freedesktop.portal.Session"
 
+APP_ID = "com.dulmina.aisnippingtool"
 SHORTCUT_ID = "open_capture_menu"
 PREFERRED_TRIGGER = "<Ctrl><Shift>S"
 REQUEST_TIMEOUT_SECONDS = 60
+
+
+def ensure_desktop_entry() -> None:
+    """Ensure the desktop entry exists for portal application identity registration."""
+    apps_dir = Path.home() / ".local" / "share" / "applications"
+    desktop_path = apps_dir / f"{APP_ID}.desktop"
+
+    if not desktop_path.exists():
+        apps_dir.mkdir(parents=True, exist_ok=True)
+        project_root = Path(__file__).resolve().parent.parent
+        python_bin = project_root / ".venv" / "bin" / "python"
+        if not python_bin.exists():
+            python_bin = Path("python3")
+        menu_path = project_root / "ui" / "capture_menu.py"
+
+        content = (
+            "[Desktop Entry]\n"
+            "Type=Application\n"
+            "Name=AI Snipping Tool\n"
+            "Comment=AI Snipping Tool for Linux\n"
+            f"Exec={python_bin} {menu_path}\n"
+            "Icon=camera-photo\n"
+            "Terminal=false\n"
+            "Categories=Utility;Graphics;\n"
+            f"StartupWMClass={APP_ID}\n"
+        )
+        desktop_path.write_text(content, encoding="utf-8")
+        os.system(f"update-desktop-database {apps_dir} >/dev/null 2>&1 || true")
 
 
 class GlobalShortcutManager(QObject):
@@ -129,8 +161,13 @@ class GlobalShortcutManager(QObject):
                 self._stop_event = None
 
     async def _register(self) -> None:
+        ensure_desktop_entry()
+
         self._bus = await MessageBus(bus_type=BusType.SESSION).connect()
         self._bus.add_message_handler(self._message_handler)
+
+        # Establish application identity through the host portal Registry before calling GlobalShortcuts
+        await self._register_identity()
 
         session_token = f"ai_snipping_{uuid.uuid4().hex}"
         create_results = await self._portal_request(
@@ -164,7 +201,7 @@ class GlobalShortcutManager(QObject):
 
         bind_results = await self._portal_request(
             member="BindShortcuts",
-            signature="osa(sa{sv})sa{sv}",
+            signature="oa(sa{sv})sa{sv}",
             body=[
                 session_handle,
                 shortcuts,
@@ -186,6 +223,24 @@ class GlobalShortcutManager(QObject):
             self._registered = True
 
         self.registration_succeeded.emit(PREFERRED_TRIGGER)
+
+    async def _register_identity(self) -> None:
+        """Register application identity via org.freedesktop.host.portal.Registry."""
+        reply = await self._bus.call(
+            Message(
+                destination=PORTAL_BUS_NAME,
+                path=PORTAL_OBJECT_PATH,
+                interface=REGISTRY_INTERFACE,
+                member="Register",
+                signature="sa{sv}",
+                body=[APP_ID, {}],
+            )
+        )
+
+        if reply.message_type == MessageType.ERROR:
+            raise RuntimeError(
+                f"Portal Registry registration failed: {reply.error_name}"
+            )
 
     async def _portal_request(self, member: str, signature: str, body: list) -> dict:
         reply = await self._bus.call(
