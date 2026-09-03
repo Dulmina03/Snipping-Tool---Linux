@@ -1,14 +1,19 @@
 """Clipboard support backed by PySide6/Qt for Wayland and X11."""
 
-import sys
+import io
 from pathlib import Path
+import sys
+from typing import Union
 
+from PIL import Image
 from PySide6.QtCore import QMimeData
-from PySide6.QtGui import QClipboard, QGuiApplication, QImage
+from PySide6.QtGui import QClipboard, QGuiApplication, QImage, QPixmap
 from PySide6.QtWidgets import QApplication
 
 
 _owned_application: QGuiApplication | None = None
+
+ImageInputType = Union[str, Path, Image.Image, QPixmap, QImage]
 
 
 def _application():
@@ -24,29 +29,45 @@ def _application():
     return application
 
 
-def copy_image_to_clipboard(image_path: str | Path) -> None:
-    """Load a PNG image from *image_path* and copy it to the system clipboard."""
-    path = Path(image_path).expanduser()
-
-    if not path.is_file():
-        raise FileNotFoundError(f"Screenshot file does not exist: {path}")
-
-    image = QImage(str(path))
+def _to_qimage(image_input: ImageInputType) -> QImage:
+    """Convert various image types (file path, PIL Image, QPixmap, QImage) to QImage."""
+    if isinstance(image_input, QImage):
+        image = image_input
+    elif isinstance(image_input, QPixmap):
+        image = image_input.toImage().convertToFormat(QImage.Format_ARGB32)
+    elif isinstance(image_input, Image.Image):
+        buf = io.BytesIO()
+        image_input.save(buf, format="PNG")
+        image = QImage()
+        image.loadFromData(buf.getvalue())
+    elif isinstance(image_input, (str, Path)):
+        path = Path(image_input).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"Screenshot file does not exist: {path}")
+        image = QImage(str(path))
+    else:
+        raise TypeError(f"Unsupported image input type: {type(image_input)}")
 
     if image.isNull():
-        raise RuntimeError(f"Could not load image for clipboard: {path}")
+        raise RuntimeError(f"Could not load valid image for clipboard: {image_input}")
+
+    if image.format() == QImage.Format_ARGB32_Premultiplied:
+        image = image.convertToFormat(QImage.Format_ARGB32)
+
+    return image
+
+
+def copy_image_to_clipboard(image_input: ImageInputType) -> None:
+    """Copy an image (file path, PIL Image, QPixmap, or QImage) to the system clipboard."""
+    image = _to_qimage(image_input)
 
     application = _application()
     clipboard = application.clipboard()
 
-    mime = QMimeData()
-    mime.setImageData(image)
-    clipboard.setMimeData(mime, QClipboard.Mode.Clipboard)
+    clipboard.setImage(image, QClipboard.Mode.Clipboard)
 
     if clipboard.supportsSelection():
-        mime_sel = QMimeData()
-        mime_sel.setImageData(image)
-        clipboard.setMimeData(mime_sel, QClipboard.Mode.Selection)
+        clipboard.setImage(image, QClipboard.Mode.Selection)
 
     application.processEvents()
 
