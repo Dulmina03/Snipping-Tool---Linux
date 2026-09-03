@@ -1,4 +1,14 @@
-"""Capture controller and post-capture action toolbar for the AI Snipping Tool."""
+"""Capture controller for the AI Snipping Tool.
+
+Windows Snipping Tool UX:
+1. Trigger (Ctrl+Shift+S or tray) immediately shows the fullscreen overlay.
+2. The overlay has a top-center pill toolbar with an action dropdown
+   ("Screenshot" vs "Extract Text") and mode buttons (Rectangular, Freeform, Window, Full Screen).
+3. Once captured, the action runs automatically with NO post-capture action popup:
+   - "Screenshot": image is saved to ~/Pictures/Screenshots/ AND copied to clipboard.
+   - "Extract Text": OCR is executed and extracted text is copied to clipboard.
+4. A brief, non-blocking floating toast confirms completion and auto-dismisses.
+"""
 
 from __future__ import annotations
 
@@ -43,21 +53,9 @@ from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Design tokens ─────────────────────────────────────────────────────────────
-_ACCENT       = "#6C63FF"
-_ACCENT_HOVER = "#857DFF"
-_SURFACE      = "#1E1E2E"
-_SURFACE_2    = "#28283E"
-_TEXT         = "#E0E0F8"
-_TEXT_DIM     = "#9090B0"
-_DANGER       = "#E06C75"
-_SUCCESS      = "#98C379"
-_TEAL         = "#4ECDC4"
-_BLUE         = "#56B4D3"
-
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Portal screenshot helper (shared by controller)
+#  Portal screenshot helper
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _portal_screenshot(interactive: bool = False) -> Path:
@@ -137,161 +135,68 @@ def _save_full(source: Path) -> Path:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  ActionMenu — floating post-capture action toolbar
+#  Non-blocking Toast Confirmation
 # ─────────────────────────────────────────────────────────────────────────────
 
-class ActionMenu(QWidget):
-    """
-    Small floating card shown after a capture is ready.
-    Four actions: Copy Image · Extract Text · Save · Cancel.
-    Auto-closes 1.2 s after any action completes.
-    """
+class CaptureToast(QWidget):
+    """Small non-blocking floating notification that auto-dismisses without clicks."""
 
-    def __init__(self, captured_path: Path, parent: QWidget | None = None):
+    def __init__(self, message: str, parent: QWidget | None = None, duration_ms: int = 1700):
         super().__init__(parent)
-        self._path = captured_path
-
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setWindowFlags(
+            Qt.FramelessWindowHint
+            | Qt.WindowStaysOnTopHint
+            | Qt.Tool
+            | Qt.WindowDoesNotAcceptFocus
+        )
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-        self._build()
-        self._apply_shadow()
-        self._position()
-
-    def _build(self) -> None:
-        outer = QVBoxLayout(self)
+        outer = QHBoxLayout(self)
         outer.setContentsMargins(12, 12, 12, 12)
 
-        card = QFrame()
-        card.setObjectName("card")
-        card.setStyleSheet(f"""
-            QFrame#card {{
-                background: {_SURFACE_2};
+        frame = QFrame()
+        frame.setObjectName("toast_frame")
+        frame.setStyleSheet("""
+            QFrame#toast_frame {
+                background: rgba(18, 18, 28, 0.94);
+                border: 1.5px solid rgba(255, 255, 255, 0.18);
                 border-radius: 14px;
-                border: 1px solid rgba(255,255,255,0.08);
-            }}
+            }
         """)
-        cl = QVBoxLayout(card)
-        cl.setContentsMargins(16, 14, 16, 14)
-        cl.setSpacing(8)
 
-        hdr = QLabel("📸  Capture ready")
-        hdr.setAlignment(Qt.AlignCenter)
-        hdr.setStyleSheet(f"font-size: 14px; font-weight: 700; color: {_TEXT}; padding-bottom: 4px; letter-spacing: 0.3px; background: transparent;")
-        cl.addWidget(hdr)
+        inner = QHBoxLayout(frame)
+        inner.setContentsMargins(18, 10, 18, 10)
 
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet("background: rgba(255,255,255,0.07); min-height:1px; max-height:1px; border: none;")
-        cl.addWidget(sep)
-        cl.addSpacing(4)
-
-        self._copy_btn   = self._btn("📋  Copy to Clipboard",    _ACCENT,  _ACCENT_HOVER)
-        self._ocr_btn    = self._btn("🔍  Extract Text (OCR)",   _TEAL,    "#66D9D1")
-        self._save_btn   = self._btn("💾  Save as Image",        _BLUE,    "#74C6E0")
-        self._cancel_btn = self._btn("✕   Cancel",               "#444460", "#55556E", small=True)
-
-        self._copy_btn.clicked.connect(self._do_copy)
-        self._ocr_btn.clicked.connect(self._do_ocr)
-        self._save_btn.clicked.connect(self._do_save)
-        self._cancel_btn.clicked.connect(self.close)
-
-        for b in (self._copy_btn, self._ocr_btn, self._save_btn):
-            cl.addWidget(b)
-        cl.addSpacing(4)
-        cl.addWidget(self._cancel_btn)
-
-        self._status = QLabel("")
-        self._status.setAlignment(Qt.AlignCenter)
-        self._status.setWordWrap(True)
-        self._status.setStyleSheet(f"font-size: 11px; color: {_TEXT_DIM}; padding-top: 4px; background: transparent;")
-        self._status.setVisible(False)
-        cl.addWidget(self._status)
-
-        outer.addWidget(card)
-        self.setStyleSheet(f"QWidget {{ font-family: 'Inter','Segoe UI',sans-serif; font-size: 13px; background: transparent; }}")
-
-    @staticmethod
-    def _btn(text: str, bg: str, hover: str, small: bool = False) -> QPushButton:
-        b = QPushButton(text)
-        b.setCursor(Qt.PointingHandCursor)
-        h = 32 if small else 40
-        b.setMinimumHeight(h)
-        b.setStyleSheet(f"""
-            QPushButton {{
-                background: {bg}; color: #FFFFFF;
-                border: none; border-radius: {'8' if small else '10'}px;
-                padding: 0 16px; font-size: {'12' if small else '13'}px;
-                font-weight: {'500' if small else '600'}; text-align: left;
-            }}
-            QPushButton:hover {{ background: {hover}; }}
-            QPushButton:disabled {{ background: rgba(255,255,255,0.06); color: {_TEXT_DIM}; }}
+        lbl = QLabel(message)
+        lbl.setStyleSheet("""
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            background: transparent;
         """)
-        return b
+        inner.addWidget(lbl)
+        outer.addWidget(frame)
 
-    def _apply_shadow(self) -> None:
-        sh = QGraphicsDropShadowEffect(self)
-        sh.setBlurRadius(32); sh.setOffset(0, 6); sh.setColor(QColor(0, 0, 0, 180))
-        self.setGraphicsEffect(sh)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(30)
+        shadow.setOffset(0, 6)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        self.setGraphicsEffect(shadow)
+
+        self.adjustSize()
+        self._position()
+        self.show()
+
+        QTimer.singleShot(duration_ms, self.close)
 
     def _position(self) -> None:
-        self.adjustSize()
         screen = QGuiApplication.primaryScreen()
         sg = screen.geometry() if screen else QRect(0, 0, 1920, 1080)
         x = sg.center().x() - self.width() // 2
-        y = sg.bottom() - self.height() - 80
-        self.move(max(12, x), max(12, y))
-
-    def _set_busy(self, msg: str) -> None:
-        for b in (self._copy_btn, self._ocr_btn, self._save_btn, self._cancel_btn):
-            b.setEnabled(False)
-        self._status.setText(msg)
-        self._status.setStyleSheet(f"font-size: 11px; color: {_TEXT_DIM}; padding-top: 4px; background: transparent;")
-        self._status.setVisible(True)
-        QApplication.processEvents()
-
-    def _finish(self, msg: str) -> None:
-        self._status.setText(msg)
-        self._status.setStyleSheet(f"font-size: 11px; color: {_SUCCESS}; padding-top: 4px; background: transparent;")
-        self._status.setVisible(True)
-        QTimer.singleShot(1200, self.close)
-
-    def _err(self, title: str, msg: str) -> None:
-        for b in (self._copy_btn, self._ocr_btn, self._save_btn, self._cancel_btn):
-            b.setEnabled(True)
-        self._status.setText(f"⚠ {msg}")
-        self._status.setStyleSheet(f"font-size: 11px; color: {_DANGER}; padding-top: 4px; background: transparent;")
-        self._status.setVisible(True)
-
-    @Slot()
-    def _do_copy(self) -> None:
-        self._set_busy("Copying image to clipboard…")
-        try:
-            copy_image_to_clipboard(self._path)
-            self._finish("✓ Image copied to clipboard!")
-        except Exception as e:
-            self._err("Clipboard error", str(e))
-
-    @Slot()
-    def _do_ocr(self) -> None:
-        self._set_busy("Running OCR — please wait…")
-        try:
-            text = extract_text(self._path)
-            if not text:
-                self._err("No text found", "Tesseract found no readable text.")
-                return
-            copy_text_to_clipboard(text)
-            self._finish(f"✓ Text copied! ({len(text)} chars)")
-        except Exception as e:
-            self._err("OCR error", str(e))
-
-    @Slot()
-    def _do_save(self) -> None:
-        self._set_busy("Confirming save…")
-        if self._path.exists():
-            self._finish(f"✓ Saved: {self._path.name}")
-        else:
-            self._err("Save error", f"File not found: {self._path}")
+        y = sg.bottom() - self.height() - 70
+        self.move(max(10, x), max(10, y))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -304,7 +209,9 @@ class CaptureMenu(QWidget):
 
     ``show_from_global_shortcut()`` immediately launches the fullscreen overlay
     (no separate launcher popup).  The overlay handles mode selection via its
-    built-in pill toolbar.  After a capture, ``ActionMenu`` is shown.
+    built-in pill toolbar.  When capture completes, it automatically executes
+    the selected action (save+copy image or OCR text to clipboard) without
+    any post-capture modal or action menu.
 
     Hidden ``action_group`` / ``mode_group`` attributes are kept for
     test-harness backward compatibility.
@@ -317,8 +224,9 @@ class CaptureMenu(QWidget):
         self.capture_engine    = ScreenshotCapture()
         self.last_capture_path: Path | None = None
         self.last_extracted_text: str | None = None
-        self._action_menu: ActionMenu | None = None
         self._overlay: Overlay | None = None
+        self._toast: CaptureToast | None = None
+        self._src_path: Path | None = None
 
         # Kept invisible — for test_capture_menu.py compatibility
         self._compat_hidden_init()
@@ -330,8 +238,6 @@ class CaptureMenu(QWidget):
 
     def _compat_hidden_init(self) -> None:
         """Create hidden groups/radios so existing test code can introspect them."""
-        from PySide6.QtWidgets import QButtonGroup, QRadioButton
-
         self.mode_group = QButtonGroup(self)
         self.full_screen_radio    = self._hidden_radio(self.mode_group, "full_screen", True)
         self.window_radio         = self._hidden_radio(self.mode_group, "window")
@@ -382,10 +288,11 @@ class CaptureMenu(QWidget):
         self.capture_button.setEnabled(True)
         if path is None:
             self.status_label.setText("Capture cancelled.")
-        else:
-            self.last_capture_path = path
-            self.status_label.setText(f"Saved: {path.name}")
-        self.capture_finished.emit()
+            self.capture_finished.emit()
+            return
+
+        action = self._selected_value(self.action_group)
+        self._handle_capture_result(path, action)
 
     def _capture(self, mode: str) -> "Path | None":
         """Capture backend — can be replaced by test harness for mocking."""
@@ -443,70 +350,118 @@ class CaptureMenu(QWidget):
 
         overlay = Overlay(bg_pixmap=bg_pixmap)
         self._overlay   = overlay
-        self._src_path  = source_path  # type: ignore[attr-defined]
+        self._src_path  = source_path
 
-        overlay.area_selected.connect(lambda rect: self._on_area_selected(rect, source_path))
-        overlay.fullscreen_capture_requested.connect(lambda: self._on_fullscreen(source_path))
-        overlay.window_capture_requested.connect(self._on_window_requested)
+        overlay.area_selected.connect(
+            lambda rect: self._on_area_selected(rect, source_path, overlay.capture_action)
+        )
+        overlay.fullscreen_capture_requested.connect(
+            lambda: self._on_fullscreen(source_path, overlay.capture_action)
+        )
+        overlay.window_capture_requested.connect(
+            lambda: self._on_window_requested(overlay.capture_action)
+        )
         overlay.cancelled.connect(self._on_cancelled)
 
         overlay.showFullScreenOverlay()
 
     # ── Capture result handlers ───────────────────────────────────────────────
 
-    def _on_area_selected(self, rect: QRect, source_path: Path | None) -> None:
+    def _on_area_selected(self, rect: QRect, source_path: Path | None, action: str) -> None:
         self._overlay = None
         if source_path is None or not source_path.exists():
             self.status_label.setText("Capture failed: no backdrop screenshot.")
+            self.capture_finished.emit()
             return
         try:
             out = _crop_and_save(source_path, rect.x(), rect.y(), rect.width(), rect.height())
         except Exception as e:
             self.status_label.setText(f"Crop failed: {e}")
+            self.capture_finished.emit()
             return
         finally:
             self._cleanup_source(source_path)
 
-        self.last_capture_path = out
-        self.status_label.setText(f"Saved: {out.name}")
-        self._show_action_menu(out)
+        self._handle_capture_result(out, action)
 
-    def _on_fullscreen(self, source_path: Path | None) -> None:
+    def _on_fullscreen(self, source_path: Path | None, action: str) -> None:
         self._overlay = None
         if source_path is None or not source_path.exists():
             self.status_label.setText("Capture failed: no backdrop screenshot.")
+            self.capture_finished.emit()
             return
         try:
             out = _save_full(source_path)
         except Exception as e:
             self.status_label.setText(f"Save failed: {e}")
+            self.capture_finished.emit()
             return
         finally:
             self._cleanup_source(source_path)
 
-        self.last_capture_path = out
-        self.status_label.setText(f"Saved: {out.name}")
-        self._show_action_menu(out)
+        self._handle_capture_result(out, action)
 
-    def _on_window_requested(self) -> None:
+    def _on_window_requested(self, action: str) -> None:
         self._overlay = None
+        self._cleanup_source(self._src_path)
         try:
             out = asyncio.run(capture_window())
         except Exception as e:
             self.status_label.setText(f"Window capture failed: {e}")
+            self.capture_finished.emit()
             return
 
         if out is None:
             self.status_label.setText("Window capture cancelled.")
+            self.capture_finished.emit()
             return
 
-        self.last_capture_path = out
-        self.status_label.setText(f"Saved: {out.name}")
-        self._show_action_menu(out)
+        self._handle_capture_result(out, action)
 
     def _on_cancelled(self) -> None:
         self._overlay = None
+        self._cleanup_source(self._src_path)
         self.status_label.setText("Capture cancelled.")
+        self.capture_finished.emit()
+
+    def _handle_capture_result(self, path: Path, action: str) -> None:
+        """Handle post-capture automatic behavior: Screenshot vs Extract Text."""
+        self.last_capture_path = path
+        is_ocr = (action == "extract_text" or action == "ocr")
+
+        if is_ocr:
+            try:
+                text = extract_text(path)
+                self.last_extracted_text = text
+                if text:
+                    copy_text_to_clipboard(text)
+                    self.status_label.setText(f"Text copied ({len(text)} chars)")
+                    self._show_toast(f"✓ Text copied! ({len(text)} chars)")
+                else:
+                    self.status_label.setText("No text found.")
+                    self._show_toast("⚠ No text detected")
+            except Exception as e:
+                print(f"[OCR ERROR] {e}", flush=True)
+                self.status_label.setText(f"OCR failed: {e}")
+                self._show_toast(f"⚠ OCR error: {e}")
+        else:
+            # Default "Screenshot" mode: BOTH save to disk AND copy to clipboard
+            try:
+                copy_image_to_clipboard(path)
+                self.status_label.setText(f"Saved & copied: {path.name}")
+                self._show_toast("✓ Saved & copied to clipboard!")
+            except Exception as e:
+                print(f"[CLIPBOARD ERROR] {e}", flush=True)
+                self.status_label.setText(f"Clipboard copy failed: {e}")
+                self._show_toast(f"✓ Saved: {path.name}")
+
+        self.capture_finished.emit()
+
+    def _show_toast(self, message: str) -> None:
+        try:
+            self._toast = CaptureToast(message)
+        except Exception as e:
+            print(f"[TOAST ERROR] {e}", flush=True)
 
     @staticmethod
     def _cleanup_source(source_path: Path | None) -> None:
@@ -515,23 +470,6 @@ class CaptureMenu(QWidget):
                 source_path.unlink()
             except OSError:
                 pass
-
-    # ── ActionMenu display ────────────────────────────────────────────────────
-
-    def _show_action_menu(self, path: Path) -> None:
-        if self._action_menu is not None:
-            try:
-                self._action_menu.close()
-            except RuntimeError:
-                pass
-            self._action_menu = None
-
-        menu = ActionMenu(captured_path=path)
-        self._action_menu = menu
-        menu.destroyed.connect(lambda: setattr(self, "_action_menu", None))
-        menu.show()
-        menu.raise_()
-        menu.activateWindow()
 
     # ── Slots wired by main.py ────────────────────────────────────────────────
 

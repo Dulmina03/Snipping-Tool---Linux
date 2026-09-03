@@ -18,6 +18,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QComboBox,
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Snipping mode enum
+#  Enums
 # ─────────────────────────────────────────────────────────────────────────────
 
 class SnipMode(str, enum.Enum):
@@ -44,12 +45,17 @@ class SnipMode(str, enum.Enum):
     FULLSCREEN  = "fullscreen"
 
 
+class CaptureAction(str, enum.Enum):
+    SCREENSHOT   = "screenshot"
+    EXTRACT_TEXT = "extract_text"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  Mode button (a QToolButton styled as a toggle)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class _ModeButton(QToolButton):
-    """Pill-toolbar icon button with icon glyph and label text."""
+    """Pill-toolbar icon button with icon glyph and bold label text."""
 
     # Normal: crisp white text on near-transparent dark pill button
     _STYLE_NORMAL = """
@@ -59,8 +65,8 @@ class _ModeButton(QToolButton):
             border: none;
             border-radius: 10px;
             padding: 6px 10px;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
         }
         QToolButton:hover {
             background: rgba(255,255,255,0.18);
@@ -75,7 +81,7 @@ class _ModeButton(QToolButton):
             border: 2px solid rgba(255,255,255,0.60);
             border-radius: 10px;
             padding: 4px 8px;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
         }
         QToolButton:hover {
@@ -83,16 +89,16 @@ class _ModeButton(QToolButton):
             color: #FFFFFF;
         }
     """
-    # Disabled: dimmed but still readable — 40% white instead of 25%
+    # Disabled: dimmed but readable — 42% white
     _STYLE_DISABLED = """
         QToolButton {
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.40);
+            color: rgba(255,255,255,0.42);
             border: none;
             border-radius: 10px;
             padding: 6px 10px;
-            font-size: 11px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 700;
         }
     """
 
@@ -119,13 +125,16 @@ class _ModeButton(QToolButton):
         self._glyph_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
         layout.addWidget(self._glyph_lbl)
 
+        # Bold and slightly larger font size (bumped up by 2px to 13px)
         self._name_lbl = QLabel(label)
         self._name_lbl.setAlignment(Qt.AlignCenter)
-        self._name_lbl.setStyleSheet("font-size: 11px; background: transparent; font-weight: 600; letter-spacing: 0.2px;")
+        self._name_lbl.setStyleSheet(
+            "font-size: 13px; background: transparent; font-weight: 700; letter-spacing: 0.2px;"
+        )
         self._name_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
         layout.addWidget(self._name_lbl)
 
-        self.setMinimumSize(QSize(80, 64))
+        self.setMinimumSize(QSize(90, 64))
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setCursor(Qt.PointingHandCursor if enabled else Qt.ArrowCursor)
         self.setEnabled(enabled)
@@ -152,7 +161,7 @@ class _ModeButton(QToolButton):
             f"font-size: 22px; background: transparent; color: {color};"
         )
         self._name_lbl.setStyleSheet(
-            f"font-size: 11px; background: transparent; font-weight: 600; "
+            f"font-size: 13px; background: transparent; font-weight: 700; "
             f"letter-spacing: 0.2px; color: {color};"
         )
 
@@ -168,11 +177,14 @@ class _ModeButton(QToolButton):
 class SnipToolbar(QFrame):
     """
     Semi-transparent pill-shaped toolbar docked at the top of the overlay.
-    Emits ``mode_changed`` when the user clicks a different snip mode button.
-    Emits ``cancel_requested`` when the × button is clicked.
+    Contains:
+      - Mode dropdown: "Screenshot" vs "Extract Text"
+      - Mode buttons: Rectangular, Freeform (disabled), Window, Full Screen
+      - Cancel button: ✕
     """
 
     mode_changed    = Signal(SnipMode)
+    action_changed  = Signal(str)
     cancel_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None):
@@ -202,18 +214,86 @@ class SnipToolbar(QFrame):
 
         outer = QHBoxLayout(self)
         outer.setContentsMargins(18, 12, 18, 12)
-        outer.setSpacing(6)
+        outer.setSpacing(8)
 
         # ── Snip tool branding ────────────────────────────────────────────────
         brand = QLabel("✂  Snip")
         brand.setStyleSheet("""
-            color: rgba(255,255,255,0.80);
+            color: rgba(255,255,255,0.85);
             font-size: 13px;
             font-weight: 700;
             letter-spacing: 0.6px;
-            padding-right: 10px;
+            padding-right: 4px;
         """)
         outer.addWidget(brand)
+
+        # ── Mode dropdown (Screenshot vs Extract Text) at the LEFT ─────────────
+        self.action_combo = QComboBox()
+        self.action_combo.setObjectName("action_combo")
+        self.action_combo.addItem("Screenshot", CaptureAction.SCREENSHOT.value)
+        self.action_combo.addItem("Extract Text", CaptureAction.EXTRACT_TEXT.value)
+        self.action_combo.setCurrentIndex(0)
+        self.action_combo.setCursor(Qt.PointingHandCursor)
+        self.action_combo.setStyleSheet("""
+            QComboBox#action_combo {
+                background: rgba(255, 255, 255, 0.09);
+                color: #FFFFFF;
+                border: 1.5px solid rgba(255, 255, 255, 0.22);
+                border-radius: 10px;
+                padding: 6px 28px 6px 14px;
+                font-size: 13px;
+                font-weight: 700;
+                min-width: 125px;
+                min-height: 38px;
+            }
+            QComboBox#action_combo:hover {
+                background: rgba(255, 255, 255, 0.18);
+                border-color: rgba(255, 255, 255, 0.45);
+            }
+            QComboBox#action_combo:on {
+                border-color: #6C63FF;
+            }
+            QComboBox#action_combo::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: center right;
+                width: 24px;
+                border: none;
+                background: transparent;
+            }
+            QComboBox#action_combo::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #FFFFFF;
+                margin-right: 10px;
+            }
+            QComboBox#action_combo QAbstractItemView {
+                background-color: #181824;
+                color: #FFFFFF;
+                selection-background-color: #6C63FF;
+                selection-color: #FFFFFF;
+                border: 1.5px solid rgba(255, 255, 255, 0.25);
+                border-radius: 10px;
+                padding: 6px;
+                outline: none;
+                font-size: 13px;
+                font-weight: 700;
+            }
+            QComboBox#action_combo QAbstractItemView::item {
+                min-height: 34px;
+                padding: 6px 12px;
+                border-radius: 6px;
+                color: #FFFFFF;
+            }
+            QComboBox#action_combo QAbstractItemView::item:selected {
+                background-color: #6C63FF;
+                color: #FFFFFF;
+            }
+        """)
+        self.action_combo.currentIndexChanged.connect(
+            lambda: self.action_changed.emit(self.current_action)
+        )
+        outer.addWidget(self.action_combo)
 
         # ── Vertical divider ─────────────────────────────────────────────────
         div = QFrame()
@@ -288,6 +368,20 @@ class SnipToolbar(QFrame):
     def current_mode(self) -> SnipMode:
         return self._current_mode
 
+    @property
+    def current_action(self) -> str:
+        data = self.action_combo.currentData()
+        if data:
+            return str(data)
+        if "Extract Text" in self.action_combo.currentText():
+            return CaptureAction.EXTRACT_TEXT.value
+        return CaptureAction.SCREENSHOT.value
+
+    def set_action(self, action: str) -> None:
+        idx = self.action_combo.findData(action)
+        if idx >= 0:
+            self.action_combo.setCurrentIndex(idx)
+
     def select_mode(self, mode: SnipMode) -> None:
         if mode in self._buttons and self._buttons[mode].isEnabled():
             self._buttons[mode].setChecked(True)
@@ -346,6 +440,11 @@ class Overlay(QWidget):
         self._toolbar.cancel_requested.connect(self.cancel_selection)
 
         self._update_cursor()
+
+    @property
+    def capture_action(self) -> str:
+        """Current capture action selected in toolbar: 'screenshot' or 'extract_text'."""
+        return self._toolbar.current_action
 
     # ── Show helpers ──────────────────────────────────────────────────────────
 
@@ -506,7 +605,7 @@ class Overlay(QWidget):
 
             # 4. Dimensions badge
             dim_text = f"{rect.width()} × {rect.height()}"
-            font = QFont("Sans-Serif", 9, QFont.Bold)
+            font = QFont("Sans-Serif", 10, QFont.Bold)
             painter.setFont(font)
             metrics  = painter.fontMetrics()
             tw = metrics.horizontalAdvance(dim_text)
