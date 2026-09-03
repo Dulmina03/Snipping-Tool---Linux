@@ -1,12 +1,16 @@
+"""Screen capture utilities via XDG Desktop Portal and PySide6."""
+
 import asyncio
-import shutil
-import uuid
 from datetime import datetime
 from pathlib import Path
+import shutil
 from urllib.parse import unquote, urlparse
+import uuid
 
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
+from PIL import Image
+from PySide6.QtGui import QPixmap
 
 from utils.clipboard import copy_image_to_clipboard
 
@@ -19,6 +23,7 @@ REQUEST_INTERFACE = "org.freedesktop.portal.Request"
 
 
 class ScreenshotCapture:
+    """Full-screen, window, and area screenshot capture engine."""
 
     def __init__(self):
         self.screenshot_folder = (
@@ -33,13 +38,9 @@ class ScreenshotCapture:
         )
 
     async def _request(self, options):
-
         bus = await MessageBus().connect()
 
-        token = (
-            "snippingtool_"
-            + uuid.uuid4().hex
-        )
+        token = "snippingtool_" + uuid.uuid4().hex
 
         options["handle_token"] = Variant(
             "s",
@@ -62,21 +63,15 @@ class ScreenshotCapture:
 
         if reply.message_type == MessageType.ERROR:
             bus.disconnect()
-
             raise RuntimeError(
-                f"Screenshot request failed: "
-                f"{reply.error_name}"
+                f"Screenshot request failed: {reply.error_name}"
             )
 
         request_path = reply.body[0]
 
-        future = (
-            asyncio.get_running_loop()
-            .create_future()
-        )
+        future = asyncio.get_running_loop().create_future()
 
         def response_handler(message):
-
             if message.message_type != MessageType.SIGNAL:
                 return
 
@@ -90,35 +85,22 @@ class ScreenshotCapture:
                 return
 
             if not future.done():
-                future.set_result(
-                    message.body
-                )
+                future.set_result(message.body)
 
         self.bus_add_handler = response_handler
-
-        bus.add_message_handler(
-            response_handler
-        )
+        bus.add_message_handler(response_handler)
 
         try:
-            response, results = (
-                await asyncio.wait_for(
-                    future,
-                    timeout=120,
-                )
+            response, results = await asyncio.wait_for(
+                future,
+                timeout=120,
             )
-
         finally:
-            bus.remove_message_handler(
-                response_handler
-            )
-
+            bus.remove_message_handler(response_handler)
             bus.disconnect()
 
         if response != 0:
-            raise RuntimeError(
-                "Screenshot was cancelled."
-            )
+            raise RuntimeError("Screenshot was cancelled.")
 
         return results
 
@@ -126,53 +108,35 @@ class ScreenshotCapture:
         self,
         mode="screen",
     ):
-
         if mode == "screen":
-
             options = {
                 "interactive": Variant(
                     "b",
                     False,
                 ),
             }
-
         elif mode == "window":
-
             options = {
                 "interactive": Variant(
                     "b",
                     True,
                 ),
             }
-
         elif mode == "area":
-
             options = {
                 "interactive": Variant(
                     "b",
                     True,
                 ),
             }
-
         else:
-            raise ValueError(
-                f"Unknown capture mode: {mode}"
-            )
+            raise ValueError(f"Unknown capture mode: {mode}")
 
-        results = await self._request(
-            options
-        )
-
+        results = await self._request(options)
         uri = results["uri"].value
 
-        destination = (
-            self._create_filename()
-        )
-
-        self._copy_screenshot(
-            uri,
-            destination,
-        )
+        destination = self._create_filename()
+        self._copy_screenshot(uri, destination)
 
         try:
             copy_image_to_clipboard(destination)
@@ -184,53 +148,50 @@ class ScreenshotCapture:
         return destination
 
     async def capture_full_screen(self):
-
-        return await self.capture(
-            "screen"
-        )
+        """Capture the full screen to a file and copy to clipboard."""
+        return await self.capture("screen")
 
     async def capture_window(self):
-
-        return await self.capture(
-            "window"
-        )
+        """Capture a selected window."""
+        return await self.capture("window")
 
     async def capture_area(self):
+        """Capture a selected screen area."""
+        return await self.capture("area")
 
-        return await self.capture(
-            "area"
-        )
+    async def capture_full_screen_pixmap(self) -> QPixmap:
+        """Capture full screen and return as QPixmap."""
+        path = await self.capture_full_screen()
+        return QPixmap(str(path))
+
+    async def capture_full_screen_pil(self) -> Image.Image:
+        """Capture full screen and return as PIL Image."""
+        path = await self.capture_full_screen()
+        return Image.open(str(path))
 
     def _create_filename(self):
-
-        timestamp = datetime.now().strftime(
-            "%Y-%m-%d_%H-%M-%S"
-        )
-
-        return (
-            self.screenshot_folder
-            / f"Screenshot_{timestamp}.png"
-        )
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        return self.screenshot_folder / f"Screenshot_{timestamp}.png"
 
     @staticmethod
-    def _copy_screenshot(
-        uri,
-        destination,
-    ):
-
+    def _copy_screenshot(uri, destination):
         if not uri.startswith("file://"):
-            raise RuntimeError(
-                f"Unsupported screenshot URI: "
-                f"{uri}"
-            )
+            raise RuntimeError(f"Unsupported screenshot URI: {uri}")
 
         parsed_uri = urlparse(uri)
+        source = unquote(parsed_uri.path)
+        shutil.copy2(source, destination)
 
-        source = unquote(
-            parsed_uri.path
-        )
 
-        shutil.copy2(
-            source,
-            destination,
-        )
+def capture_screen_pixmap() -> QPixmap:
+    """Synchronous helper to capture full screen as a QPixmap."""
+    capture_engine = ScreenshotCapture()
+    path = asyncio.run(capture_engine.capture_full_screen())
+    return QPixmap(str(path))
+
+
+def capture_screen_pil() -> Image.Image:
+    """Synchronous helper to capture full screen as a PIL Image."""
+    capture_engine = ScreenshotCapture()
+    path = asyncio.run(capture_engine.capture_full_screen())
+    return Image.open(str(path))
