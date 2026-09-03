@@ -1,9 +1,11 @@
-"""Wayland global-shortcut registration through XDG Desktop Portal."""
+"""Wayland and X11 global-shortcut registration through XDG Desktop Portal and D-Bus."""
 
 import asyncio
+import logging
 import os
 from pathlib import Path
 import threading
+from typing import Callable, Optional
 import uuid
 
 from dbus_next import Message, MessageType, Variant
@@ -11,6 +13,8 @@ from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType
 from PySide6.QtCore import QObject, Signal
 
+
+logger = logging.getLogger(__name__)
 
 PORTAL_BUS_NAME = "org.freedesktop.portal.Desktop"
 PORTAL_OBJECT_PATH = "/org/freedesktop/portal/desktop"
@@ -54,23 +58,32 @@ def ensure_desktop_entry() -> None:
 
 
 class GlobalShortcutManager(QObject):
-    """Register Ctrl+Shift+S and relay portal activation into the Qt UI."""
+    """Register global hotkey via XDG Desktop Portal and relay activation into Qt UI."""
 
     registration_succeeded = Signal(str)
     registration_failed = Signal(str)
     shortcut_activated = Signal()
 
-    def __init__(self):
+    def __init__(
+        self,
+        preferred_trigger: str = PREFERRED_TRIGGER,
+        description: str = "Open AI Snipping Tool capture menu",
+        shortcut_id: str = SHORTCUT_ID,
+    ):
         super().__init__()
 
-        self._thread = None
-        self._loop = None
-        self._bus = None
-        self._session_handle = None
-        self._stop_event = None
-        self._request_futures = {}
+        self.preferred_trigger = preferred_trigger
+        self.shortcut_description = description
+        self.shortcut_id = shortcut_id
+
+        self._thread: Optional[threading.Thread] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._bus: Optional[MessageBus] = None
+        self._session_handle: Optional[str] = None
+        self._stop_event: Optional[asyncio.Event] = None
+        self._request_futures: dict[str, asyncio.Future] = {}
         self._registered = False
-        self._error = None
+        self._error: Optional[str] = None
         self._ready = threading.Event()
         self._lock = threading.Lock()
 
@@ -140,7 +153,10 @@ class GlobalShortcutManager(QObject):
             loop.run_until_complete(self._register())
         except Exception as error:
             message = str(error)
-
+            logger.warning(
+                "Global shortcut registration failed or is unsupported on this desktop: %s",
+                message,
+            )
             with self._lock:
                 self._error = message
 
@@ -163,11 +179,18 @@ class GlobalShortcutManager(QObject):
     async def _register(self) -> None:
         ensure_desktop_entry()
 
-        self._bus = await MessageBus(bus_type=BusType.SESSION).connect()
+        try:
+            self._bus = await MessageBus(bus_type=BusType.SESSION).connect()
+        except Exception as bus_error:
+            raise RuntimeError(f"Could not connect to D-Bus session bus: {bus_error}") from bus_error
+
         self._bus.add_message_handler(self._message_handler)
 
-        # Establish application identity through the host portal Registry before calling GlobalShortcuts
-        await self._register_identity()
+        # Establish application identity through the host portal Registry
+        try:
+            await self._register_identity()
+        except Exception as ident_error:
+            logger.warning("Application identity registration warning: %s", ident_error)
 
         session_token = f"ai_snipping_{uuid.uuid4().hex}"
         create_results = await self._portal_request(
@@ -191,10 +214,10 @@ class GlobalShortcutManager(QObject):
 
         shortcuts = [
             [
-                SHORTCUT_ID,
+                self.shortcut_id,
                 {
-                    "description": Variant("s", "Open AI Snipping Tool capture menu"),
-                    "preferred_trigger": Variant("s", PREFERRED_TRIGGER),
+                    "description": Variant("s", self.shortcut_description),
+                    "preferred_trigger": Variant("s", self.preferred_trigger),
                 },
             ]
         ]
@@ -213,16 +236,16 @@ class GlobalShortcutManager(QObject):
         bound_shortcuts = self._variant_value(bind_results.get("shortcuts", []))
         bound_ids = {shortcut[0] for shortcut in bound_shortcuts}
 
-        if SHORTCUT_ID not in bound_ids:
+        if self.shortcut_id not in bound_ids:
             raise RuntimeError(
-                "Ctrl+Shift+S was not registered. It may have been cancelled "
-                "or rejected by the portal."
+                f"{self.preferred_trigger} was not registered. It may have been cancelled "
+                "or rejected by the desktop portal."
             )
 
         with self._lock:
             self._registered = True
 
-        self.registration_succeeded.emit(PREFERRED_TRIGGER)
+        self.registration_succeeded.emit(self.preferred_trigger)
 
     async def _register_identity(self) -> None:
         """Register application identity via org.freedesktop.host.portal.Registry."""
@@ -305,7 +328,7 @@ class GlobalShortcutManager(QObject):
         ):
             session_handle, shortcut_id = message.body[:2]
 
-            if session_handle == self.session_handle and shortcut_id == SHORTCUT_ID:
+            if session_handle == self.session_handle and shortcut_id == self.shortcut_id:
                 self.shortcut_activated.emit()
 
     @staticmethod
@@ -328,6 +351,6 @@ class GlobalShortcutManager(QObject):
                 )
 
                 if reply.message_type == MessageType.ERROR:
-                    print(f"Global shortcut session close failed: {reply.error_name}")
+                    logger.debug("Global shortcut session close notice: %s", reply.error_name)
         finally:
             self._bus.disconnect()

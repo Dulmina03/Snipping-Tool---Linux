@@ -1,961 +1,226 @@
+"""Selected area capture implementation using PySide6 Overlay and XDG Desktop Portal."""
+
 import asyncio
 import os
-import time
-import tkinter as tk
 from pathlib import Path
+import sys
+import time
 from urllib.parse import unquote
 
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
+from PIL import Image
+from PySide6.QtCore import QEventLoop, QRect
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtWidgets import QApplication
 
+from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard
 
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
+SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 
-SCREENSHOTS_DIR = (
-    Path.home()
-    / "Pictures"
-    / "Screenshots"
-)
-
-
-# ============================================================
-# SELECTED AREA
-# ============================================================
 
 class SelectedAreaSelector:
+    """Fullscreen rectangular selection overlay powered by PySide6 Overlay."""
 
     def __init__(self):
-
-        self.root = None
-        self.canvas = None
-
-        self.start_x = 0
-        self.start_y = 0
-
-        self.end_x = 0
-        self.end_y = 0
-
-        self.selection_finished = False
-        self.cancelled = False
-
-        self.rectangle = None
+        self.selected_area = None
 
     def select(self):
-        """
-        Create the fullscreen selection window.
+        """Display the PySide6 fullscreen selection overlay."""
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication(sys.argv)
 
-        IMPORTANT:
-        This function runs entirely on the main thread.
-        We do NOT use asyncio.to_thread().
-        """
-
-        self.root = tk.Tk()
-
-        self.root.title(
-            "Select Area"
-        )
-
-        # Fullscreen
-        self.root.attributes(
-            "-fullscreen",
-            True
-        )
-
-        # Keep overlay above other windows
-        self.root.attributes(
-            "-topmost",
-            True
-        )
-
-        # Remove normal window decorations
-        self.root.overrideredirect(
-            True
-        )
-
-        # Crosshair cursor
-        self.root.config(
-            cursor="crosshair"
-        )
-
-        # Try to make the overlay transparent
-        try:
-
-            self.root.attributes(
-                "-alpha",
-                0.25
-            )
-
-        except tk.TclError:
-
-            pass
-
-        self.canvas = tk.Canvas(
-            self.root,
-            bg="black",
-            highlightthickness=0,
-            cursor="crosshair"
-        )
-
-        self.canvas.pack(
-            fill=tk.BOTH,
-            expand=True
-        )
-
-        # Mouse events
-        self.canvas.bind(
-            "<ButtonPress-1>",
-            self.mouse_down
-        )
-
-        self.canvas.bind(
-            "<B1-Motion>",
-            self.mouse_drag
-        )
-
-        self.canvas.bind(
-            "<ButtonRelease-1>",
-            self.mouse_up
-        )
-
-        # ESC = cancel
-        self.root.bind(
-            "<Escape>",
-            self.cancel
-        )
-
+        overlay = Overlay()
+        virtual_geom = overlay._get_virtual_geometry()
         print(
-            "Selection overlay opened."
+            f"[OVERLAY LAUNCH] Class: {overlay.__class__.__name__}, "
+            f"Screen Geometry: {virtual_geom}"
         )
 
+        overlay.showFullScreenOverlay()
         print(
-            "Drag with LEFT mouse button."
+            f"[OVERLAY SHOWN] Class: {overlay.__class__.__name__}, "
+            f"Active Geometry: {overlay.geometry()}"
         )
 
-        print(
-            "Press ESC to cancel."
-        )
+        loop = QEventLoop()
+        overlay.area_selected.connect(lambda rect: loop.quit())
+        overlay.cancelled.connect(lambda: loop.quit())
+        loop.exec()
 
-        # Start Tk event loop
-        self.root.mainloop()
+        if overlay.selected_rect is not None:
+            r = overlay.selected_rect
+            print(f"[OVERLAY SELECTION] Selected: X={r.x()}, Y={r.y()}, Width={r.width()}, Height={r.height()}")
+            return (r.x(), r.y(), r.width(), r.height())
 
-        # Tk has now completely finished.
-        # We are back on the same main thread.
-
-        if self.cancelled:
-
-            return None
-
-        if not self.selection_finished:
-
-            return None
-
-        x = min(
-            self.start_x,
-            self.end_x
-        )
-
-        y = min(
-            self.start_y,
-            self.end_y
-        )
-
-        width = abs(
-            self.end_x - self.start_x
-        )
-
-        height = abs(
-            self.end_y - self.start_y
-        )
-
-        if width < 2 or height < 2:
-
-            return None
-
-        return (
-            x,
-            y,
-            width,
-            height
-        )
-
-    # --------------------------------------------------------
-    # Mouse pressed
-    # --------------------------------------------------------
-
-    def mouse_down(
-        self,
-        event
-    ):
-
-        self.start_x = event.x
-        self.start_y = event.y
-
-        self.end_x = event.x
-        self.end_y = event.y
-
-        if self.rectangle is not None:
-
-            self.canvas.delete(
-                self.rectangle
-            )
-
-            self.rectangle = None
-
-    # --------------------------------------------------------
-    # Mouse dragging
-    # --------------------------------------------------------
-
-    def mouse_drag(
-        self,
-        event
-    ):
-
-        self.end_x = event.x
-        self.end_y = event.y
-
-        if self.rectangle is not None:
-
-            self.canvas.delete(
-                self.rectangle
-            )
-
-        x1 = min(
-            self.start_x,
-            self.end_x
-        )
-
-        y1 = min(
-            self.start_y,
-            self.end_y
-        )
-
-        x2 = max(
-            self.start_x,
-            self.end_x
-        )
-
-        y2 = max(
-            self.start_y,
-            self.end_y
-        )
-
-        self.rectangle = (
-            self.canvas.create_rectangle(
-                x1,
-                y1,
-                x2,
-                y2,
-                outline="white",
-                width=2
-            )
-        )
-
-    # --------------------------------------------------------
-    # Mouse released
-    # --------------------------------------------------------
-
-    def mouse_up(
-        self,
-        event
-    ):
-
-        self.end_x = event.x
-        self.end_y = event.y
-
-        self.selection_finished = True
-
-        # Destroy Tk window on the SAME thread
-        self.root.destroy()
-
-    # --------------------------------------------------------
-    # ESC
-    # --------------------------------------------------------
-
-    def cancel(
-        self,
-        event=None
-    ):
-
-        self.cancelled = True
-
-        if self.root is not None:
-
-            self.root.destroy()
+        print("[OVERLAY CANCELLED] Selection was cancelled.")
+        return None
 
 
-# ============================================================
-# SCREENSHOT PORTAL
-# ============================================================
-
-async def take_portal_screenshot():
-
-    print()
-
-    print(
-        "Connecting to Screenshot portal..."
-    )
-
+async def take_portal_screenshot() -> str:
+    """Request a non-interactive full screen screenshot from XDG Desktop Portal."""
+    print("Connecting to Screenshot portal...")
     bus = await MessageBus().connect()
 
-    print(
-        "Connected to portal."
-    )
-
-    print()
-
-    # Unique token for this request
-    request_token = (
-        "ai_snipping_tool_"
-        + str(os.getpid())
-        + "_"
-        + str(
-            int(
-                time.time() * 1000
-            )
-        )
-    )
+    token = f"ai_snipping_tool_{os.getpid()}_{int(time.time() * 1000)}"
 
     options = {
-
-        "handle_token": Variant(
-            "s",
-            request_token
-        ),
-
-        "interactive": Variant(
-            "b",
-            False
-        )
+        "handle_token": Variant("s", token),
+        "interactive": Variant("b", False),
     }
 
-    # --------------------------------------------------------
-    # Screenshot() D-Bus method call
-    # --------------------------------------------------------
-
     message = Message(
-
-        destination=(
-            "org.freedesktop.portal.Desktop"
-        ),
-
-        path=(
-            "/org/freedesktop/portal/desktop"
-        ),
-
-        interface=(
-            "org.freedesktop.portal.Screenshot"
-        ),
-
+        destination="org.freedesktop.portal.Desktop",
+        path="/org/freedesktop/portal/desktop",
+        interface="org.freedesktop.portal.Screenshot",
         member="Screenshot",
-
         signature="sa{sv}",
-
-        body=[
-            "",
-            options
-        ]
+        body=["", options],
     )
 
-    print(
-        "Creating screenshot request..."
-    )
-
-    reply = await bus.call(
-        message
-    )
+    reply = await bus.call(message)
 
     if reply.message_type == MessageType.ERROR:
-
         bus.disconnect()
+        raise RuntimeError(f"Portal screenshot request error: {reply.error_name}")
 
-        raise RuntimeError(
-            "Screenshot request failed: "
-            + str(reply.error_name)
-        )
+    request_handle = reply.body[0]
+    print("Screenshot request created:", request_handle)
 
-    if not reply.body:
+    future = asyncio.get_running_loop().create_future()
 
-        bus.disconnect()
-
-        raise RuntimeError(
-            "Screenshot portal returned "
-            "no request path."
-        )
-
-    request_path = reply.body[0]
-
-    print(
-        "Screenshot request created:"
-    )
-
-    print(
-        request_path
-    )
-
-    print()
-
-    # --------------------------------------------------------
-    # Wait for Response signal
-    # --------------------------------------------------------
-
-    loop = asyncio.get_running_loop()
-
-    response_future = loop.create_future()
-
-    def message_handler(
-        msg
-    ):
-
+    def on_signal(msg):
         if (
-            msg.message_type
-            == MessageType.SIGNAL
-            and
-            msg.interface
-            == "org.freedesktop.portal.Request"
-            and
-            msg.member
-            == "Response"
-            and
-            msg.path
-            == request_path
+            msg.message_type == MessageType.SIGNAL
+            and msg.interface == "org.freedesktop.portal.Request"
+            and msg.member == "Response"
+            and msg.path == request_handle
         ):
+            if not future.done():
+                future.set_result(msg.body)
 
-            if not response_future.done():
-
-                response_future.set_result(
-                    msg.body
-                )
-
-    bus.add_message_handler(
-        message_handler
-    )
-
-    print(
-        "Waiting for screenshot..."
-    )
+    bus.add_message_handler(on_signal)
 
     try:
-
-        response = await response_future
-
+        response_code, results = await asyncio.wait_for(future, timeout=120)
     finally:
-
-        # IMPORTANT:
-        # disconnect() is NOT awaited.
+        bus.remove_message_handler(on_signal)
         bus.disconnect()
 
-    # --------------------------------------------------------
-    # Process response
-    # --------------------------------------------------------
-
-    if not response:
-
-        raise RuntimeError(
-            "Screenshot portal returned "
-            "an empty response."
-        )
-
-    response_code = response[0]
-
-    results = {}
-
-    if len(response) > 1:
-
-        results = response[1]
-
-    print()
-
-    print(
-        "Screenshot portal responded."
-    )
-
-    print(
-        f"Response code: {response_code}"
-    )
-
-    # 0 = success
     if response_code != 0:
+        raise RuntimeError(f"Screenshot cancelled or denied (code {response_code}).")
 
-        raise RuntimeError(
-            "Screenshot was cancelled "
-            "or failed."
-        )
+    return results["uri"].value
 
-    uri_variant = results.get(
-        "uri"
-    )
 
-    if uri_variant is None:
+def uri_to_path(uri: str) -> Path:
+    if not uri.startswith("file://"):
+        raise RuntimeError(f"Portal returned an unsupported URI: {uri}")
+    return Path(unquote(uri[7:]))
 
-        raise RuntimeError(
-            "Screenshot portal did not "
-            "return a URI."
-        )
 
-    uri = uri_variant.value
+def get_screen_size() -> tuple[int, int]:
+    """Get the virtual desktop size across all connected screens."""
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
 
-    print()
+    total_rect = QRect()
+    for screen in QGuiApplication.screens():
+        total_rect = total_rect.united(screen.geometry())
 
-    print(
-        "Screenshot URI:"
-    )
+    if total_rect.isEmpty():
+        primary = QGuiApplication.primaryScreen()
+        total_rect = primary.geometry() if primary else QRect(0, 0, 1920, 1080)
 
-    print(
-        uri
-    )
+    return (total_rect.width(), total_rect.height())
 
-    return uri
 
+def crop_screenshot(source_path: Path, x: int, y: int, width: int, height: int) -> Path:
+    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"Screenshot_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png"
+    output_path = SCREENSHOTS_DIR / filename
 
-# ============================================================
-# URI -> PATH
-# ============================================================
+    with Image.open(source_path) as image:
+        screen_width, screen_height = get_screen_size()
+        scale_x = image.width / screen_width
+        scale_y = image.height / screen_height
 
-def uri_to_path(
-    uri
-):
+        print(f"Full screenshot size: {image.width} x {image.height}")
+        print(f"Logical screen size: {screen_width} x {screen_height}")
+        print(f"Scale: X = {scale_x:.3f}, Y = {scale_y:.3f}")
 
-    if not uri.startswith(
-        "file://"
-    ):
+        crop_x = round(x * scale_x)
+        crop_y = round(y * scale_y)
+        crop_width = round(width * scale_x)
+        crop_height = round(height * scale_y)
 
-        raise RuntimeError(
-            "Portal returned an unsupported URI: "
-            + uri
-        )
+        left = max(0, crop_x)
+        top = max(0, crop_y)
+        right = min(image.width, crop_x + crop_width)
+        bottom = min(image.height, crop_y + crop_height)
 
-    path = uri[7:]
+        print(f"Final crop: ({left}, {top}) -> ({right}, {bottom})")
 
-    return Path(
-        unquote(path)
-    )
+        if right <= left or bottom <= top:
+            raise RuntimeError("Invalid crop coordinates.")
 
-
-# ============================================================
-# SCREEN SIZE
-# ============================================================
-
-def get_screen_size():
-
-    """
-    Get the logical screen size using Tk.
-
-    This function is called on the main thread,
-    after the selection overlay has finished.
-    """
-
-    root = tk.Tk()
-
-    root.withdraw()
-
-    width = root.winfo_screenwidth()
-
-    height = root.winfo_screenheight()
-
-    root.destroy()
-
-    return (
-        width,
-        height
-    )
-
-
-# ============================================================
-# CROP SCREENSHOT
-# ============================================================
-
-def crop_screenshot(
-    source_path,
-    x,
-    y,
-    width,
-    height
-):
-
-    try:
-
-        from PIL import Image
-
-    except ImportError:
-
-        raise RuntimeError(
-            "Pillow is not installed.\n"
-            "Run:\n"
-            "pip install Pillow"
-        )
-
-    SCREENSHOTS_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    filename = (
-        "Screenshot_"
-        + time.strftime(
-            "%Y-%m-%d_%H-%M-%S"
-        )
-        + ".png"
-    )
-
-    output_path = (
-        SCREENSHOTS_DIR
-        / filename
-    )
-
-    # --------------------------------------------------------
-    # Open full screenshot
-    # --------------------------------------------------------
-
-    with Image.open(
-        source_path
-    ) as image:
-
-        print()
-
-        print(
-            "Full screenshot size:"
-        )
-
-        print(
-            f"{image.width} x "
-            f"{image.height}"
-        )
-
-        # ----------------------------------------------------
-        # Get actual logical screen size
-        # ----------------------------------------------------
-
-        screen_width, screen_height = (
-            get_screen_size()
-        )
-
-        print(
-            "Logical screen size:"
-        )
-
-        print(
-            f"{screen_width} x "
-            f"{screen_height}"
-        )
-
-        # ----------------------------------------------------
-        # Calculate scaling
-        # ----------------------------------------------------
-
-        scale_x = (
-            image.width
-            / screen_width
-        )
-
-        scale_y = (
-            image.height
-            / screen_height
-        )
-
-        print(
-            "Scale:"
-        )
-
-        print(
-            f"X = {scale_x:.3f}"
-        )
-
-        print(
-            f"Y = {scale_y:.3f}"
-        )
-
-        # ----------------------------------------------------
-        # Convert selected coordinates
-        # ----------------------------------------------------
-
-        crop_x = round(
-            x * scale_x
-        )
-
-        crop_y = round(
-            y * scale_y
-        )
-
-        crop_width = round(
-            width * scale_x
-        )
-
-        crop_height = round(
-            height * scale_y
-        )
-
-        left = max(
-            0,
-            crop_x
-        )
-
-        top = max(
-            0,
-            crop_y
-        )
-
-        right = min(
-            image.width,
-            crop_x + crop_width
-        )
-
-        bottom = min(
-            image.height,
-            crop_y + crop_height
-        )
-
-        print()
-
-        print(
-            "Final crop:"
-        )
-
-        print(
-            f"({left}, {top}) -> "
-            f"({right}, {bottom})"
-        )
-
-        if (
-            right <= left
-            or
-            bottom <= top
-        ):
-
-            raise RuntimeError(
-                "Invalid crop coordinates."
-            )
-
-        # ----------------------------------------------------
-        # Crop
-        # ----------------------------------------------------
-
-        cropped = image.crop(
-            (
-                left,
-                top,
-                right,
-                bottom
-            )
-        )
-
-        # ----------------------------------------------------
-        # Save
-        # ----------------------------------------------------
-
-        cropped.save(
-            output_path,
-            "PNG"
-        )
+        cropped = image.crop((left, top, right, bottom))
+        cropped.save(output_path, "PNG")
 
     return output_path
 
 
-# ============================================================
-# MAIN
-# ============================================================
-
-async def main():
-
-    print()
-
-    print(
-        "==================================="
-    )
-
-    print(
-        "       SELECTED AREA CAPTURE"
-    )
-
-    print(
-        "==================================="
-    )
-
-    print()
-
-    print(
-        "Drag over the area you want "
-        "to capture."
-    )
-
-    print(
-        "Press ESC to cancel."
-    )
-
-    print()
-
-    # --------------------------------------------------------
-    # IMPORTANT:
-    #
-    # Tkinter selection happens BEFORE
-    # any asyncio work.
-    #
-    # This prevents the Tcl_AsyncDelete
-    # wrong-thread crash.
-    # --------------------------------------------------------
+async def main() -> Path | None:
+    print("===================================")
+    print("       SELECTED AREA CAPTURE       ")
+    print("===================================")
 
     selector = SelectedAreaSelector()
-
     area = selector.select()
 
     if area is None:
-
-        print()
-
-        print(
-            "Selection cancelled."
-        )
-
-        return
+        print("Selection cancelled.")
+        return None
 
     x, y, width, height = area
 
-    print()
-
-    print(
-        "========== SELECTED AREA =========="
-    )
-
-    print(
-        f"X: {x}"
-    )
-
-    print(
-        f"Y: {y}"
-    )
-
-    print(
-        f"Width: {width}"
-    )
-
-    print(
-        f"Height: {height}"
-    )
-
-    print(
-        "==================================="
-    )
-
-    # --------------------------------------------------------
-    # Take full screenshot using portal
-    # --------------------------------------------------------
-
     try:
-
         uri = await take_portal_screenshot()
-
-        source_path = uri_to_path(
-            uri
-        )
+        source_path = uri_to_path(uri)
 
         if not source_path.exists():
+            raise RuntimeError(f"Portal screenshot file does not exist: {source_path}")
 
-            raise RuntimeError(
-                "Portal screenshot file "
-                "does not exist:\n"
-                + str(source_path)
-            )
-
-        print()
-
-        print(
-            "Cropping selected area..."
-        )
-
-        # ----------------------------------------------------
-        # Crop
-        # ----------------------------------------------------
-
-        output_path = crop_screenshot(
-
-            source_path,
-
-            x,
-            y,
-
-            width,
-            height
-        )
+        print("Cropping selected area...")
+        output_path = crop_screenshot(source_path, x, y, width, height)
 
         try:
             copy_image_to_clipboard(output_path)
             print("Copied to clipboard.")
         except Exception as clipboard_error:
-            print(
-                "WARNING: Screenshot saved, but "
-                "clipboard copy failed:"
-            )
-            print(clipboard_error)
+            print("WARNING: Screenshot saved, but clipboard copy failed:", clipboard_error)
 
-        print()
-
-        print(
-            "================================"
-        )
-
-        print(
-            "SELECTED AREA SCREENSHOT SUCCESS!"
-        )
-
-        print(
-            "================================"
-        )
-
-        print()
-
-        print(
-            "Saved to:"
-        )
-
-        print(
-            output_path
-        )
-
-        # ----------------------------------------------------
-        # Remove temporary full screenshot
-        # ----------------------------------------------------
+        print("================================")
+        print("SELECTED AREA SCREENSHOT SUCCESS!")
+        print("================================")
+        print("Saved to:", output_path)
 
         try:
-
             source_path.unlink()
-
-            print()
-
-            print(
-                "Temporary full screenshot "
-                "removed."
-            )
-
+            print("Temporary full screenshot removed.")
         except OSError:
-
             pass
 
         return output_path
 
     except Exception as error:
-
-        print()
-
-        print(
-            "Screenshot failed:"
-        )
-
-        print(
-            error
-        )
-
+        print("Screenshot failed:", error)
         return None
 
 
-# ============================================================
-# PROGRAM ENTRY POINT
-# ============================================================
-
 if __name__ == "__main__":
-
-    asyncio.run(
-        main()
-    )
+    asyncio.run(main())

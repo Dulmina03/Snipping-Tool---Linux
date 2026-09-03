@@ -1,5 +1,7 @@
 """Selection overlay widget for rectangular screen capture."""
 
+import logging
+
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import (
     QColor,
@@ -11,6 +13,9 @@ from PySide6.QtGui import (
     QPixmap,
 )
 from PySide6.QtWidgets import QWidget
+
+
+logger = logging.getLogger(__name__)
 
 
 class Overlay(QWidget):
@@ -28,19 +33,18 @@ class Overlay(QWidget):
         self.selecting = False
         self.selected_rect: QRect | None = None
 
-        # Setup window properties: frameless, translucent, always on top
+        # Standard top-level window flags for Wayland and X11 toplevel fullscreen surfaces
         self.setWindowFlags(
-            Qt.FramelessWindowHint
+            Qt.Window
+            | Qt.FramelessWindowHint
             | Qt.WindowStaysOnTopHint
-            | Qt.Tool
-            | Qt.BypassWindowManagerHint
         )
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setMouseTracking(True)
         self.setCursor(Qt.CrossCursor)
 
-    def showFullScreenOverlay(self) -> None:
-        """Position overlay to cover the virtual geometry of all connected screens."""
+    def _get_virtual_geometry(self) -> QRect:
+        """Calculate the united virtual desktop geometry across all screens."""
         total_rect = QRect()
         for screen in QGuiApplication.screens():
             total_rect = total_rect.united(screen.geometry())
@@ -49,10 +53,33 @@ class Overlay(QWidget):
             primary = QGuiApplication.primaryScreen()
             total_rect = primary.geometry() if primary else QRect(0, 0, 1920, 1080)
 
-        self.setGeometry(total_rect)
+        return total_rect
+
+    def showFullScreenOverlay(self) -> None:
+        """Position overlay to cover the virtual geometry of all connected screens."""
+        virtual_rect = self._get_virtual_geometry()
+        logger.debug("Configuring overlay with virtual geometry: %s", virtual_rect)
+
+        # Set geometry before showing
+        self.setGeometry(virtual_rect)
+        self.resize(virtual_rect.size())
+        self.move(virtual_rect.topLeft())
+
         self.showFullScreen()
+
+        # Re-assert geometry and bring to front
+        self.setGeometry(virtual_rect)
         self.raise_()
         self.activateWindow()
+
+        logger.debug("Overlay displayed with active geometry: %s", self.geometry())
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        virtual_rect = self._get_virtual_geometry()
+        if not virtual_rect.isEmpty() and self.geometry() != virtual_rect:
+            self.setGeometry(virtual_rect)
+            self.resize(virtual_rect.size())
 
     def get_selection_rect(self) -> QRect:
         """Return the current normalized selection rectangle."""
