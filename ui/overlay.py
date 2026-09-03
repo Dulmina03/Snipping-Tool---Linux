@@ -51,81 +51,110 @@ class SnipMode(str, enum.Enum):
 class _ModeButton(QToolButton):
     """Pill-toolbar icon button with icon glyph and label text."""
 
+    # Normal: crisp white text on near-transparent dark pill button
     _STYLE_NORMAL = """
         QToolButton {
-            background: transparent;
-            color: rgba(255,255,255,0.75);
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.90);
             border: none;
-            border-radius: 8px;
-            padding: 4px 8px;
+            border-radius: 10px;
+            padding: 6px 10px;
             font-size: 11px;
+            font-weight: 600;
         }
         QToolButton:hover {
-            background: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.18);
             color: #FFFFFF;
         }
     """
+    # Checked: vivid violet with white border — unmistakably active
     _STYLE_CHECKED = """
         QToolButton {
-            background: rgba(108,99,255,0.85);
+            background: rgba(108,99,255,1.0);
             color: #FFFFFF;
-            border: none;
-            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.60);
+            border-radius: 10px;
             padding: 4px 8px;
             font-size: 11px;
+            font-weight: 700;
         }
         QToolButton:hover {
-            background: rgba(130,120,255,0.90);
+            background: rgba(130,120,255,1.0);
             color: #FFFFFF;
         }
     """
+    # Disabled: dimmed but still readable — 40% white instead of 25%
     _STYLE_DISABLED = """
         QToolButton {
-            background: transparent;
-            color: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.40);
             border: none;
-            border-radius: 8px;
-            padding: 4px 8px;
+            border-radius: 10px;
+            padding: 6px 10px;
             font-size: 11px;
+            font-weight: 500;
         }
     """
+
+    # Per-state text colors applied directly to child QLabels
+    # (Qt does not propagate `color` from QToolButton stylesheet to child widgets)
+    _COLOR_NORMAL   = "rgba(255,255,255,0.90)"
+    _COLOR_CHECKED  = "#FFFFFF"
+    _COLOR_DISABLED = "rgba(255,255,255,0.42)"
 
     def __init__(self, icon_glyph: str, label: str, mode: SnipMode, enabled: bool = True):
         super().__init__()
         self.mode = mode
         self.setCheckable(True)
-        self.setChecked(False)
+        # NOTE: do NOT call setChecked here — _glyph_lbl/_name_lbl don't exist yet.
+        # _refresh_style() is called at the end of __init__ instead.
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 4, 6, 4)
         layout.setSpacing(2)
 
-        glyph_lbl = QLabel(icon_glyph)
-        glyph_lbl.setAlignment(Qt.AlignCenter)
-        glyph_lbl.setStyleSheet("font-size: 18px; background: transparent; color: inherit;")
-        glyph_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
-        layout.addWidget(glyph_lbl)
+        self._glyph_lbl = QLabel(icon_glyph)
+        self._glyph_lbl.setAlignment(Qt.AlignCenter)
+        self._glyph_lbl.setStyleSheet("font-size: 22px; background: transparent;")
+        self._glyph_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
+        layout.addWidget(self._glyph_lbl)
 
-        name_lbl = QLabel(label)
-        name_lbl.setAlignment(Qt.AlignCenter)
-        name_lbl.setStyleSheet("font-size: 10px; background: transparent; color: inherit; font-weight: 500;")
-        name_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
-        layout.addWidget(name_lbl)
+        self._name_lbl = QLabel(label)
+        self._name_lbl.setAlignment(Qt.AlignCenter)
+        self._name_lbl.setStyleSheet("font-size: 11px; background: transparent; font-weight: 600; letter-spacing: 0.2px;")
+        self._name_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
+        layout.addWidget(self._name_lbl)
 
-        self.setMinimumSize(QSize(68, 54))
+        self.setMinimumSize(QSize(80, 64))
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setCursor(Qt.PointingHandCursor if enabled else Qt.ArrowCursor)
         self.setEnabled(enabled)
 
+        # Apply initial style now that labels exist
         self._refresh_style()
 
     def _refresh_style(self) -> None:
         if not self.isEnabled():
             self.setStyleSheet(self._STYLE_DISABLED)
+            self._set_label_color(self._COLOR_DISABLED)
         elif self.isChecked():
             self.setStyleSheet(self._STYLE_CHECKED)
+            self._set_label_color(self._COLOR_CHECKED)
         else:
             self.setStyleSheet(self._STYLE_NORMAL)
+            self._set_label_color(self._COLOR_NORMAL)
+
+    def _set_label_color(self, color: str) -> None:
+        """Push an explicit color onto child labels (Qt doesn't inherit from button stylesheet)."""
+        if not hasattr(self, "_glyph_lbl"):
+            return  # called before labels exist (during super().__init__)
+        self._glyph_lbl.setStyleSheet(
+            f"font-size: 22px; background: transparent; color: {color};"
+        )
+        self._name_lbl.setStyleSheet(
+            f"font-size: 11px; background: transparent; font-weight: 600; "
+            f"letter-spacing: 0.2px; color: {color};"
+        )
 
     def setChecked(self, checked: bool) -> None:
         super().setChecked(checked)
@@ -159,37 +188,37 @@ class SnipToolbar(QFrame):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet("""
             QFrame#snip_toolbar {
-                background: rgba(18, 18, 28, 0.88);
-                border: 1px solid rgba(255,255,255,0.10);
-                border-radius: 16px;
+                background: rgba(12, 12, 20, 0.96);
+                border: 1.5px solid rgba(255,255,255,0.18);
+                border-radius: 20px;
             }
         """)
 
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(28)
-        shadow.setOffset(0, 6)
-        shadow.setColor(QColor(0, 0, 0, 180))
+        shadow.setBlurRadius(40)
+        shadow.setOffset(0, 8)
+        shadow.setColor(QColor(0, 0, 0, 220))
         self.setGraphicsEffect(shadow)
 
         outer = QHBoxLayout(self)
-        outer.setContentsMargins(14, 10, 14, 10)
-        outer.setSpacing(4)
+        outer.setContentsMargins(18, 12, 18, 12)
+        outer.setSpacing(6)
 
         # ── Snip tool branding ────────────────────────────────────────────────
         brand = QLabel("✂  Snip")
         brand.setStyleSheet("""
-            color: rgba(255,255,255,0.55);
-            font-size: 12px;
+            color: rgba(255,255,255,0.80);
+            font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            padding-right: 8px;
+            letter-spacing: 0.6px;
+            padding-right: 10px;
         """)
         outer.addWidget(brand)
 
         # ── Vertical divider ─────────────────────────────────────────────────
         div = QFrame()
         div.setFrameShape(QFrame.VLine)
-        div.setStyleSheet("background: rgba(255,255,255,0.12); min-width:1px; max-width:1px; margin: 4px 6px; border: none;")
+        div.setStyleSheet("background: rgba(255,255,255,0.20); min-width:1px; max-width:1px; margin: 6px 8px; border: none;")
         outer.addWidget(div)
 
         # ── Mode buttons ──────────────────────────────────────────────────────
@@ -220,23 +249,24 @@ class SnipToolbar(QFrame):
         # ── Divider + Cancel ─────────────────────────────────────────────────
         div2 = QFrame()
         div2.setFrameShape(QFrame.VLine)
-        div2.setStyleSheet("background: rgba(255,255,255,0.12); min-width:1px; max-width:1px; margin: 4px 6px; border: none;")
+        div2.setStyleSheet("background: rgba(255,255,255,0.20); min-width:1px; max-width:1px; margin: 6px 8px; border: none;")
         outer.addWidget(div2)
 
         close_btn = QPushButton("✕")
-        close_btn.setFixedSize(QSize(32, 32))
+        close_btn.setFixedSize(QSize(38, 38))
         close_btn.setCursor(Qt.PointingHandCursor)
         close_btn.setToolTip("Cancel (Esc)")
         close_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
-                color: rgba(255,255,255,0.55);
+                color: rgba(255,255,255,0.85);
                 border: none;
                 border-radius: 6px;
-                font-size: 14px;
+                font-size: 16px;
+                font-weight: 600;
             }
             QPushButton:hover {
-                background: rgba(224, 108, 117, 0.75);
+                background: rgba(224, 108, 117, 0.80);
                 color: #FFFFFF;
             }
         """)
