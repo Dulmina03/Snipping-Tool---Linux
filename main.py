@@ -49,8 +49,8 @@ def main() -> int:
     tray_icon.setToolTip("AI Snipping Tool\nPress Ctrl+Shift+S to capture")
 
     tray_menu = QMenu()
-    capture_action = tray_menu.addAction("Capture Menu (Ctrl+Shift+S)")
-    capture_action.triggered.connect(menu.show_from_global_shortcut)
+    capture_action = tray_menu.addAction("Capture (Ctrl+Shift+S)")
+    capture_action.triggered.connect(menu.launch_overlay)
 
     tray_menu.addSeparator()
 
@@ -59,7 +59,7 @@ def main() -> int:
 
     tray_icon.setContextMenu(tray_menu)
     tray_icon.activated.connect(
-        lambda reason: menu.show_from_global_shortcut()
+        lambda reason: menu.launch_overlay()
         if reason == QSystemTrayIcon.Trigger
         else None
     )
