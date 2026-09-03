@@ -138,33 +138,33 @@ class Overlay(QWidget):
         has_selection = not rect.isEmpty() and rect.width() > 1 and rect.height() > 1
 
         if self.bg_pixmap and not self.bg_pixmap.isNull():
-            # Draw background screen snapshot
+            # 1. Draw full desktop screenshot at 100% clarity
             painter.drawPixmap(self.rect(), self.bg_pixmap)
 
-            # Dim everything outside the selection
+            # 2. Dim everything outside the selection using OddEven cutout
             dim_path = QPainterPath()
+            dim_path.setFillRule(Qt.OddEvenFill)
             dim_path.addRect(self.rect())
             if has_selection:
                 dim_path.addRect(rect)
 
-            painter.fillPath(dim_path, QColor(0, 0, 0, 120))
+            painter.fillPath(dim_path, QColor(0, 0, 0, 130))
         else:
-            # Translucent dark overlay with cut-out
+            # Fallback when no background pixmap is provided
+            dim_path = QPainterPath()
+            dim_path.setFillRule(Qt.OddEvenFill)
+            dim_path.addRect(self.rect())
             if has_selection:
-                painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
-                painter.setCompositionMode(QPainter.CompositionMode_Clear)
-                painter.fillRect(rect, Qt.transparent)
-                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-            else:
-                painter.fillRect(self.rect(), QColor(0, 0, 0, 100))
+                dim_path.addRect(rect)
+            painter.fillPath(dim_path, QColor(0, 0, 0, 130))
 
         if has_selection:
-            # Draw crisp border around the cut-out selection
+            # 3. Draw crisp border around the cut-out selection
             border_pen = QPen(QColor(255, 255, 255, 240), 1.5, Qt.SolidLine)
             painter.setPen(border_pen)
             painter.drawRect(rect)
 
-            # Draw dimensions label near the cursor / selection corner
+            # 4. Draw dimensions label near the selection corner
             dim_text = f"{rect.width()} × {rect.height()}"
             font = QFont("Sans-Serif", 9, QFont.Bold)
             painter.setFont(font)

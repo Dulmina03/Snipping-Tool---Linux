@@ -329,6 +329,7 @@ class GlobalShortcutManager(QObject):
             session_handle, shortcut_id = message.body[:2]
 
             if session_handle == self.session_handle and shortcut_id == self.shortcut_id:
+                print(f"[SHORTCUT ACTIVATED] Real keypress detected: {shortcut_id}", flush=True)
                 self.shortcut_activated.emit()
 
     @staticmethod

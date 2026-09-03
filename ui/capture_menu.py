@@ -195,6 +195,7 @@ class CaptureMenu(QWidget):
     @Slot()
     def show_from_global_shortcut(self) -> None:
         """Bring the existing capture menu forward after Ctrl+Shift+S."""
+        print("[CAPTURE MENU] Opened via shortcut or tray", flush=True)
         self.show()
         self.raise_()
         self.activateWindow()

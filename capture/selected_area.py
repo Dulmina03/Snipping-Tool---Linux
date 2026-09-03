@@ -11,7 +11,7 @@ from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from PIL import Image
 from PySide6.QtCore import QEventLoop, QRect
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QPixmap
 from PySide6.QtWidgets import QApplication
 
 from ui.overlay import Overlay
@@ -24,16 +24,17 @@ SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 class SelectedAreaSelector:
     """Fullscreen rectangular selection overlay powered by PySide6 Overlay."""
 
-    def __init__(self):
+    def __init__(self, bg_pixmap: QPixmap | None = None):
+        self.bg_pixmap = bg_pixmap
         self.selected_area = None
 
-    def select(self):
+    def select(self) -> tuple[int, int, int, int] | None:
         """Display the PySide6 fullscreen selection overlay."""
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
 
-        overlay = Overlay()
+        overlay = Overlay(bg_pixmap=self.bg_pixmap)
         virtual_geom = overlay._get_virtual_geometry()
         print(
             f"[OVERLAY LAUNCH] Class: {overlay.__class__.__name__}, "
@@ -179,22 +180,31 @@ async def main() -> Path | None:
     print("       SELECTED AREA CAPTURE       ")
     print("===================================")
 
-    selector = SelectedAreaSelector()
-    area = selector.select()
-
-    if area is None:
-        print("Selection cancelled.")
-        return None
-
-    x, y, width, height = area
-
     try:
+        # 1. Take full screenshot first via portal to use as overlay backdrop
         uri = await take_portal_screenshot()
         source_path = uri_to_path(uri)
 
         if not source_path.exists():
             raise RuntimeError(f"Portal screenshot file does not exist: {source_path}")
 
+        bg_pixmap = QPixmap(str(source_path))
+
+        # 2. Show overlay with the actual desktop screenshot
+        selector = SelectedAreaSelector(bg_pixmap=bg_pixmap)
+        area = selector.select()
+
+        if area is None:
+            print("Selection cancelled.")
+            try:
+                source_path.unlink()
+            except OSError:
+                pass
+            return None
+
+        x, y, width, height = area
+
+        # 3. Crop selected area
         print("Cropping selected area...")
         output_path = crop_screenshot(source_path, x, y, width, height)
 
