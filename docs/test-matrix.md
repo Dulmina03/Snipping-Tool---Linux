@@ -160,3 +160,16 @@ User reported physical app-grid PASS; capture/Esc/rectangle/OCR/window/tray FAIL
 ## Capture-to-clipboard integration fix — 2026-11-14
 
 Physical startup, Ctrl+Shift+S overlay, Escape and tray Quit now user-confirmed PASS. Image/OCR paste and Window remain pre-fix FAIL. Fixed publication after overlay teardown; OCR retains surface/result, defers unfocused delivery to click/Enter, GUI-thread guard, standard Clipboard only, no fake anchor/nested event pump. Native production handlers + two separate readers PASS for rectangle/fullscreen/repeat, real English OCR and supplied Sinhala/English/ZWJ punctuation. 74 tests PASS. Real Window picker opens (Screenshot v2); selected-window completion and all post-fix physical paste acceptance NOT RUN/pending user. Window success/cancel mocks are separate; no claim of complete Window root cause. Phase 1 OPEN; no Phase 2. [Details](phase-01-acceptance.md), [evidence](phase-01-delivery-evidence.txt).
+
+
+## Alt+Shift+S final shortcut change — 2026-11-14
+
+- PASS: 76 automated tests; requested `ALT+SHIFT+s`, stable app/action IDs, old remembered binding preserved, new Alt assignment parsing, actual display, mismatch, ShortcutsChanged, v1 configuration gate, capture/OCR/clipboard lifecycle regressions. Syntax/import and both diff whitespace checks PASS.
+- PASS: genuine host installed-desktop-entry execution, Registry identity, one main.py instance, actual assignment retrieved by List and displayed truthfully. Prior process quit through PID-verified tray protocol; no physical click simulated as PASS.
+- FAIL / pending migration: desired Alt+Shift+S is not yet assigned. GNOME still returns `Press <Shift><Control>s`, and read-only stored settings agree. No Alt conflict has been established. User must edit this app's action in Settings → Apps → AI Snipping Tool → Global Shortcuts and confirm; cancel any conflict. No settings were silently changed; ConfigureShortcuts v1 was not called.
+- PASS (user report before this shortcut change): grid startup, rectangle screenshot/paste, English OCR/paste, Window screenshot/paste, Escape, tray Quit. This supersedes earlier physical delivery failures.
+- NOT RUN after this change: physical Alt+Shift+S, Escape, rectangle/OCR/Window external paste, physical tray Quit, persistence across restart. Automated routing does not prove these. Phase 1 remains OPEN until the user confirms the new binding and no regressions. Phase 2 has not started.
+
+Detailed evidence and minimum acceptance: [phase-01-acceptance.md](phase-01-acceptance.md), [phase-01-alt-shortcut-evidence.txt](phase-01-alt-shortcut-evidence.txt).
+
+Final native cleanup PASS: PID-verified DBusMenu Quit on updated PID 200574 logged aboutToQuit, capture-job/session cleanup and Shutdown complete; PID no longer exists. Own terminal test harness stopped. A real Activated signal + screenshot response 0 appeared late in the session, but without key/source attribution or user visual confirmation; physical Alt+Shift+S remains NOT RUN.

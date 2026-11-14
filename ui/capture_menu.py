@@ -1,7 +1,7 @@
 """Capture controller for the AI Snipping Tool.
 
 Windows Snipping Tool UX:
-1. Trigger (Ctrl+Shift+S or tray) immediately shows the fullscreen overlay.
+1. Trigger (Alt+Shift+S or tray) immediately shows the fullscreen overlay.
 2. The overlay has a top-center pill toolbar with an action dropdown
    ("Screenshot" vs "Extract Text") and mode buttons (Rectangular, Freeform, Window, Full Screen).
 3. Once captured, the action runs automatically with NO post-capture action popup:
@@ -276,11 +276,11 @@ class CaptureMenu(QWidget):
         btn = group.checkedButton()
         return btn.property("value") if btn else ""
 
-    # ── Main entry point (Ctrl+Shift+S → overlay immediately) ─────────────────
+    # ── Main entry point (Alt+Shift+S → overlay immediately) ─────────────────
 
     @Slot()
     def show_from_global_shortcut(self) -> None:
-        """Called by Ctrl+Shift+S or tray icon — launches the overlay directly."""
+        """Called by Alt+Shift+S or tray icon — launches the overlay directly."""
         print("[CAPTURE MENU] Overlay launched via shortcut/tray", flush=True)
         self.launch_overlay()
 

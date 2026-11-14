@@ -2,7 +2,7 @@
 
 Run in GNOME/Wayland, authorize the shortcut, focus another app and press the
 desktop-assigned shortcut within 90 seconds. Record separately whether
-Ctrl+Shift+S is actually assigned. This requests a real screenshot.
+Alt+Shift+S is actually assigned. This requests a real screenshot.
 """
 import sys
 

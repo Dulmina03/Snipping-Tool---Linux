@@ -16,7 +16,7 @@ Build a polished, reliable, **offline-first Linux snipping and document-text ext
 
 The product should:
 
-- Open immediately from the global **Ctrl+Shift+S** shortcut or a tray/menu entry.
+- Open immediately from the global **Alt+Shift+S** shortcut or a tray/menu entry.
 - Capture a rectangle, freeform area, selected window, or complete screen.
 - Copy screenshots or extracted text to the system clipboard and optionally save files.
 - **Accurately extract printed Sinhala, English, and mixed Sinhala+English text** from screen captures, images, and PDFs; also handle documents with an existing text layer without unnecessarily running OCR.
@@ -86,7 +86,7 @@ Codex must **confirm each issue against the local checkout before changing code*
 
 **General behavior:**
 
-- `Ctrl+Shift+S` from an unfocused app, repeatable without ghost windows.
+- `Alt+Shift+S` from an unfocused app, repeatable without ghost windows.
 - Tray Capture/Open, Settings, Recent Captures, About, Quit.
 - Optional save-to-file, copy-to-clipboard, or both (user preference).
 - Clear result feedback; never claim clipboard success unless it was verified appropriately.
@@ -623,7 +623,7 @@ processing_ms,peak_memory_mb,notes
 
 Run these manually on a supported GNOME/Wayland machine and automate parts where possible:
 
-**Journey A — screenshot:** From another application press Ctrl+Shift+S → rectangle → copy image → paste into browser/editor → save correct PNG → capture again within one second → distinct names.
+**Journey A — screenshot:** From another application press Alt+Shift+S → rectangle → copy image → paste into browser/editor → save correct PNG → capture again within one second → distinct names.
 
 **Journey B — window/full-screen/freeform:** Capture each mode, verify exact pixels/alpha, cancellation, and repeat activation without extra blank windows.
 

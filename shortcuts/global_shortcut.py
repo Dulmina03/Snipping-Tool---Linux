@@ -29,7 +29,7 @@ REQUEST_INTERFACE = "org.freedesktop.portal.Request"
 SESSION_INTERFACE = "org.freedesktop.portal.Session"
 
 SHORTCUT_ID = "open_capture_menu"
-PREFERRED_TRIGGER = "CTRL+SHIFT+s"
+PREFERRED_TRIGGER = "ALT+SHIFT+s"
 REQUEST_TIMEOUT_SECONDS = 60
 
 

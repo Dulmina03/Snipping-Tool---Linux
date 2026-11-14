@@ -96,10 +96,10 @@ class AssignmentTests(unittest.TestCase):
             asyncio.run(self.manager._register())
 
     def test_xdg_base_keysym_and_stable_id(self):
-        self.assertEqual(PREFERRED_TRIGGER, 'CTRL+SHIFT+s')
+        self.assertEqual(PREFERRED_TRIGGER, 'ALT+SHIFT+s')
         self.assertEqual(SHORTCUT_ID, 'open_capture_menu')
-        self.assertEqual(comparison(PREFERRED_TRIGGER, 'Press <Control><Shift>s'), 'match')
-        self.assertEqual(comparison(PREFERRED_TRIGGER, 'Ctrl+Shift+S'), 'match')
+        self.assertEqual(comparison(PREFERRED_TRIGGER, 'Press <Alt><Shift>s'), 'match')
+        self.assertEqual(comparison(PREFERRED_TRIGGER, 'Alt+Shift+S'), 'match')
 
     def test_new_binding_request_and_actual_response(self):
         bus = FakeBus()
@@ -111,7 +111,7 @@ class AssignmentTests(unittest.TestCase):
         self.assertEqual(self.successes, ['Press <Control><Alt>s'])
         self.assertEqual(self.manager.assigned_trigger, 'Press <Control><Alt>s')
         self.assertEqual(self.assignments[-1], (PREFERRED_TRIGGER, 'Press <Control><Alt>s', 'different'))
-        self.assertTrue(any('requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s' in line for line in logs.output))
+        self.assertTrue(any('requested=ALT+SHIFT+s; actual=Press <Control><Alt>s' in line for line in logs.output))
         self.assertEqual([m.member for m in bus.calls].count('ListShortcuts'), 2)
 
     def test_remembered_choice_not_replaced_by_preference(self):
@@ -119,6 +119,28 @@ class AssignmentTests(unittest.TestCase):
         self.register(bus)
         request = next(msg for msg in bus.calls if msg.member == 'BindShortcuts')
         self.assertNotIn('preferred_trigger', request.body[1][0][1])
+
+    def test_previous_control_shift_assignment_remains_truthful_on_v1(self):
+        old = entries('Press <Shift><Control>s')
+        bus = FakeBus(version=1, remembered=old)
+        bus.actual = old
+        self.register(bus)
+        request = next(msg for msg in bus.calls if msg.member == 'BindShortcuts')
+        self.assertEqual(request.body[1][0][0], SHORTCUT_ID)
+        self.assertNotIn('preferred_trigger', request.body[1][0][1])
+        self.assertEqual(self.assignments[-1],
+                         ('ALT+SHIFT+s', 'Press <Shift><Control>s', 'different'))
+        self.assertFalse(self.manager.can_configure)
+        self.assertFalse(any(m.member == 'ConfigureShortcuts' for m in bus.calls))
+
+    def test_alt_shift_assignment_verified_by_list(self):
+        bus = FakeBus(version=1)
+        bus.actual = entries('Press <Shift><Alt>s')
+        self.register(bus)
+        self.assertEqual(self.assignments[-1],
+                         ('ALT+SHIFT+s', 'Press <Shift><Alt>s', 'match'))
+        self.assertEqual(self.successes, ['Press <Shift><Alt>s'])
+        self.assertEqual([m.member for m in bus.calls].count('ListShortcuts'), 2)
 
     def test_missing_description_never_substitutes_requested_key(self):
         self.manager._apply_assignment([[SHORTCUT_ID, {}]], 'test')
@@ -135,7 +157,7 @@ class AssignmentTests(unittest.TestCase):
     def test_shortcuts_changed_updates_and_filters_session(self):
         self.manager._session_handle = '/session/capture'
         msg = NS(message_type=MessageType.SIGNAL, interface=GLOBAL_SHORTCUTS_INTERFACE,
-                 member='ShortcutsChanged', body=['/other', entries('Ctrl+Shift+S')])
+                 member='ShortcutsChanged', body=['/other', entries('Alt+Shift+S')])
         self.manager._message_handler(msg)
         self.assertFalse(self.assignments)
         msg.body[0] = '/session/capture'
@@ -149,11 +171,11 @@ class AssignmentTests(unittest.TestCase):
 
     def test_stale_list_does_not_overwrite_new_signal(self):
         async def list_result():
-            self.manager._apply_assignment(entries('Ctrl+Shift+S'), 'ShortcutsChanged')
+            self.manager._apply_assignment(entries('Alt+Shift+S'), 'ShortcutsChanged')
             return entries('Ctrl+Alt+S')
         with patch.object(self.manager, '_list_shortcuts', list_result):
             asyncio.run(self.manager._refresh_assignment())
-        self.assertEqual(self.manager.assigned_trigger, 'Ctrl+Shift+S')
+        self.assertEqual(self.manager.assigned_trigger, 'Alt+Shift+S')
 
     def test_failed_list_retains_last_reported_assignment(self):
         self.manager._apply_assignment(entries(), 'BindShortcuts')
@@ -315,7 +337,9 @@ class PresentationTests(unittest.TestCase):
         self.assertIn('Press <Control><Alt>s', self.tray_menu.actions()[0].text())
         self.assertIn('assigned: Press <Control><Alt>s', self.tray.toolTip())
         self.assertIn('Desktop chose a different shortcut', self.menu.status_label.text())
-        self.assertIn('Requested: CTRL+SHIFT+s', self.menu.status_label.text())
+        self.assertIn('Requested: ALT+SHIFT+s', self.menu.status_label.text())
+        self.assertIn('Settings → Apps → AI Snipping Tool → Global Shortcuts', self.menu.status_label.text())
+        self.assertIn('cancel if it conflicts', self.menu.status_label.text())
         self.assertFalse(self.menu.isVisible())
 
     def test_worker_assignment_is_delivered_to_gui_thread(self):
@@ -326,12 +350,12 @@ class PresentationTests(unittest.TestCase):
             original_render()
         with patch.object(self.status, '_render', render):
             worker = threading.Thread(target=lambda: self.manager.assignment_changed.emit(
-                PREFERRED_TRIGGER, 'Ctrl+Shift+S', 'match'))
+                PREFERRED_TRIGGER, 'Alt+Shift+S', 'match'))
             worker.start()
             worker.join()
             spin_until(lambda: bool(threads))
         self.assertEqual(threads, [app.thread()])
-        self.assertIn('Ctrl+Shift+S', self.tray_menu.actions()[0].text())
+        self.assertIn('Alt+Shift+S', self.tray_menu.actions()[0].text())
 
     def test_configuration_action_is_explicit_and_capability_gated(self):
         action = self.status.configure_action
@@ -349,4 +373,4 @@ class PresentationTests(unittest.TestCase):
         self.manager.registration_failed.emit('Portal denied registration')
         self.assertEqual(self.tray_menu.actions()[0].text(), 'Capture')
         self.assertIn('Portal denied registration', self.menu.status_label.text())
-        self.assertNotIn('registered: CTRL+SHIFT+s', self.tray.toolTip())
+        self.assertNotIn('registered: ALT+SHIFT+s', self.tray.toolTip())

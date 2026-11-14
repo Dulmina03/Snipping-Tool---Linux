@@ -34,7 +34,7 @@ class ShortcutStatus(QObject):
         self.capture_action.setText('Capture' if state == 'unbound' else f'Capture ({actual})')
         self.assignment_text = f'Requested: {requested}; assigned: {actual}'
         if state == 'different':
-            self.assignment_text += ' — Desktop chose a different shortcut. Use Configure Shortcut when available to change it.'
+            self.assignment_text += ' — Desktop chose a different shortcut. Use Configure Shortcut when available, or on GNOME open Settings → Apps → AI Snipping Tool → Global Shortcuts. Confirm the change there; cancel if it conflicts with another shortcut.'
         elif state == 'unknown':
             self.assignment_text += ' — Compare the desktop assignment with your request.'
         elif state == 'unbound':

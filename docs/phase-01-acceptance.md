@@ -1,3 +1,35 @@
+# Latest Phase 1 shortcut change — 2026-11-14
+
+**Phase 1 OPEN; Phase 2 has not begun.** The user now confirms physical application-grid startup, rectangle image paste, English OCR paste, Window image paste, Escape and tray Quit **PASS**. These supersede the older delivery failures recorded below. This change requests **Alt+Shift+S** (`ALT+SHIFT+s`), while GNOME currently still assigns **Ctrl+Shift+S** (`Press <Shift><Control>s`). Physical acceptance of the new binding remains pending.
+
+The starting working tree/index were clean on `fix/phase-01-app-lifecycle`, HEAD `024a99e` (external commit containing the preceding delivery work; earlier reported HEAD was `f62fc02`). No Git mutation commands were used. Existing history is preserved.
+
+## Change and migration
+
+- Changed the default preferred trigger only; preserved app ID `com.dulmina.aisnippingtool`, shortcut ID `open_capture_menu`, activation signal and production capture route. `main.py` and `shortcuts/assignment.py` already use the default and handle Alt correctly, so required no edits. Capture/clipboard/OCR algorithms were not changed.
+- Updated current build-plan/manual harness references and controller comments. The tray continues to render the portal's actual description, with an understandable mismatch warning and the GNOME Settings path.
+- Native host launch through the installed desktop entry registered the correct app identity. GlobalShortcuts version is **1**. The pre-bind List contained no remembered session binding (`remembered binding=False`), but the post-bind List and ShortcutsChanged repeatedly returned the old key. Read-only GNOME settings inspection independently confirms the stored `open_capture_menu` binding is `['<Shift><Control>s']`. An empty pre-bind List therefore does **not** prove the desktop has forgotten its persisted preference.
+- **Safe migration:** keep the same app/shortcut IDs and have the user edit only this app's existing action in **Settings → Apps → AI Snipping Tool → Global Shortcuts → Open AI Snipping Tool capture menu**. Press Alt+Shift+S and confirm in GNOME. If GNOME reports a conflict, cancel and report its name; do not replace another shortcut. The running manager handles ShortcutsChanged and verifies via ListShortcuts; the tray must show the new actual description. Restart from the grid if necessary, then verify again. No automated settings write, permission reset, new shortcut ID or duplicate binding was introduced. ConfigureShortcuts remains disabled on v1 and was not invoked.
+- The Settings path is verified against the installed GNOME Control Center resources (the row/dialog is called **Global Shortcuts**). This is a user-confirmed desktop configuration migration, not a programmatic override. Permission and binding dialogs were not accepted by automation.
+
+## Results
+
+- **PASS:** 76 automated regressions (74 previous +2 new), including XDG syntax/base keysym, stable ID, remembered old-binding preservation on v1, requested/assigned mismatch, Alt assignment verified by List, truthful tray, ShortcutsChanged, configuration gating, capture/clipboard/OCR lifecycle and clean shutdown mocks. Syntax/import and whitespace checks PASS. These tests do not prove physical keyboard activation.
+- **PASS:** genuine host installed-launcher execution of `.venv/bin/python main.py`, host Registry identity, actual-assignment retrieval and truthful tray. Exactly one main.py PID (200574) observed after launch. Earlier PID 194387 quit through its PID-verified DBusMenu action before replacement. Updated PID 200574 also exited after a PID-verified DBusMenu Quit event, logging Quit, aboutToQuit, job/session cleanup and Shutdown complete. The owned terminal-receiver harness was stopped afterward. Protocol activation is not a physical tray click. A real portal Activated signal and successful screenshot response appeared late in the session, but no input source/key or visual result was confirmed; this is not physical Alt+Shift+S acceptance.
+- **FAIL / unresolved goal:** new desired binding is not yet effective; GNOME still returns Ctrl+Shift+S. No conflict is established by this result; retained configuration is confirmed, and GNOME's configuration UI must check availability of Alt+Shift+S.
+- **NOT RUN:** physical Alt+Shift+S opening only the overlay, physical Escape after this change, post-migration rectangle/English OCR/Window paste, physical tray Quit after this change, and binding persistence after a restart. The six earlier physical workflow passes are user-confirmed evidence, not reruns of the new binding.
+- An initial GIO launch produced no durable app while its terminal receiver immediately exited; the successful repeat kept the receiver alive. This is a diagnostic harness limitation, not evidence of a GNOME app-grid failure. This task did not itself press Super or launch by a physical app-grid click.
+
+## Minimum acceptance gate
+
+1. Make the explicit GNOME Settings change above; cancel on any conflict. Confirm the tray's **assigned** key becomes Alt+Shift+S (modifier order in GNOME's description may differ).
+2. Quit and relaunch **AI Snipping Tool** from the application grid. Focus another app, physically press Alt+Shift+S, then Escape. Only the overlay should open and close.
+3. Repeat with rectangle → external image paste, Extract Text → external English paste, and Window → external image paste; then physically choose tray Quit. Report whether all work and the app exits. No duplicate instances should remain.
+
+**Phase 1 cannot close until the user confirms the new shortcut and no regressions.** After that approval, recommend Phase 2 (capture reliability, including multi-monitor/mixed-DPI); do not start it now. Evidence: [phase-01-alt-shortcut-evidence.txt](phase-01-alt-shortcut-evidence.txt). Older entries below are historical.
+
+---
+
 ## Production clipboard delivery fix and Window investigation — 2026-11-14
 
 **Phase 1 remains OPEN. Do not start Phase 2.** Latest user-confirmed physical results supersede earlier entries: GNOME grid startup, Ctrl+Shift+S overlay, Escape and real tray Quit **PASS**. Rectangle paste, English OCR paste, OCR after focus switching and Window capture **FAIL before this change**. Full post-change physical confirmation is pending. No claim of Sinhala OCR recognition accuracy is made.
