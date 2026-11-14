@@ -31,6 +31,8 @@ class DeliveryTests(unittest.TestCase):
         self.overlay._toolbar.set_action(action)
         self.overlay.start_point=QPoint(50,300);self.overlay.end_point=QPoint(400,500)
         self.overlay.confirm_selection()
+        if action == 'screenshot':
+            spin_until(lambda: not self.menu.busy)
 
     def test_rectangular_image_is_copied_before_surface_teardown(self):
         observations=[]

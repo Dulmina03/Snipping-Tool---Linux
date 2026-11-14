@@ -175,6 +175,7 @@ class LifecycleTests(unittest.TestCase):
         with patch('ui.capture_menu._save_full', return_value=saved), \
              patch('ui.capture_menu.copy_image_to_clipboard') as clipboard:
             self.menu._overlay._on_mode_changed(__import__('ui.overlay', fromlist=['SnipMode']).SnipMode.FULLSCREEN)
+            spin_until(lambda: not self.menu.busy)
         clipboard.assert_called_once_with(saved)
         self.assertIsNone(self.menu._overlay)
         self.assertFalse(self.menu.isVisible())
@@ -187,15 +188,16 @@ class LifecycleTests(unittest.TestCase):
             clipboard.assert_not_called()
             self.assertEqual(self.menu.status_label.text(), 'Window capture cancelled.')
 
-    def test_rectangle_completion_closes_overlay_before_clipboard(self):
+    def test_rectangle_completion_keeps_overlay_until_clipboard(self):
         self.menu.launch_overlay()
         spin_until(lambda: self.menu._overlay is not None)
         from PySide6.QtCore import QPoint
         overlay = self.menu._overlay
         overlay.start_point, overlay.end_point = QPoint(10, 10), QPoint(40, 40)
         with patch('ui.capture_menu.copy_image_to_clipboard',
-                   side_effect=lambda _: self.assertIsNone(self.menu._overlay)):
+                   side_effect=lambda _: self.assertIs(self.menu._overlay, overlay)):
             overlay.confirm_selection()
+            spin_until(lambda: not self.menu.busy)
         self.assertFalse(self.menu.isVisible())
         self.assertTrue(self.menu.last_capture_path.is_file())
 

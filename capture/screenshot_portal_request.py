@@ -8,7 +8,7 @@ import uuid
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from utils.desktop_entry import APP_ID
-from utils.capture_diagnostics import trace
+from utils.capture_diagnostics import trace, timed
 
 BUS_NAME = 'org.freedesktop.portal.Desktop'
 OBJECT_PATH = '/org/freedesktop/portal/desktop'
@@ -34,6 +34,7 @@ def method_error(reply, operation):
     return ScreenshotPortalError(kind, f'{operation}: {name}: {reply.body}')
 
 
+@timed('portal_request_including_registration_and_user_dialog')
 async def request_screenshot(interactive=False, parent_window=''):
     bus = MessageBus()
     handler = None

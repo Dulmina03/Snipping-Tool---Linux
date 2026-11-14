@@ -366,6 +366,7 @@ class ControllerMappingTests(unittest.TestCase):
             session.begin(session.primary, QPointF(20, 100))
             session.move(session.primary, QPointF(39, 119))
             session.confirm()
+            spin_until(lambda: not self.menu.busy)
         self.assertIsNone(self.menu._overlay)
         with Image.open(self.menu.last_capture_path) as result:
             self.assertEqual(result.size, (20, 20))
@@ -385,6 +386,7 @@ class ControllerMappingTests(unittest.TestCase):
         expected = self.source.read_bytes()
         with patch.object(overlay, 'isActiveWindow', return_value=True):
             self.menu._on_fullscreen(self.source, 'screenshot')
+            spin_until(lambda: not self.menu.busy)
         self.assertEqual(self.menu.last_capture_path.read_bytes(), expected)
         self.assertIsNone(self.menu._overlay)
 

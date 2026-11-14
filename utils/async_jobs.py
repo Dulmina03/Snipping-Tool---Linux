@@ -1,6 +1,8 @@
 """Cooperatively service asyncio I/O from Qt's main thread, without nested waits."""
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from PySide6.QtCore import QObject, QTimer
 
@@ -15,6 +17,30 @@ class AsyncJobs(QObject):
         self.timer.start()
         self.tasks = set()
         self.closed = False
+        self.file_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='snipping-file')
+
+    async def run_file(self, function, *args, **kwargs):
+        """Only plain file/Pillow work; never pass Qt GUI objects here.
+
+        A running filesystem write cannot safely be interrupted. Drain it on
+        cancellation so source cleanup, retry and shutdown cannot race it.
+        """
+        if self.closed:
+            raise RuntimeError('Application is shutting down')
+        future = self.loop.run_in_executor(self.file_executor, partial(function, *args, **kwargs))
+        try:
+            return await asyncio.shield(future)
+        except asyncio.CancelledError:
+            while not future.done():
+                try:
+                    await asyncio.shield(future)
+                except asyncio.CancelledError:
+                    continue
+                except Exception:
+                    break
+            if not future.cancelled():
+                future.exception()  # Consume a failure after cancellation, never publish it.
+            raise
 
     def submit(self, coroutine):
         if self.closed:
@@ -55,5 +81,6 @@ class AsyncJobs(QObject):
         if remaining:
             self.loop.run_until_complete(asyncio.gather(*remaining, return_exceptions=True))
         self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+        self.file_executor.shutdown(wait=True, cancel_futures=True)
         self.closed = True
         self.loop.close()

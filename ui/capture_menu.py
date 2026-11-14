@@ -52,7 +52,7 @@ from ui.overlay import Overlay, SnipMode
 from ui.display_overlay import DisplayOverlay, screen_fingerprint
 from capture.display_mapping import (Rect, DisplayMappingError, compatibility_mapping, read_gnome_layout)
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
-from utils.capture_diagnostics import trace, image_trace
+from utils.capture_diagnostics import trace, image_trace, timed
 from utils.screenshot_files import copy_screenshot, save_png, cleanup_capture_source
 
 
@@ -75,17 +75,20 @@ def _get_virtual_size() -> tuple[int, int]:
     return total.width() or 1920, total.height() or 1080
 
 
-def _crop_and_save(source: Path, x: float, y: float, w: float, h: float, mapping=None) -> Path:
+@timed('rectangle_decode_crop_save')
+def _crop_and_save(source: Path, x: float, y: float, w: float, h: float, mapping=None, canvas_size=None) -> Path:
     with Image.open(source) as img:
-        if mapping is None and QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
+        if canvas_size is None and mapping is None and QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
             raise DisplayMappingError('A verified per-monitor mapping is required. Capture through main.py.')
-        mapping = mapping or compatibility_mapping(_get_virtual_size(), img.size)
+        mapping = mapping or compatibility_mapping(canvas_size or _get_virtual_size(), img.size)
         if tuple(img.size) != mapping.image_size:
             raise DisplayMappingError('Screenshot dimensions changed after the overlay was created.')
         box = mapping.crop_box(Rect(x, y, w, h))
-        return save_png(img.crop(box), SCREENSHOTS_DIR)
+        with img.crop(box) as cropped:
+            return save_png(cropped, SCREENSHOTS_DIR)
 
 
+@timed('fullscreen_file_copy')
 def _save_full(source: Path) -> Path:
     return copy_screenshot(source, SCREENSHOTS_DIR)
 
@@ -180,6 +183,7 @@ class CaptureMenu(QWidget):
         self.jobs = jobs if jobs is not None else AsyncJobs(self)
         self._pending = None
         self._shutting_down = False
+        self._operation_active = False
         self._permission_prompt = None
         self._clipboard_pending = None
         self.capture_engine    = ScreenshotCapture()
@@ -230,12 +234,12 @@ class CaptureMenu(QWidget):
 
     def start_capture(self) -> None:
         """Used by test_capture_menu.py --cancel and --run test modes."""
+        if self._shutting_down or self.busy or self._operation_active:
+            return
         mode = self._selected_value(self.mode_group)
         self.capture_button.setEnabled(False)
         self.last_capture_path = None
         self.last_extracted_text = None
-        if self._shutting_down or self.busy:
-            return
         self.status_label.setText("Preparing…")
         self._pending = self.jobs.submit(self._legacy_run(mode))
 
@@ -298,6 +302,7 @@ class CaptureMenu(QWidget):
     def busy(self):
         return self._pending is not None and not self._pending.done()
 
+    @timed('activation_to_overlay_prepare')
     async def _launch_overlay(self, permission_retry=False):
         try:
             native_wayland = QGuiApplication.platformName() == 'wayland'
@@ -436,7 +441,9 @@ class CaptureMenu(QWidget):
             dialog.close()
 
 
+    @timed('overlay_close_schedule')
     def _close_overlay(self):
+        self._operation_active = False
         overlay, self._overlay = self._overlay, None
         if overlay is not None:
             overlay.close()
@@ -462,10 +469,12 @@ class CaptureMenu(QWidget):
     # ── Capture result handlers ───────────────────────────────────────────────
 
     def _on_area_selected(self, rect: QRect | QRectF, source_path: Path | None, action: str) -> None:
+        if self._shutting_down or self._operation_active:
+            return
+        self._operation_active = True
         trace('capture_selected', action=action, mode='rectangle')
         if self._overlay is not None:
             self._overlay.set_processing()
-        self._src_path = None
         if source_path is None or not source_path.exists():
             self._close_overlay()
             self.status_label.setText("Capture failed: no backdrop screenshot.")
@@ -476,40 +485,55 @@ class CaptureMenu(QWidget):
             if mapping_error:
                 raise DisplayMappingError(mapping_error)
             mapping = getattr(self._overlay, 'capture_mapping', None)
-            out = _crop_and_save(source_path, rect.x(), rect.y(), rect.width(), rect.height(), mapping=mapping)
+            if mapping is None and QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
+                raise DisplayMappingError('A verified per-monitor mapping is required. Capture through main.py.')
+            # Freeze all Qt-dependent geometry before submitting plain Pillow work.
+            canvas_size = _get_virtual_size() if mapping is None else (1, 1)
+            self._pending = self.jobs.submit(self._save_selected(source_path, action, 'Crop',
+                _crop_and_save, rect.x(), rect.y(), rect.width(), rect.height(),
+                mapping=mapping, canvas_size=canvas_size))
         except Exception as e:
             self._close_overlay()
             self.status_label.setText(f"Crop failed: {e}")
             self.capture_finished.emit()
-            return
-        finally:
             self._cleanup_source(source_path)
-
-        self._handle_capture_result(out, action)
+            self._src_path = None
 
     def _on_fullscreen(self, source_path: Path | None, action: str) -> None:
+        if self._shutting_down or self._operation_active:
+            return
+        self._operation_active = True
         trace('capture_selected', action=action, mode='fullscreen')
         if self._overlay is not None:
             self._overlay.set_processing()
-        self._src_path = None
         if source_path is None or not source_path.exists():
             self._close_overlay()
             self.status_label.setText("Capture failed: no backdrop screenshot.")
             self.capture_finished.emit()
             return
+        self._pending = self.jobs.submit(self._save_selected(source_path, action, 'Save', _save_full))
+
+    async def _save_selected(self, source_path, action, operation, function, *args, **kwargs):
+        # Ownership transfers from the controller to this coroutine. Cancellation
+        # drains its one worker before the source is unlinked in finally.
+        self._src_path = None
         try:
-            out = _save_full(source_path)
+            out = await self.jobs.run_file(function, source_path, *args, **kwargs)
+            if not self._shutting_down:
+                self._handle_capture_result(out, action)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             self._close_overlay()
-            self.status_label.setText(f"Save failed: {e}")
+            self.status_label.setText(f"{operation} failed: {e}")
             self.capture_finished.emit()
-            return
         finally:
             self._cleanup_source(source_path)
 
-        self._handle_capture_result(out, action)
-
     def _on_window_requested(self, action: str) -> None:
+        if self._shutting_down or self._operation_active:
+            return
+        self._operation_active = True
         trace('capture_selected', action=action, mode='window')
         if self._overlay is not None:
             self._overlay.set_processing()
@@ -561,6 +585,7 @@ class CaptureMenu(QWidget):
             self._clipboard_pending = ('image', path)
             self._deliver_pending_clipboard()
 
+    @timed('clipboard_delivery')
     def _deliver_pending_clipboard(self):
         if self._shutting_down or self._clipboard_pending is None:
             return
@@ -592,6 +617,7 @@ class CaptureMenu(QWidget):
             self._show_toast(self.status_label.text())
         self.capture_finished.emit()
 
+    @timed('english_or_selected_ocr_job')
     async def _recognize(self, path):
         try:
             trace('ocr_started')

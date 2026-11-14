@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import time
 from typing import BinaryIO, Callable
+from utils.capture_diagnostics import timed
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def copy_screenshot(source: Path, directory: Path) -> Path:
     return write_screenshot(directory, write)
 
 
+@timed('png_encode_publish')
 def save_png(image, directory: Path) -> Path:
     """Keep the existing Pillow PNG encoding, with safe publication."""
     return write_screenshot(directory, lambda stream: image.save(stream, 'PNG'))
