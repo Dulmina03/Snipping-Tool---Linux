@@ -52,7 +52,7 @@ def covered(rect, monitors):
             start = max(top, end)
             area += (right - left) * max(0, bottom - start)
             end = max(end, bottom)
-    return math.isclose(area, rect.width * rect.height, abs_tol=1e-6)
+    return math.isclose(area, rect.width * rect.height, rel_tol=0, abs_tol=1e-6)
 
 
 @dataclass(frozen=True)
@@ -164,8 +164,9 @@ def parse_layout(body):
 
 async def read_gnome_layout():
     """Read-only, bounded D-Bus request; never block the Qt GUI thread."""
-    bus = MessageBus()
+    bus = None
     try:
+        bus = MessageBus()
         await asyncio.wait_for(bus.connect(), 3)
         version = await asyncio.wait_for(bus.call(Message(
             destination='org.gnome.Shell', path='/org/gnome/Shell',
@@ -192,7 +193,8 @@ async def read_gnome_layout():
     except Exception as error:
         raise DisplayMappingError('Cannot establish the GNOME display mapping. Use Window or Full Screen.') from error
     finally:
-        bus.disconnect()
+        if bus is not None:
+            bus.disconnect()
 
 
 def compatibility_mapping(canvas_size, image_size):

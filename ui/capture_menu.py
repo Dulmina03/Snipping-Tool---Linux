@@ -27,7 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from PIL import Image
-from PySide6.QtCore import QRect, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QRect, QRectF, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QGuiApplication, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -75,7 +75,7 @@ def _get_virtual_size() -> tuple[int, int]:
     return total.width() or 1920, total.height() or 1080
 
 
-def _crop_and_save(source: Path, x: int, y: int, w: int, h: int, mapping=None) -> Path:
+def _crop_and_save(source: Path, x: float, y: float, w: float, h: float, mapping=None) -> Path:
     with Image.open(source) as img:
         if mapping is None and QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
             raise DisplayMappingError('A verified per-monitor mapping is required. Capture through main.py.')
@@ -185,7 +185,7 @@ class CaptureMenu(QWidget):
         self.capture_engine    = ScreenshotCapture()
         self.last_capture_path: Path | None = None
         self.last_extracted_text: str | None = None
-        self._overlay: Overlay | None = None
+        self._overlay: Overlay | DisplayOverlay | None = None
         self._toast: CaptureToast | None = None
         self._src_path: Path | None = None
 
@@ -461,7 +461,7 @@ class CaptureMenu(QWidget):
 
     # ── Capture result handlers ───────────────────────────────────────────────
 
-    def _on_area_selected(self, rect: QRect, source_path: Path | None, action: str) -> None:
+    def _on_area_selected(self, rect: QRect | QRectF, source_path: Path | None, action: str) -> None:
         trace('capture_selected', action=action, mode='rectangle')
         if self._overlay is not None:
             self._overlay.set_processing()

@@ -1,3 +1,5 @@
+**Physical acceptance update — 2026-11-14:** The user confirms all six Phase 2 Task 1 physical acceptance tests PASS and has explicitly authorized Task 2. The earlier NOT RUN statements below record the status before that confirmation. Task 1 is accepted.
+
 # Phase 2 Task 1 — Unique filenames and repeated captures
 
 Date: 2026-11-14. **Implementation and automated verification PASS; physical GNOME acceptance NOT RUN.** The user explicitly authorized this bounded Phase 2 task. Older Phase 1 shortcut/physical acceptance notes remain historical evidence; this task does not imply that those gates were signed off. No Phase 2 geometry, multi-monitor, Freeform or AI work was started.

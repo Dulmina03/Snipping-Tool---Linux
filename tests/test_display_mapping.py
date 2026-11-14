@@ -68,6 +68,10 @@ class MappingTests(unittest.TestCase):
         self.assertEqual(mapping.source_rect(layout.monitors[1]), Rect(80, 0, 120, 80))
         with self.assertRaisesRegex(DisplayMappingError, 'outside'):
             mapping.crop_box(Rect(30, 50, 80, 25))  # Includes space below shorter monitor.
+        large = Layout(1, (Monitor('one', Rect(0, 0, 10000, 10000), 1),
+                            Monitor('two', Rect(10000, 0, 10000, 9999), 1))).mapping((20000, 10000))
+        with self.assertRaises(DisplayMappingError):
+            large.crop_box(Rect(0, 0, 10000.003, 10000))  # Relative area tolerance must not admit a gap.
 
     def test_mixed_scale_stage_mapping_uses_compositor_scale_not_output_dpr(self):
         layout = parse_layout(state([('left', 0, 0, 160, 120, 2., 0),
@@ -292,6 +296,9 @@ class ProviderTests(unittest.TestCase):
             self.assertEqual(closed, [True])
             if version == '51.0':
                 self.assertEqual(bus.call.await_count, 1)
+        with patch('capture.display_mapping.MessageBus', side_effect=RuntimeError('no session bus')):
+            with self.assertRaises(DisplayMappingError):
+                asyncio.run(read_gnome_layout())
 
     def test_read_only_query_and_disconnect_on_success_error_and_cancel(self):
         for outcome in ('success', 'error', 'cancel'):
