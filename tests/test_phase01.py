@@ -355,7 +355,7 @@ class PortalCleanupTests(unittest.TestCase):
         bus.disconnect = lambda: setattr(bus, 'closed', True)
         jobs = AsyncJobs()
         try:
-            with patch('ui.capture_menu.MessageBus', return_value=bus):
+            with patch('capture.portal_screenshot.MessageBus', return_value=bus):
                 task = jobs.submit(_portal_screenshot())
                 spin_until(lambda: bus.started)
                 task.cancel()
@@ -387,6 +387,10 @@ class PortalCleanupTests(unittest.TestCase):
             def disconnect(self):
                 self.closed = True
             async def call(self, message):
+                if message.member == 'Register':
+                    return SimpleNamespace(message_type=MessageType.METHOD_RETURN, body=[])
+                if message.member == 'Get':
+                    return SimpleNamespace(message_type=MessageType.METHOD_RETURN, body=[Variant('u', 2)])
                 if message.member == 'Close':
                     self.request_closed = True
                     return SimpleNamespace(message_type=MessageType.METHOD_RETURN)
@@ -405,7 +409,7 @@ class PortalCleanupTests(unittest.TestCase):
             bus = Bus(delay=cancelled)
             jobs = AsyncJobs()
             try:
-                with patch('ui.capture_menu.MessageBus', return_value=bus):
+                with patch('capture.portal_screenshot.MessageBus', return_value=bus):
                     task = jobs.submit(_portal_screenshot())
                     spin_until(lambda: bus.started)
                     if cancelled:

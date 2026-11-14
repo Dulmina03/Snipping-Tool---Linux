@@ -9,7 +9,7 @@ from pathlib import Path
 
 from utils.desktop_entry import APP_ID, ensure_desktop_entry
 
-from PySide6.QtCore import QLockFile, QStandardPaths, Qt
+from PySide6.QtCore import QLockFile, QStandardPaths, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
@@ -96,7 +96,10 @@ def configure_application(application):
     configure_action = tray_menu.addAction("Configure Shortcut (unavailable)")
     tray_menu.addSeparator()
     quit_action = tray_menu.addAction("Quit")
-    quit_action.triggered.connect(application.quit)
+    def request_quit():
+        logging.getLogger(__name__).info('Tray Quit action received; scheduling QApplication.quit')
+        QTimer.singleShot(0, application.quit)
+    quit_action.triggered.connect(request_quit)
 
     tray_icon.setContextMenu(tray_menu)
     tray_icon.activated.connect(
@@ -110,6 +113,8 @@ def configure_application(application):
     shortcut_manager.shortcut_activated.connect(menu.launch_overlay)
     menu.shortcut_status = ShortcutStatus(menu, shortcut_manager, tray_icon, capture_action,
         shortcut_status_action, identity_action, configure_action)
+    application.aboutToQuit.connect(
+        lambda: logging.getLogger(__name__).info('QApplication aboutToQuit emitted'))
     application.aboutToQuit.connect(menu.shutdown)
 
     return menu, shortcut_manager, tray_icon, tray_menu
@@ -138,11 +143,14 @@ def main() -> int:
         shortcut_manager.start()
         return application.exec()
     finally:
+        logging.getLogger(__name__).info('Shutdown: stopping capture jobs')
         menu.shutdown()
         menu.jobs.close()
+        logging.getLogger(__name__).info('Shutdown: closing shortcut portal session')
         shortcut_manager.stop()
         tray_icon.hide()
         lock.unlock()
+        logging.getLogger(__name__).info('Shutdown complete')
         for sig, handler in previous_handlers.items():
             signal.signal(sig, handler)
 

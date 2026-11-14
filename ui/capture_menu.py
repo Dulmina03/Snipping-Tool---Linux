@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import os
 import inspect
+import logging
 import time
 from pathlib import Path
 from urllib.parse import unquote
@@ -31,6 +32,9 @@ from PySide6.QtCore import QRect, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QGuiApplication, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QVBoxLayout,
     QButtonGroup,
     QFrame,
     QGraphicsDropShadowEffect,
@@ -56,57 +60,9 @@ SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 #  Portal screenshot helper
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def _portal_screenshot(interactive: bool = False) -> Path:
-    """Request a full-screen (or interactive window) screenshot from XDG portal."""
-    bus = MessageBus()
-    try:
-        await asyncio.wait_for(bus.connect(), timeout=10)
-    except BaseException:
-        bus.disconnect()
-        raise
-    token = f"snip_{os.getpid()}_{int(time.time() * 1000) % 1_000_000}"
-    options: dict = {
-        "handle_token": Variant("s", token),
-        "interactive":  Variant("b", interactive),
-    }
-    request_path = '/org/freedesktop/portal/desktop/request/' + bus.unique_name[1:].replace('.', '_') + '/' + token
-    future = asyncio.get_running_loop().create_future()
+from capture.portal_screenshot import request_screenshot as _portal_screenshot, ScreenshotPortalError
 
-    def handler(msg):
-        if (msg.message_type == MessageType.SIGNAL
-                and msg.interface == "org.freedesktop.portal.Request"
-                and msg.member == "Response" and msg.path == request_path
-                and not future.done()):
-            future.set_result(msg.body)
-
-    bus.add_message_handler(handler)
-    try:
-        reply = await asyncio.wait_for(bus.call(Message(
-            destination="org.freedesktop.portal.Desktop",
-            path="/org/freedesktop/portal/desktop",
-            interface="org.freedesktop.portal.Screenshot", member="Screenshot",
-            signature="sa{sv}", body=["", options])), timeout=15)
-        if reply.message_type == MessageType.ERROR:
-            raise RuntimeError("Screenshot portal request failed.")
-        request_path = reply.body[0]
-        code, results = await asyncio.wait_for(future, timeout=120)
-        if code != 0:
-            raise RuntimeError("Screenshot cancelled or denied.")
-        uri = results["uri"].value
-        if not uri.startswith("file://"):
-            raise RuntimeError("Unsupported screenshot URI.")
-        return Path(unquote(uri[7:]))
-    except (asyncio.CancelledError, asyncio.TimeoutError):
-        try:
-            await asyncio.wait_for(bus.call(Message(
-                destination="org.freedesktop.portal.Desktop", path=request_path,
-                interface="org.freedesktop.portal.Request", member="Close")), timeout=1)
-        except Exception:
-            pass
-        raise
-    finally:
-        bus.remove_message_handler(handler)
-        bus.disconnect()
+logger = logging.getLogger(__name__)
 
 
 def _get_virtual_size() -> tuple[int, int]:
@@ -228,6 +184,7 @@ class CaptureMenu(QWidget):
         self.jobs = jobs if jobs is not None else AsyncJobs(self)
         self._pending = None
         self._shutting_down = False
+        self._permission_prompt = None
         self.capture_engine    = ScreenshotCapture()
         self.last_capture_path: Path | None = None
         self.last_extracted_text: str | None = None
@@ -328,6 +285,11 @@ class CaptureMenu(QWidget):
     @Slot()
     def launch_overlay(self) -> None:
         """Coalesce activation while a portal request, overlay or OCR job is active."""
+        if self._permission_prompt is not None:
+            self._permission_prompt.show()
+            self._permission_prompt.raise_()
+            self._permission_prompt.activateWindow()
+            return
         if self._shutting_down or self._overlay is not None or self.busy:
             return
         self._pending = self.jobs.submit(self._launch_overlay())
@@ -336,9 +298,16 @@ class CaptureMenu(QWidget):
     def busy(self):
         return self._pending is not None and not self._pending.done()
 
-    async def _launch_overlay(self):
+    async def _launch_overlay(self, permission_retry=False):
         try:
             source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+            if permission_retry:
+                # Discard the consent capture: it may include our permission
+                # window. Recapture only after that real window has disappeared.
+                self._dismiss_permission_prompt()
+                self._cleanup_source(source_path)
+                await asyncio.sleep(.2)
+                source_path = await _portal_screenshot(interactive=False)
             self._src_path = source_path
             bg_pixmap = QPixmap(str(source_path))
             if bg_pixmap.isNull():
@@ -355,12 +324,71 @@ class CaptureMenu(QWidget):
             overlay.showFullScreenOverlay()
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as error:
             self._cleanup_source(self._src_path)
             self._src_path = None
-            self.status_label.setText("Screenshot cancelled, denied or unavailable.")
+            if isinstance(error, ScreenshotPortalError):
+                self.status_label.setText(str(error))
+                logger.warning('Capture failed: kind=%s response=%s detail=%s',
+                               error.kind, error.response_code, error)
+                if error.kind == 'permission' or error.response_code == 2:
+                    self._show_permission_prompt()
+                elif self._permission_prompt is not None:
+                    self._permission_prompt.message.setText(str(error))
+            else:
+                logger.exception('Unexpected capture failure')
+                self.status_label.setText(f'Screenshot failed: {error}')
             self._show_toast(self.status_label.text())
             self.capture_finished.emit()
+        finally:
+            if self._permission_prompt is not None:
+                self._permission_prompt.continue_button.setEnabled(True)
+
+    def _show_permission_prompt(self):
+        if self._permission_prompt is not None or self._shutting_down:
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Screenshot permission — AI Snipping Tool')
+        layout = QVBoxLayout(dialog)
+        dialog.message = QLabel(
+            'GNOME could not complete the screenshot request. It may require this app '
+            'to be focused before showing its permission dialog.\n'
+            'Click Continue here, then choose Allow or Deny in GNOME. '
+            'No screenshot permission is changed automatically.')
+        dialog.message.setWordWrap(True)
+        layout.addWidget(dialog.message)
+        buttons = QDialogButtonBox(QDialogButtonBox.Cancel)
+        dialog.continue_button = buttons.addButton('Continue', QDialogButtonBox.ActionRole)
+        layout.addWidget(buttons)
+        buttons.rejected.connect(dialog.reject)
+        dialog.continue_button.clicked.connect(self._retry_screenshot_permission)
+        dialog.finished.connect(lambda _: self._permission_prompt_closed(dialog))
+        self._permission_prompt = dialog
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _retry_screenshot_permission(self):
+        if self._shutting_down or self.busy or self._permission_prompt is None:
+            return
+        # An explicit click gives GNOME a genuine focused app, not a forged
+        # activation token or an invisible controller impersonating a parent.
+        self._permission_prompt.continue_button.setEnabled(False)
+        self._pending = self.jobs.submit(self._launch_overlay(permission_retry=True))
+
+    def _permission_prompt_closed(self, dialog):
+        if self._permission_prompt is dialog:
+            self._permission_prompt = None
+            if self.busy:
+                self._pending.cancel()
+            self.status_label.setText('Screenshot permission request closed.')
+        dialog.deleteLater()
+
+    def _dismiss_permission_prompt(self):
+        dialog, self._permission_prompt = self._permission_prompt, None
+        if dialog is not None:
+            dialog.close()
+
 
     def _close_overlay(self):
         overlay, self._overlay = self._overlay, None
@@ -373,6 +401,7 @@ class CaptureMenu(QWidget):
         if self.busy:
             self._pending.cancel()
         self._close_overlay()
+        self._dismiss_permission_prompt()
         self._cleanup_source(self._src_path)
         self._src_path = None
         if self._toast is not None:
@@ -438,8 +467,9 @@ class CaptureMenu(QWidget):
             self._handle_capture_result(out, action)
         except asyncio.CancelledError:
             raise
-        except Exception:
-            self.status_label.setText("Window capture failed or timed out.")
+        except Exception as error:
+            logger.exception("Window capture failed")
+            self.status_label.setText(str(error) if isinstance(error, ScreenshotPortalError) else "Window capture failed or timed out.")
             self._show_toast(self.status_label.text())
             self.capture_finished.emit()
 
