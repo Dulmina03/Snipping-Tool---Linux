@@ -210,3 +210,18 @@ Phase 2 Task 1 is now **physically accepted**: user reports all six acceptance t
 - Explicit limits: Rectangle requires verified GNOME 50 packing/metadata, logical-layout mode, matched outputs; cloned/overlapping/unknown layouts and native negative GNOME stage origins are refused. Negative Qt origins work by connector mapping. Layout-gap selections save nothing. Full Screen may retain genuine compositor gaps; source image and save behavior are preserved.
 
 [Detailed strategy, file list, evidence and minimum physical gate](phase-02-task-02.md). No Task 3/Freeform/AI.
+
+
+## Phase 2 Task 3 — Performance and long-run stability (2026-11-14)
+
+User confirms Phase 1 accepted; Task 1 all six physical tests PASS; Task 2 all seven physical tests PASS on single-monitor 100%. Mixed-monitor/fractional physical checks remain pending.
+
+- PASS: baseline 132 tests, 8.628s; final **145 tests, 17.455s, exit 0**. Syntax/import and staged/unstaged whitespace checks PASS.
+- PASS: 50 alternating production Rectangle/Full Screen benchmark operations after three warmups; all distinct saved PNGs, no staging/orphan asyncio jobs. Public offscreen fixture only: selection-to-delivery median/p95 370.255/464.674 → 190.597/315.705 ms; clipboard 235.342/323.975 → 47.110/67.090 ms; maximum Qt heartbeat gap 514.882 → 76.901 ms. Portal fixture delay is not native latency; no OCR algorithm speedup claimed.
+- PASS: one worker, GUI-thread geometry/clipboard; cancellation drains in-flight writes, rejects overlap and discards late clipboard/OCR results. Active/idle shutdown, late worker failure and retry tested. Initial worker shutdown hang detected and fixed; final tests exit normally.
+- PASS: existing 100 screenshot/ten Unicode OCR callback series plus 50 launch/cancel cycles, 20 Window backend success/cancel cycles, failed/timeout portal fixtures and repeated activation. Saved pixel/Qt MIME integrity, original PNG byte reuse/source-deletion lifetime, non-PNG fallback, Sinhala/English punctuation/ZWJ transfer retained. These are simulated workflows, not physical keys, native picker acceptance or Sinhala recognition accuracy.
+- PASS: real existing English OCR subprocess benchmark and process cancellation/error regressions. RSS 122976/128836/126588 KiB at warmup/10/50, FD counts 14/14/14 and native threads 8/8/8; exactly one Python file worker, joined at close. Qt native pool remains until process exit; no unbounded leak over 50 captures observed, no hours-long claim.
+- PASS: read-only GNOME Shell 50.1 and Screenshot v2 inventory; one existing user app left untouched. No GNOME shortcut/permission/settings edits.
+- NOT RUN: new physical Alt+Shift+S/Escape, native portal/permission timing, fresh cross-process external screenshot/OCR paste, actual Window picker, extended user capture series and physical Quit/restart on changed implementation. Previously accepted physical behavior is not silently re-signed off.
+
+[Task report, full file list, exact commands, baseline/final measurements and minimum physical steps](phase-02-task-03.md). Task 3 awaits physical acceptance; no subsequent task, Freeform or AI begun.

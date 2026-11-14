@@ -1,0 +1,98 @@
+{
+  "kind": "offscreen public production-handler fixture; no physical input",
+  "fixture": "1600x900 seeded RGB noise; rectangle 1200x700; 50 alternating captures after 3 warmups",
+  "metrics_ms": {
+    "fixture_portal_wait_ms": {
+      "n": 50,
+      "median": 32.624,
+      "p95": 34.611,
+      "max": 35.792
+    },
+    "activation_to_overlay_ms": {
+      "n": 50,
+      "median": 64.533,
+      "p95": 127.836,
+      "max": 187.572
+    },
+    "fullscreen_copy_ms": {
+      "n": 25,
+      "median": 6.289,
+      "p95": 9.423,
+      "max": 12.984
+    },
+    "clipboard_publish_ms": {
+      "n": 50,
+      "median": 282.335,
+      "p95": 387.082,
+      "max": 517.447
+    },
+    "overlay_close_ms": {
+      "n": 51,
+      "median": 0.216,
+      "p95": 0.387,
+      "max": 0.475
+    },
+    "selection_to_delivery_ms": {
+      "n": 50,
+      "median": 419.91,
+      "p95": 639.569,
+      "max": 649.418
+    },
+    "png_save_ms": {
+      "n": 25,
+      "median": 198.698,
+      "p95": 279.762,
+      "max": 349.06
+    },
+    "crop_total_ms": {
+      "n": 25,
+      "median": 259.601,
+      "p95": 354.592,
+      "max": 411.394
+    },
+    "english_ocr_ms": {
+      "n": 3,
+      "median": 2379.559,
+      "p95": 2950.581,
+      "max": 2950.581
+    }
+  },
+  "qt_heartbeat_gap_ms": {
+    "n": 14390,
+    "median": 1.161,
+    "p95": 1.352,
+    "max": 522.951
+  },
+  "resource_observations": [
+    {
+      "after_captures": 0,
+      "rss_kib": 128596,
+      "threads": 7,
+      "fds": 13
+    },
+    {
+      "after_captures": 10,
+      "rss_kib": 142964,
+      "threads": 7,
+      "fds": 13
+    },
+    {
+      "after_captures": 50,
+      "rss_kib": 133608,
+      "threads": 9,
+      "fds": 15
+    }
+  ],
+  "threads_before_close": 9,
+  "resources_after_close": {
+    "rss_kib": 133892,
+    "threads": 8,
+    "fds": 12
+  },
+  "limitations": [
+    "Portal delay is synthetic, not native latency or permission time.",
+    "No physical shortcut, compositor frame presentation, focus change or external paste.",
+    "Toast rendering excluded. OCR is real Tesseract on a public English fixture.",
+    "PNG save is contained in crop_total; do not sum those overlapping metrics."
+  ]
+}

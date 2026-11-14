@@ -1,5 +1,7 @@
 # Phase 2 Task 2 — Display mapping
 
+**User acceptance update (Task 3 request, 2026-11-14): all seven physical tests PASS on one monitor at 100% scaling. Mixed-monitor and actual fractional-scaling tests remain pending. Earlier NOT RUN records below describe the implementation-time observations.**
+
 Work in progress, 2026-11-14. Phase 2 Task 1 is physically accepted by the user (all six acceptance tests PASS). Task 2 only; no Freeform or AI work.
 
 ## Confirmed limitations before changes

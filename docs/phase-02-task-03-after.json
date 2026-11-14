@@ -1,0 +1,152 @@
+{
+  "kind": "offscreen public production-handler fixture; no physical input",
+  "fixture": "1600x900 seeded RGB noise; rectangle 1200x700; 50 alternating captures after 3 warmups",
+  "metrics_ms": {
+    "fixture_portal_wait_ms": {
+      "n": 50,
+      "median": 32.665,
+      "p95": 34.006,
+      "max": 35.212
+    },
+    "activation_to_overlay_ms": {
+      "n": 50,
+      "median": 55.125,
+      "p95": 112.336,
+      "max": 115.576
+    },
+    "fullscreen_copy_ms": {
+      "n": 25,
+      "median": 6.175,
+      "p95": 6.953,
+      "max": 7.048
+    },
+    "clipboard_publish_ms": {
+      "n": 50,
+      "median": 47.11,
+      "p95": 67.09,
+      "max": 71.007
+    },
+    "overlay_close_ms": {
+      "n": 51,
+      "median": 0.221,
+      "p95": 0.281,
+      "max": 0.288
+    },
+    "selection_to_delivery_ms": {
+      "n": 50,
+      "median": 190.597,
+      "p95": 315.705,
+      "max": 333.243
+    },
+    "png_save_ms": {
+      "n": 25,
+      "median": 191.926,
+      "p95": 200.95,
+      "max": 224.141
+    },
+    "crop_total_ms": {
+      "n": 25,
+      "median": 248.359,
+      "p95": 261.921,
+      "max": 282.177
+    },
+    "english_ocr_ms": {
+      "n": 3,
+      "median": 1900.179,
+      "p95": 1950.592,
+      "max": 1950.592
+    }
+  },
+  "qt_heartbeat_gap_ms": {
+    "n": 12627,
+    "median": 1.144,
+    "p95": 1.312,
+    "max": 76.901
+  },
+  "resource_observations": [
+    {
+      "after_captures": 0,
+      "rss_kib": 122976,
+      "threads": 8,
+      "fds": 14,
+      "python_threads": [
+        "MainThread",
+        "snipping-file_0"
+      ],
+      "native_thread_names": [
+        "QDBusConnection",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "python",
+        "snipping-file_0"
+      ]
+    },
+    {
+      "after_captures": 10,
+      "rss_kib": 128836,
+      "threads": 8,
+      "fds": 14,
+      "python_threads": [
+        "MainThread",
+        "snipping-file_0"
+      ],
+      "native_thread_names": [
+        "QDBusConnection",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "python",
+        "snipping-file_0"
+      ]
+    },
+    {
+      "after_captures": 50,
+      "rss_kib": 126588,
+      "threads": 8,
+      "fds": 14,
+      "python_threads": [
+        "MainThread",
+        "snipping-file_0"
+      ],
+      "native_thread_names": [
+        "QDBusConnection",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "Thread (pooled)",
+        "python",
+        "snipping-file_0"
+      ]
+    }
+  ],
+  "threads_before_close": 8,
+  "resources_after_close": {
+    "rss_kib": 126840,
+    "threads": 7,
+    "fds": 11,
+    "python_threads": [
+      "MainThread"
+    ],
+    "native_thread_names": [
+      "QDBusConnection",
+      "Thread (pooled)",
+      "Thread (pooled)",
+      "Thread (pooled)",
+      "Thread (pooled)",
+      "Thread (pooled)",
+      "python"
+    ]
+  },
+  "limitations": [
+    "Portal delay is synthetic, not native latency or permission time.",
+    "No physical shortcut, compositor frame presentation, focus change or external paste.",
+    "Toast rendering excluded. OCR is real Tesseract on a public English fixture.",
+    "PNG save is contained in crop_total; do not sum those overlapping metrics."
+  ]
+}
