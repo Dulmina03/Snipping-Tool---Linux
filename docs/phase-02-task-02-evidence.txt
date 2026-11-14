@@ -1,0 +1,93 @@
+Phase 2 Task 2 evidence — 2026-11-14 (Asia/Colombo)
+
+Initial state: clean fix/phase-02-capture-reliability, HEAD 7b3d295.
+User accepted all six Phase 2 Task 1 physical tests. Scope: Task 2 only.
+Read project instructions, Phase 2 report, handoff, test matrix and actual overlay,
+controller, portal and crop code. Limitations documented before implementation.
+
+Full regression command:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Final process exit 0; retained output /tmp/snipping-phase02-task02-regressions.log:
+Ran 132 tests in 8.563s
+OK
+
+Scaling fixture command (separate processes for each QT_SCALE_FACTOR):
+QT_QPA_PLATFORM=offscreen QT_SCALE_FACTOR=<scale> .venv/bin/python -m unittest discover -s tests -p test_display_mapping.py -v
+1.25: Ran 25 tests in 0.498s; OK
+1.5: Ran 25 tests in 0.448s; OK
+1.75: Ran 25 tests in 0.448s; OK
+2: Ran 25 tests in 0.449s; OK
+
+All 107 existing tests retained, 25 new mapping/provider/session/controller cases.
+Initial reverse-drag assertion exposed QRect normalization losing endpoints;
+fixed explicit edges and reran green. New fractional, gap, unknown-backend,
+change/cancel, source-paint, PNG pixel and offscreen MIME checks pass. This does
+not establish cross-process paste or physical multi-monitor behavior.
+
+Compile/import/whitespace commands, all exit 0:
+.venv/bin/python -m compileall -q capture/display_mapping.py capture/selected_area.py ui/display_overlay.py ui/overlay.py ui/capture_menu.py tests/test_display_mapping.py tests/production_clipboard_probe.py
+QT_QPA_PLATFORM=offscreen .venv/bin/python -c 'import capture.display_mapping, capture.selected_area, ui.display_overlay, ui.capture_menu'
+git diff --check
+git diff --cached --check
+
+Protection checks:
+Toolbar classes/QSS prefix before class Overlay compared with git show
+7b3d295:ui/overlay.py: byte-identical.
+Protected main/shortcuts/clipboard/filename/OCR/requirements diff: empty.
+No display settings, bindings, permissions or API keys changed.
+
+Native commands actually executed:
+- gdbus GetCurrentState on org.gnome.Mutter.DisplayConfig (read only).
+- gdbus Properties.Get org.gnome.Shell ShellVersion -> 50.1.
+- /usr/bin/python3 /tmp/snipping-terminal-launch.py /home/dulmina/Projects/ai-snipping-tool/.venv/bin/python /tmp/snipping-task02-native.py
+- /usr/bin/python3 /tmp/snipping-terminal-launch.py /usr/bin/python3 /tmp/snipping-task02-scales.py
+Ordinary GNOME Terminal host service/Exec, real Screenshot portal permission
+path, read-only before/after state. PNG inspected for dimensions and Software
+only. Native visible surfaces used a public white fixture; no private pixels
+exported/logged. No clipboard writes in the native geometry probe. An existing
+main.py user instance was not stopped or replaced.
+
+Native observations transcribed from the successful tool output in this turn:
+The original /tmp/snipping-task02-native.log and /tmp/snipping-task02-scales.log
+were no longer present at final evidence collection (checked sandbox and host).
+The records below preserve the observed metadata, not a claim to a retained raw
+log or newly repeated physical test.
+
+GNOME 50.1, one physical eDP-1, logical layout [0,0,1920,1080], GNOME scale 1.0.
+Real portal PNG [1920,1080], Software=gnome-screenshot. Stable layout=true.
+Verified PNG stage scale=1.0. Native platform=wayland.
+QT_SCALE_FACTOR=1: viewport [1920,1080], native output eDP-1,
+  selected pixel box [100,100,150,140], expected same, exit 0.
+QT_SCALE_FACTOR=1.25: Qt geometry/viewport [1536,864], DPR1.25,
+  selected pixel box [125,125,188,175], expected same, exit 0.
+QT_SCALE_FACTOR=1.5: viewport [1280,720], DPR1.5,
+  selected pixel box [150,150,225,210], expected same, exit 0.
+QT_SCALE_FACTOR=1.75: viewport [1097,617], DPR1.75,
+  selected pixel box [175,175,263,246], expected same, exit 0.
+QT_SCALE_FACTOR=2: viewport [960,540], DPR2,
+  selected pixel box [200,200,300,280], expected same, exit 0.
+Each native probe cancelled its public-fixture surfaces programmatically and
+reported NATIVE_PROBE_EXIT 0. GNOME stayed at scale 1.0 throughout. The current
+1920x1080 mode did not advertise 175%; no unsupported scale was forced.
+
+Classification:
+PASS: controlled mapping fixtures, all regressions, single native output at
+GNOME 100%, and native Qt high-DPI coordinate conversion. No double scaling.
+NOT RUN: physical multi-monitor/mixed GNOME scale/pointer-grab acceptance,
+actual GNOME fractional display changes, new physical shortcut/Escape/tray,
+new external screenshot/OCR paste after this task. Same-process MIME assertions
+are not external paste proof. User must restart resident app to load changes.
+Optional production_clipboard_probe.py updated for the session QWidget and its
+single-monitor/100% reference; compiled but not run against the existing app.
+
+Constraints: GNOME major50 stage packing, known PNG metadata/dimensions,
+logical-layout mode and matching outputs/proportions. Unknown versions, clones,
+overlap, native nonzero GNOME origin, gaps and layout changes refuse Rectangle;
+Full Screen/Window original routes remain available. Negative Qt origins map by
+connector; no global window-move assumption. Source PNG pixels are cropped with
+floor/ceil half-open coverage and never resized.
+
+Git: external 4b7425f/1d9509c/1fdc09c appeared during work and were preserved.
+Agent performed no stage/commit/merge/reset/checkout/push. Recheck final index.
+Detailed strategy, files, constraints and manual gate: phase-02-task-02.md.
+No Task 3, Freeform or AI started.

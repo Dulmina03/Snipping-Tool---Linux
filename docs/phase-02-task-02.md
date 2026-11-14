@@ -41,7 +41,7 @@ No edits to filename generation, screenshot directory, clipboard implementation,
 
 ## Automated verification
 
-- **PASS — full suite: 132 tests in 8.435s, exit 0.** Existing Task 1 repeated-capture, uniqueness, cleanup, clipboard/OCR lifecycle, toolbar and startup regressions remain green.
+- **PASS — full suite: 132 tests in 8.563s, exit 0.** Existing Task 1 repeated-capture, uniqueness, cleanup, clipboard/OCR lifecycle, toolbar and startup regressions remain green.
 - **PASS — all 25 mapping tests at Qt scale factors 1.25, 1.5, 1.75 and 2.0**, each run in a separate offscreen process; standard 100% also covered. Controlled portal PNGs and simulated monitor configurations are used.
 - The matrix covers 100/125/150/175/200% compositor scales, fractional ceil-render buffers, different resolutions, mixed scales, left/right/above/below arrangements, negative origins, cross-boundary forward/reverse drags, edges, gaps, zero/invalid selection, pixel-exact saved crops and real offscreen Qt PNG MIME contents. These MIME checks do not establish external paste.
 - Tests verify per-output source-region painting, subpixel precision, dimension badges, one routed signal for Window/Full Screen/cancel, geometry-change cancellation, missing/unsupported metadata, unsupported backend versions and layout modes, provider errors/cancellation/disconnection, and fallback Full Screen preservation.
@@ -85,4 +85,6 @@ Task 2 implementation is ready for this acceptance gate; physical multi-monitor 
 
 ## Git provenance
 
-Started clean on existing `fix/phase-02-capture-reliability`, HEAD `7b3d295`. External commits `4b7425f` and `1d9509c` appeared during implementation and were preserved. The agent did not stage, commit, merge, reset, checkout or push. Recheck the current index/history before continuing. Evidence and commands are recorded in [phase-02-task-02-evidence.txt](phase-02-task-02-evidence.txt).
+Started clean on existing `fix/phase-02-capture-reliability`, HEAD `7b3d295`. External commits `4b7425f`, `1d9509c` and `1fdc09c` appeared during implementation and were preserved. The agent did not stage, commit, merge, reset, checkout or push. Recheck the current index/history before continuing. Evidence and commands are recorded in [phase-02-task-02-evidence.txt](phase-02-task-02-evidence.txt).
+
+Evidence note: the native temporary log files were no longer available at final collection. The repository evidence file explicitly transcribes their earlier successful tool output; surviving regression/scaling fixture summaries were collected from their logs. No raw native log retention or physical acceptance is implied.

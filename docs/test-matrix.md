@@ -202,7 +202,7 @@ User explicitly authorized this bounded Phase 2 task; no implied Phase 1 physica
 
 Phase 2 Task 1 is now **physically accepted**: user reports all six acceptance tests PASS. Earlier NOT RUN records are historical.
 
-- PASS: 132-test full regression suite, 8.435s, exit 0; all prior 107 retained. Compile/import and both whitespace checks PASS.
+- PASS: 132-test full regression suite, 8.563s, exit 0; all prior 107 retained. Compile/import and both whitespace checks PASS.
 - PASS: 25 new geometry/provider/session/controller cases; standard 100% and separate Qt 125/150/175/200% runs all PASS. Simulated compositor scales include all five factors; different resolutions/scales, left/right/above/below and negative origins, forward/reverse boundary drags, edges, invalid/gap areas, saved/copy PNG pixel accuracy, configuration changes, cancellation and fallback Full Screen tested.
 - PASS: per-output source painting without global stretching; subpixel coordinates preserved; correct physical PNG dimensions in badge; origin/reverse QRect defects fixed. Toolbar classes/QSS byte-identical; protected clipboard/OCR/shortcut/tray/filename modules unchanged.
 - PASS: native GNOME 50.1 Screenshot portal real dimensions/metadata and before/after geometry on one eDP-1 1920×1080 at GNOME 100%; correct output/fullscreen viewport and pixel box. Programmatic cancellation exits cleanly. Native Qt scale 125/150/175/200% changes viewport but preserves PNG dimensions and maps expected boxes once.
