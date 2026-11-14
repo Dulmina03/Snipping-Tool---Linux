@@ -2,16 +2,17 @@
 
 import asyncio
 import logging
-import os
-from pathlib import Path
 import threading
-from typing import Callable, Optional
+from typing import Optional
 import uuid
 
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType
 from PySide6.QtCore import QObject, Signal
+
+
+from utils.desktop_entry import APP_ID, ensure_desktop_entry
 
 
 logger = logging.getLogger(__name__)
@@ -23,38 +24,9 @@ GLOBAL_SHORTCUTS_INTERFACE = "org.freedesktop.portal.GlobalShortcuts"
 REQUEST_INTERFACE = "org.freedesktop.portal.Request"
 SESSION_INTERFACE = "org.freedesktop.portal.Session"
 
-APP_ID = "com.dulmina.aisnippingtool"
 SHORTCUT_ID = "open_capture_menu"
 PREFERRED_TRIGGER = "<Ctrl><Shift>S"
 REQUEST_TIMEOUT_SECONDS = 60
-
-
-def ensure_desktop_entry() -> None:
-    """Ensure the desktop entry exists for portal application identity registration."""
-    apps_dir = Path.home() / ".local" / "share" / "applications"
-    desktop_path = apps_dir / f"{APP_ID}.desktop"
-
-    if not desktop_path.exists():
-        apps_dir.mkdir(parents=True, exist_ok=True)
-        project_root = Path(__file__).resolve().parent.parent
-        python_bin = project_root / ".venv" / "bin" / "python"
-        if not python_bin.exists():
-            python_bin = Path("python3")
-        menu_path = project_root / "ui" / "capture_menu.py"
-
-        content = (
-            "[Desktop Entry]\n"
-            "Type=Application\n"
-            "Name=AI Snipping Tool\n"
-            "Comment=AI Snipping Tool for Linux\n"
-            f"Exec={python_bin} {menu_path}\n"
-            "Icon=camera-photo\n"
-            "Terminal=false\n"
-            "Categories=Utility;Graphics;\n"
-            f"StartupWMClass={APP_ID}\n"
-        )
-        desktop_path.write_text(content, encoding="utf-8")
-        os.system(f"update-desktop-database {apps_dir} >/dev/null 2>&1 || true")
 
 
 class GlobalShortcutManager(QObject):
@@ -85,6 +57,7 @@ class GlobalShortcutManager(QObject):
         self._registered = False
         self._error: Optional[str] = None
         self._ready = threading.Event()
+        self._shutdown_requested = threading.Event()
         self._lock = threading.Lock()
 
     @property
@@ -116,6 +89,7 @@ class GlobalShortcutManager(QObject):
             self._error = None
             self._session_handle = None
             self._ready.clear()
+            self._shutdown_requested.clear()
             self._thread = threading.Thread(
                 target=self._thread_main,
                 name="global-shortcut-portal",
@@ -137,8 +111,12 @@ class GlobalShortcutManager(QObject):
             stop_event = self._stop_event
             thread = self._thread
 
+        self._shutdown_requested.set()
         if loop is not None and stop_event is not None:
-            loop.call_soon_threadsafe(stop_event.set)
+            try:
+                loop.call_soon_threadsafe(stop_event.set)
+            except RuntimeError:
+                pass  # Loop already closed during concurrent shutdown.
 
         if thread is not None and thread is not threading.current_thread():
             thread.join(timeout=5)
@@ -150,31 +128,48 @@ class GlobalShortcutManager(QObject):
         self._stop_event = asyncio.Event()
 
         try:
-            loop.run_until_complete(self._register())
-        except Exception as error:
-            message = str(error)
-            logger.warning(
-                "Global shortcut registration failed or is unsupported on this desktop: %s",
-                message,
-            )
-            with self._lock:
-                self._error = message
-
-            self.registration_failed.emit(message)
-            self._ready.set()
-        else:
-            self._ready.set()
-            loop.run_until_complete(self._stop_event.wait())
+            loop.run_until_complete(self._run_session())
         finally:
-            loop.run_until_complete(self._close_session())
-            loop.close()
+            try:
+                loop.run_until_complete(asyncio.wait_for(self._close_session(), 2))
+            except Exception as error:
+                logger.warning("Shortcut cleanup failed: %s", type(error).__name__)
+            finally:
+                if self._bus is not None:
+                    self._bus.disconnect()
+                loop.close()
+                self._ready.set()
+                with self._lock:
+                    self._registered = False
+                    self._session_handle = None
+                    self._bus = None
+                    self._loop = None
+                    self._stop_event = None
 
-            with self._lock:
-                self._registered = False
-                self._session_handle = None
-                self._bus = None
-                self._loop = None
-                self._stop_event = None
+    async def _run_session(self):
+        if self._shutdown_requested.is_set():
+            return
+        registration = asyncio.create_task(asyncio.wait_for(self._register(), REQUEST_TIMEOUT_SECONDS))
+        stopping = asyncio.create_task(self._stop_event.wait())
+        try:
+            done, _ = await asyncio.wait((registration, stopping), return_when=asyncio.FIRST_COMPLETED)
+            if stopping in done:
+                return
+            try:
+                registration.result()
+            except Exception as error:
+                with self._lock:
+                    self._error = str(error)
+                logger.warning("Shortcut registration failed: %s", type(error).__name__)
+                self.registration_failed.emit(str(error))
+                return
+            self._ready.set()
+            await stopping
+        finally:
+            for task in (registration, stopping):
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(registration, stopping, return_exceptions=True)
 
     async def _register(self) -> None:
         ensure_desktop_entry()

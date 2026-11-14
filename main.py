@@ -1,8 +1,12 @@
 """Main entry point for AI Snipping Tool background daemon."""
 
 import sys
+import signal
+from pathlib import Path
 
-from PySide6.QtCore import Qt
+from utils.desktop_entry import APP_ID, ensure_desktop_entry
+
+from PySide6.QtCore import QLockFile, QStandardPaths, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
@@ -37,10 +41,19 @@ def create_tray_icon() -> QIcon:
     return QIcon(pixmap)
 
 
-def main() -> int:
-    application = QApplication(sys.argv)
-    application.setQuitOnLastWindowClosed(False)
+def acquire_instance_lock():
+    runtime = QStandardPaths.writableLocation(QStandardPaths.RuntimeLocation)
+    lock = QLockFile(str(Path(runtime) / f"{APP_ID}.lock"))
+    if not lock.tryLock(0):
+        return None
+    return lock
 
+
+def configure_application(application):
+    """Build a quiet background app; expose owned objects for lifecycle tests."""
+    application.setQuitOnLastWindowClosed(False)
+    application.setApplicationName(APP_ID)
+    application.setDesktopFileName(APP_ID)
     menu = CaptureMenu()
     shortcut_manager = GlobalShortcutManager()
 
@@ -71,15 +84,39 @@ def main() -> int:
         menu.set_global_shortcut_registered
     )
     shortcut_manager.registration_failed.connect(menu.set_global_shortcut_error)
-    application.aboutToQuit.connect(shortcut_manager.stop)
+    application.aboutToQuit.connect(menu.shutdown)
 
-    print("AI Snipping Tool started in background.")
-    print("Press Ctrl+Shift+S to capture or use the system tray icon.")
+    return menu, shortcut_manager, tray_icon, tray_menu
 
-    shortcut_manager.start()
 
-    # Start quietly in the background without opening menu/overlay
-    return application.exec()
+def main() -> int:
+    if "--install-desktop" in sys.argv:
+        try:
+            print(ensure_desktop_entry())
+            return 0
+        except (OSError, RuntimeError, ValueError) as error:
+            print(str(error), file=sys.stderr)
+            return 1
+    application = QApplication(sys.argv)
+    lock = acquire_instance_lock()
+    if lock is None:
+        print("AI Snipping Tool is already running, or its runtime lock is unavailable.", file=sys.stderr)
+        return 0
+    menu, shortcut_manager, tray_icon, tray_menu = configure_application(application)
+    previous_handlers = {}
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        previous_handlers[sig] = signal.signal(sig, lambda *_: application.quit())
+    try:
+        shortcut_manager.start()
+        return application.exec()
+    finally:
+        menu.shutdown()
+        menu.jobs.close()
+        shortcut_manager.stop()
+        tray_icon.hide()
+        lock.unlock()
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == "__main__":
