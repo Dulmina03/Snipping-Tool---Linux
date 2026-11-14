@@ -74,15 +74,29 @@ def copy_image_to_clipboard(image_input: ImageInputType) -> None:
     Encodes standard image/png MIME data so external apps can paste without issue.
     """
     application = _application()
-    image = _to_qimage(image_input)
+    encoded_png = None
+    if isinstance(image_input, (str, Path)):
+        # Saved screenshots are already complete immutable PNGs. Decode and
+        # validate the same bytes that we publish, without encoding them again.
+        path = Path(image_input).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"Screenshot file does not exist: {path}")
+        raw = path.read_bytes()
+        image = _to_qimage(QImage.fromData(raw))
+        if raw.startswith(b'\x89PNG\r\n\x1a\n'):
+            encoded_png = QByteArray(raw)
+    else:
+        image = _to_qimage(image_input)
 
     # Encode raw PNG bytes for external clipboard consumers (browsers, editors, chat)
-    ba = QByteArray()
-    buf = QBuffer(ba)
-    buf.open(QIODevice.WriteOnly)
-    if not image.save(buf, "PNG"):
-        raise RuntimeError("Could not encode clipboard PNG.")
-    buf.close()
+    ba = encoded_png
+    if ba is None:
+        ba = QByteArray()
+        buf = QBuffer(ba)
+        buf.open(QIODevice.WriteOnly)
+        if not image.save(buf, "PNG"):
+            raise RuntimeError("Could not encode clipboard PNG.")
+        buf.close()
 
     mime = QMimeData()
     mime.setImageData(image)

@@ -2,6 +2,7 @@
 import asyncio
 from pathlib import Path
 import unittest
+import tempfile
 from unittest.mock import patch
 
 from PySide6.QtCore import QThread
@@ -29,6 +30,33 @@ class ClipboardTests(unittest.TestCase):
             decoded = QImage.fromData(bytes(mime.data(name)), 'PNG')
             self.assertEqual(decoded.convertToFormat(QImage.Format_ARGB32), image)
         self.assertEqual(app.clipboard().image().convertToFormat(QImage.Format_ARGB32), image)
+
+    def test_saved_png_reuses_validated_bytes_after_source_removed(self):
+        image = reference_image('saved-public-png')
+        with tempfile.TemporaryDirectory() as scratch:
+            path = Path(scratch) / 'saved.png'
+            self.assertTrue(image.save(str(path), 'PNG'))
+            raw = path.read_bytes()
+            copy_image_to_clipboard(path)
+        mime = app.clipboard().mimeData()
+        for name in ('image/png', 'image/x-png'):
+            self.assertEqual(bytes(mime.data(name)), raw)
+            self.assertEqual(QImage.fromData(bytes(mime.data(name))).convertToFormat(QImage.Format_ARGB32), image)
+        self.assertEqual(app.clipboard().image().convertToFormat(QImage.Format_ARGB32), image)
+
+    def test_other_encoded_file_still_publishes_png_and_invalid_file_preserves_owner(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            path = Path(scratch) / 'public.bmp'
+            image = reference_image('bmp fallback')
+            self.assertTrue(image.save(str(path), 'BMP'))
+            copy_image_to_clipboard(path)
+            raw = bytes(app.clipboard().mimeData().data('image/png'))
+            self.assertTrue(raw.startswith(b'\x89PNG\r\n\x1a\n'))
+            self.assertEqual(QImage.fromData(raw).convertToFormat(QImage.Format_ARGB32), image)
+            path.write_bytes(b'\x89PNG\r\n\x1a\ninvalid')
+            with self.assertRaises(RuntimeError):
+                copy_image_to_clipboard(path)
+            self.assertEqual(bytes(app.clipboard().mimeData().data('image/png')), raw)
 
     def test_sinhala_zwj_and_english_exact_utf8_formats(self):
         copy_text_to_clipboard(PUBLIC_TEXT)

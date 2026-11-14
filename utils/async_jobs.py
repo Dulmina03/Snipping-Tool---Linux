@@ -27,20 +27,20 @@ class AsyncJobs(QObject):
         """
         if self.closed:
             raise RuntimeError('Application is shutting down')
-        future = self.loop.run_in_executor(self.file_executor, partial(function, *args, **kwargs))
-        try:
-            return await asyncio.shield(future)
-        except asyncio.CancelledError:
-            while not future.done():
-                try:
-                    await asyncio.shield(future)
-                except asyncio.CancelledError:
-                    continue
-                except Exception:
-                    break
-            if not future.cancelled():
-                future.exception()  # Consume a failure after cancellation, never publish it.
-            raise
+        future = self.file_executor.submit(partial(function, *args, **kwargs))
+        cancelled = False
+        # Poll one concurrent future on our already-cooperative asyncio loop.
+        # Do not depend on cross-thread asyncio future callbacks: the target
+        # Python runtime stalled at shutdown in that implementation's regression.
+        while not future.done():
+            try:
+                await asyncio.sleep(.01)
+            except asyncio.CancelledError:
+                cancelled = True
+        if cancelled:
+            future.exception()  # Consume a failure after cancellation; never publish it.
+            raise asyncio.CancelledError
+        return future.result()
 
     def submit(self, coroutine):
         if self.closed:

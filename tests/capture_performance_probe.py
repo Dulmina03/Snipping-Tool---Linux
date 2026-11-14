@@ -13,6 +13,7 @@ import shutil
 import statistics
 import sys
 import tempfile
+import threading
 import time
 from unittest.mock import patch
 
@@ -30,7 +31,9 @@ from utils.ocr_process import extract_text_async
 def resources():
     fields = dict(line.split(':', 1) for line in Path('/proc/self/status').read_text().splitlines() if ':' in line)
     return {'rss_kib': int(fields['VmRSS'].split()[0]),
-            'threads': int(fields['Threads']), 'fds': len(list(Path('/proc/self/fd').iterdir()))}
+            'threads': int(fields['Threads']), 'fds': len(list(Path('/proc/self/fd').iterdir())),
+            'python_threads': [thread.name for thread in threading.enumerate()],
+            'native_thread_names': sorted(path.read_text().strip() for path in Path('/proc/self/task').glob('*/comm'))}
 
 
 def main_probe(output):
