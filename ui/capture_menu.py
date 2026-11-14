@@ -58,7 +58,12 @@ SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 
 async def _portal_screenshot(interactive: bool = False) -> Path:
     """Request a full-screen (or interactive window) screenshot from XDG portal."""
-    bus = await MessageBus().connect()
+    bus = MessageBus()
+    try:
+        await asyncio.wait_for(bus.connect(), timeout=10)
+    except BaseException:
+        bus.disconnect()
+        raise
     token = f"snip_{os.getpid()}_{int(time.time() * 1000) % 1_000_000}"
     options: dict = {
         "handle_token": Variant("s", token),

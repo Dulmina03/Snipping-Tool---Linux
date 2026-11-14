@@ -175,7 +175,6 @@ class LifecycleTests(unittest.TestCase):
 
     def test_real_ocr_process_boundary_error_and_cancel(self):
         from utils.ocr_process import extract_text_async
-        from utils.async_jobs import AsyncJobs
         # Real worker protocol error is generic and does not expose document text.
         task = self.menu.jobs.submit(extract_text_async('/nonexistent/phase01.png'))
         spin_until(task.done)
@@ -309,6 +308,27 @@ class EntryTests(unittest.TestCase):
 
 
 class PortalCleanupTests(unittest.TestCase):
+    def test_cancel_during_bus_connect_disconnects(self):
+        from ui.capture_menu import _portal_screenshot
+        from utils.async_jobs import AsyncJobs
+        bus = SimpleNamespace(started=False, closed=False)
+        async def connect():
+            bus.started = True
+            await asyncio.sleep(60)
+        bus.connect = connect
+        bus.disconnect = lambda: setattr(bus, 'closed', True)
+        jobs = AsyncJobs()
+        try:
+            with patch('ui.capture_menu.MessageBus', return_value=bus):
+                task = jobs.submit(_portal_screenshot())
+                spin_until(lambda: bus.started)
+                task.cancel()
+                spin_until(task.done)
+            self.assertTrue(task.cancelled())
+            self.assertTrue(bus.closed)
+        finally:
+            jobs.close()
+
     def test_early_response_and_cancel_cleanup(self):
         from dbus_next import MessageType, Variant
         from ui.capture_menu import _portal_screenshot

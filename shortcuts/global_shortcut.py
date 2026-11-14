@@ -52,7 +52,6 @@ class GlobalShortcutManager(QObject):
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._bus: Optional[MessageBus] = None
         self._session_handle: Optional[str] = None
-        self._stop_event: Optional[asyncio.Event] = None
         self._request_futures: dict[str, asyncio.Future] = {}
         self._registered = False
         self._error: Optional[str] = None
@@ -118,7 +117,6 @@ class GlobalShortcutManager(QObject):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         self._loop = loop
-        self._stop_event = asyncio.Event()
 
         try:
             loop.run_until_complete(self._run_session())
@@ -137,7 +135,6 @@ class GlobalShortcutManager(QObject):
                     self._session_handle = None
                     self._bus = None
                     self._loop = None
-                    self._stop_event = None
 
     async def _wait_for_stop(self):
         # Bounded polling also works when a confined runtime cannot wake the
