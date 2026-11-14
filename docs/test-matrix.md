@@ -184,3 +184,15 @@ Final native cleanup PASS: PID-verified DBusMenu Quit on updated PID 200574 logg
 - PENDING: explicit GNOME Settings → Apps → AI Snipping Tool → Permissions → Global Shortcuts → capture action → Set Shortcut confirmation. Cancel conflicts; no binding reset/replacement automated. Phase 1 open; no Phase 2.
 
 [Current detailed acceptance](phase-01-acceptance.md), [evidence](phase-01-status-ui-evidence.txt).
+
+
+## Phase 2 Task 1 — Filename and repetition reliability (2026-11-14)
+
+- PASS: full suite **107 tests**, 9.835s, exit 0; all 86 previous regressions retained. Syntax/import and staged/unstaged whitespace PASS.
+- PASS: 100 frozen-second copies; existing file/directory/dangling-symlink and publication-race preservation; 40 concurrent thread PNGs; four real separate processes/32 same-second copies; byte/pixel integrity; incomplete encode/missing source/write failure/no public partial; no staging leaks; all six save routes tested.
+- PASS: 100 consecutive real production-controller screenshot operations with fixture portal replies, Qt heartbeat and actual offscreen clipboard pixels; ten asynchronous fixture OCR returns including English/Sinhala/ZWJ; repeat activation coalesces; one overlay; no stale path/text; cancel/failure/retry; no late OCR text or pending tasks; saved-source cleanup protection.
+- PASS: actual default directory on ext4; additional same-filesystem isolated PNG publication check, no user screenshot writes. Unsupported hard-link filesystems fail cleanly, no unsafe fallback.
+- NOT RUN: new physical GNOME rapid captures, Window picker cancellation/completion, external image/text paste, and physical Quit after the series. Offscreen MIME retrieval is not cross-process/native paste; fixture OCR is not recognition-accuracy evidence.
+- Earlier isolated repetition test had offscreen Qt MIME-owner teardown exit 139 despite completed assertions; minimal plain Qt text-owner reproduced it. Test-owned MIME/deferred-widget cleanup fixed harness teardown; final tests exit 0. No production clipboard change.
+
+User explicitly authorized this bounded Phase 2 task; no implied Phase 1 physical sign-off or Phase 2 overall completion. [Full inventory, evidence and minimum manual steps](phase-02-task-01.md).
