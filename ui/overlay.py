@@ -604,6 +604,8 @@ class Overlay(QWidget):
     # ── Show helpers ──────────────────────────────────────────────────────────
 
     def _get_virtual_geometry(self) -> QRect:
+        if hasattr(self, '_display_geometry'):
+            return QRect(self._display_geometry)
         total = QRect()
         for screen in QGuiApplication.screens():
             total = total.united(screen.geometry())
@@ -720,9 +722,12 @@ class Overlay(QWidget):
     # ── Selection logic ───────────────────────────────────────────────────────
 
     def get_selection_rect(self) -> QRect:
-        if self.start_point.isNull() or self.end_point.isNull():
+        if self.start_point == self.end_point:
             return QRect()
-        return QRect(self.start_point, self.end_point).normalized()
+        return QRect(min(self.start_point.x(), self.end_point.x()),
+                     min(self.start_point.y(), self.end_point.y()),
+                     abs(self.start_point.x() - self.end_point.x()) + 1,
+                     abs(self.start_point.y() - self.end_point.y()) + 1)
 
     def confirm_selection(self) -> None:
         rect = self.get_selection_rect()
@@ -752,7 +757,8 @@ class Overlay(QWidget):
 
         if self.bg_pixmap and not self.bg_pixmap.isNull():
             # 1. Draw desktop screenshot at full clarity
-            painter.drawPixmap(self.rect(), self.bg_pixmap)
+            source_rect = getattr(self, 'bg_source_rect', QRectF(self.bg_pixmap.rect()))
+            painter.drawPixmap(QRectF(self.rect()), self.bg_pixmap, source_rect)
 
             # 2. Dim everything EXCEPT the live selection (OddEven rule)
             dim_path = QPainterPath()
@@ -776,7 +782,7 @@ class Overlay(QWidget):
             painter.drawRect(rect)
 
             # 4. Dimensions badge (Linear style)
-            dim_text = f"{rect.width()} × {rect.height()}"
+            dim_text = f"{rect.width():g} × {rect.height():g}"
             font = QFont("Inter", 9, QFont.Medium)
             font.setStyleHint(QFont.SansSerif)
             painter.setFont(font)
@@ -790,7 +796,7 @@ class Overlay(QWidget):
             by = rect.bottom() + 6 if rect.bottom() + bh + 10 < self.height() else rect.bottom() - bh - 4
             bx = max(4, bx)
 
-            badge = QRect(bx, by, bw, bh)
+            badge = QRect(round(bx), round(by), bw, bh)
             painter.setPen(QPen(QColor(255, 255, 255, 30), 1))
             painter.setBrush(QColor(17, 19, 26, 220))
             painter.drawRoundedRect(badge, 4, 4)

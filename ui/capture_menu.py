@@ -48,7 +48,9 @@ from capture.screenshot import ScreenshotCapture
 from capture.window_capture import take_screenshot as capture_window
 from utils.async_jobs import AsyncJobs
 from utils.ocr_process import extract_text_async
-from ui.overlay import Overlay
+from ui.overlay import Overlay, SnipMode
+from ui.display_overlay import DisplayOverlay, screen_fingerprint
+from capture.display_mapping import (Rect, DisplayMappingError, compatibility_mapping, read_gnome_layout)
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 from utils.capture_diagnostics import trace, image_trace
 from utils.screenshot_files import copy_screenshot, save_png, cleanup_capture_source
@@ -73,15 +75,15 @@ def _get_virtual_size() -> tuple[int, int]:
     return total.width() or 1920, total.height() or 1080
 
 
-def _crop_and_save(source: Path, x: int, y: int, w: int, h: int) -> Path:
+def _crop_and_save(source: Path, x: int, y: int, w: int, h: int, mapping=None) -> Path:
     with Image.open(source) as img:
-        sw, sh = _get_virtual_size()
-        sx, sy = img.width / sw, img.height / sh
-        left   = max(0, round(x * sx))
-        top    = max(0, round(y * sy))
-        right  = min(img.width,  round((x + w) * sx))
-        bottom = min(img.height, round((y + h) * sy))
-        return save_png(img.crop((left, top, right, bottom)), SCREENSHOTS_DIR)
+        if mapping is None and QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
+            raise DisplayMappingError('A verified per-monitor mapping is required. Capture through main.py.')
+        mapping = mapping or compatibility_mapping(_get_virtual_size(), img.size)
+        if tuple(img.size) != mapping.image_size:
+            raise DisplayMappingError('Screenshot dimensions changed after the overlay was created.')
+        box = mapping.crop_box(Rect(x, y, w, h))
+        return save_png(img.crop(box), SCREENSHOTS_DIR)
 
 
 def _save_full(source: Path) -> Path:
@@ -298,6 +300,15 @@ class CaptureMenu(QWidget):
 
     async def _launch_overlay(self, permission_retry=False):
         try:
+            native_wayland = QGuiApplication.platformName() == 'wayland'
+            layout_before = None
+            mapping_error = None
+            qt_before = screen_fingerprint(QGuiApplication.screens())
+            if native_wayland:
+                try:
+                    layout_before = await read_gnome_layout()
+                except DisplayMappingError as error:
+                    mapping_error = str(error)
             source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
             if permission_retry:
                 # Discard the consent capture: it may include our permission
@@ -311,7 +322,34 @@ class CaptureMenu(QWidget):
             bg_pixmap = QPixmap(str(source_path))
             if bg_pixmap.isNull():
                 raise RuntimeError("Portal returned an unreadable screenshot.")
-            overlay = Overlay(bg_pixmap=bg_pixmap)
+            overlay = None
+            if native_wayland and layout_before is not None:
+                try:
+                    layout_after = await read_gnome_layout()
+                    if layout_before != layout_after or qt_before != screen_fingerprint(QGuiApplication.screens()):
+                        raise DisplayMappingError('Display layout changed during capture. Capture again.')
+                    with Image.open(source_path) as image:
+                        mapping = layout_after.mapping(image.size, image.info.get('Software', ''))
+                    bg_pixmap.setDevicePixelRatio(1.)  # PNG pixels, not output-DPR units.
+                    overlay = DisplayOverlay(bg_pixmap, mapping)
+                    overlay.mapping_failed.connect(self._on_mapping_failed)
+                except DisplayMappingError as error:
+                    mapping_error = str(error)
+            if overlay is None:
+                overlay = Overlay(bg_pixmap=bg_pixmap)
+                if native_wayland:
+                    # Keep server-side Full Screen and Window available, but do
+                    # not let an unverified stretched preview produce a crop.
+                    overlay._toolbar._buttons[SnipMode.RECTANGULAR].setEnabled(False)
+                    overlay.bg_pixmap = None
+                    overlay._mode = SnipMode.FULLSCREEN
+                    overlay._toolbar.select_mode(SnipMode.FULLSCREEN)
+                    primary = QGuiApplication.primaryScreen()
+                    if primary is not None:
+                        overlay._display_geometry = primary.geometry()
+                        overlay.winId()
+                        overlay.windowHandle().setScreen(primary)
+                    overlay._rectangle_mapping_error = mapping_error or 'Rectangle display mapping is unavailable.'
             self._overlay = overlay
             overlay.area_selected.connect(
                 lambda rect: self._on_area_selected(rect, source_path, overlay.capture_action))
@@ -322,6 +360,9 @@ class CaptureMenu(QWidget):
             overlay.cancelled.connect(self._on_cancelled)
             overlay.delivery_requested.connect(self._deliver_pending_clipboard)
             overlay.showFullScreenOverlay()
+            if mapping_error:
+                self.status_label.setText(mapping_error)
+                self._show_toast(mapping_error)
         except asyncio.CancelledError:
             raise
         except Exception as error:
@@ -343,6 +384,11 @@ class CaptureMenu(QWidget):
         finally:
             if self._permission_prompt is not None:
                 self._permission_prompt.continue_button.setEnabled(True)
+
+    def _on_mapping_failed(self, message):
+        self._on_cancelled()
+        self.status_label.setText(message)
+        self._show_toast(message)
 
     def _show_permission_prompt(self):
         if self._permission_prompt is not None or self._shutting_down:
@@ -426,7 +472,11 @@ class CaptureMenu(QWidget):
             self.capture_finished.emit()
             return
         try:
-            out = _crop_and_save(source_path, rect.x(), rect.y(), rect.width(), rect.height())
+            mapping_error = getattr(self._overlay, '_rectangle_mapping_error', None)
+            if mapping_error:
+                raise DisplayMappingError(mapping_error)
+            mapping = getattr(self._overlay, 'capture_mapping', None)
+            out = _crop_and_save(source_path, rect.x(), rect.y(), rect.width(), rect.height(), mapping=mapping)
         except Exception as e:
             self._close_overlay()
             self.status_label.setText(f"Crop failed: {e}")

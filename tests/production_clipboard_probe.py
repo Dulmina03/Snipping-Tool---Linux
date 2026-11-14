@@ -22,6 +22,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from PIL import Image,ImageDraw,ImageFont
+from PIL.PngImagePlugin import PngInfo
 from clipboard_native_probe import ClipboardEditor
 
 MIXED='English punctuation: hello, world! සිංහල ශ්‍රී ලංකාව — ආයුබෝවන්.\nZWJ: \u200d'
@@ -79,6 +80,16 @@ def writer():
             if process.returncode is None:process.kill();await process.wait()
     async def run(app,menu,manager,tray,tray_menu):
         try:
+            # This public OCR/reference fixture uses fixed 100%-scale positions.
+            # Geometry fixtures cover other layouts; do not report a false native
+            # clipboard regression if this older probe cannot represent them.
+            from capture.display_mapping import read_gnome_layout
+            layout = await read_gnome_layout()
+            screens = QApplication.screens()
+            if (len(layout.monitors) != 1 or len(screens) != 1
+                    or layout.monitors[0].scale != 1 or screens[0].devicePixelRatio() != 1):
+                record('fixture_layout', 'NOT RUN', reason='This clipboard probe requires one monitor at 100%; use geometry fixtures and physical checks for other layouts.')
+                return
             with tempfile.TemporaryDirectory(prefix='snipping-production-') as scratch,patch.object(capture,'SCREENSHOTS_DIR',Path(scratch)/'saved'):
                 for case in ('rectangle','fullscreen','rectangle_repeat','english_ocr','unicode_transfer'):
                     width,height=capture._get_virtual_size()
@@ -90,12 +101,15 @@ def writer():
                     if 'ocr' in case or case=='unicode_transfer':
                         draw.rectangle((0,300,width,700),fill='white')
                         draw.text((50,400),ENGLISH,fill='black',font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',36))
-                    image.save(source)
+                    metadata = PngInfo()
+                    metadata.add_text('Software', 'gnome-screenshot')
+                    image.save(source, pnginfo=metadata)  # Controlled full-stage fixture.
                     with patch.object(capture,'_portal_screenshot',new=AsyncMock(return_value=source)):
                         menu.launch_overlay()
                         if not await wait_for(lambda:menu._overlay is not None):
                             record(case,'FAIL',reason='No overlay');continue
                     overlay=menu._overlay
+                    surface=getattr(overlay, 'primary', overlay)
                     await asyncio.sleep(.8)
                     if not overlay.isActiveWindow():
                         record(case,'NOT RUN',reason='Native capture surface did not receive focus');menu._on_cancelled();continue
@@ -109,9 +123,9 @@ def writer():
                             await asyncio.sleep(.3);return MIXED
                         context=patch.object(capture,'extract_text_async',fake_text) if case=='unicode_transfer' else patch.dict(os.environ,{})
                         with context:
-                            QTest.mousePress(overlay,Qt.LeftButton,Qt.NoModifier,QPoint(20,350))
-                            QTest.mouseMove(overlay,QPoint(min(width-20,1200),650))
-                            QTest.mouseRelease(overlay,Qt.LeftButton,Qt.NoModifier,QPoint(min(width-20,1200),650))
+                            QTest.mousePress(surface,Qt.LeftButton,Qt.NoModifier,QPoint(20,350))
+                            QTest.mouseMove(surface,QPoint(min(width-20,1200),650))
+                            QTest.mouseRelease(surface,Qt.LeftButton,Qt.NoModifier,QPoint(min(width-20,1200),650))
                             await wait_for(lambda:not menu.busy,25)
                     path=menu.last_capture_path
                     valid=path is not None and path.is_file()

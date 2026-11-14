@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication
 from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard
 from utils.screenshot_files import save_png, cleanup_capture_source
+from capture.display_mapping import compatibility_mapping, DisplayMappingError, Rect
 
 
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
@@ -142,32 +143,12 @@ def get_screen_size() -> tuple[int, int]:
 
 
 def crop_screenshot(source_path: Path, x: int, y: int, width: int, height: int) -> Path:
+    if QGuiApplication.platformName() == 'wayland' and len(QGuiApplication.screens()) > 1:
+        raise DisplayMappingError('Legacy area capture cannot map multiple Wayland outputs. Use main.py.')
     with Image.open(source_path) as image:
-        screen_width, screen_height = get_screen_size()
-        scale_x = image.width / screen_width
-        scale_y = image.height / screen_height
-
-        print(f"Full screenshot size: {image.width} x {image.height}")
-        print(f"Logical screen size: {screen_width} x {screen_height}")
-        print(f"Scale: X = {scale_x:.3f}, Y = {scale_y:.3f}")
-
-        crop_x = round(x * scale_x)
-        crop_y = round(y * scale_y)
-        crop_width = round(width * scale_x)
-        crop_height = round(height * scale_y)
-
-        left = max(0, crop_x)
-        top = max(0, crop_y)
-        right = min(image.width, crop_x + crop_width)
-        bottom = min(image.height, crop_y + crop_height)
-
-        print(f"Final crop: ({left}, {top}) -> ({right}, {bottom})")
-
-        if right <= left or bottom <= top:
-            raise RuntimeError("Invalid crop coordinates.")
-
-        cropped = image.crop((left, top, right, bottom))
-        return save_png(cropped, SCREENSHOTS_DIR)
+        mapping = compatibility_mapping(get_screen_size(), image.size)
+        box = mapping.crop_box(Rect(x, y, width, height))
+        return save_png(image.crop(box), SCREENSHOTS_DIR)
 
 
 async def main() -> Path | None:
