@@ -323,6 +323,13 @@ class AssignmentTests(unittest.TestCase):
 
 
 class PresentationTests(unittest.TestCase):
+    def test_identity_timeout_is_not_stuck_checking(self):
+        self.manager.identity_changed.emit('Identity not registered: Registry.Register timed out')
+        self.manager.registration_failed.emit('Registry.Register: TimeoutError (startup attempt 3/3)')
+        self.assertEqual(self.status.identity_text, 'Not registered')
+        self.assertIn('TimeoutError', self.status.error_detail)
+
+
     def setUp(self):
         self.menu, self.manager, self.tray, self.tray_menu = configure_application(app)
         self.status = self.menu.shortcut_status

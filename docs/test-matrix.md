@@ -253,3 +253,14 @@ Stage 1 is now user-accepted: all six physical tests PASS. Stage 2 actual login 
 - NOT RUN: actual enabled login, next login after Quit, disabled future login, real logout/reboot, quiet login visual confirmation, new physical key/Escape/tray, Stage 2 real Window/Rectangle/OCR external paste. No simulated login claimed. Stage 1 physical passes are historical/user-confirmed, not new Stage 2 observations.
 
 [Full configuration, all modified files, exact commands, tested disable/rollback and next-login physical steps](background-service-stage-02.md). No subsequent stage, Freeform, AI or packaging.
+
+
+## Stage 2 login-registration recovery — 2026-11-14
+
+- User physical pre-fix: automatic quiet login startup PASS; shortcut registration FAIL, identity Checking. Other login-specific capture/OCR/Window/Quit/reboot checks NOT RUN; Stage 1 acceptance preserved.
+- Automated final: PASS, 173 tests /20.296s; 164 previous plus nine new checks for Registry stall recovery/new-connection identity, bounded NoReply exhaustion, no retry of binding denial/post-session timeout, cancellation/task cleanup, useful terminal errors/UI identity and NO_AUTOSTART shutdown. Python syntax/diff whitespace PASS.
+- Native protocol: PASS, same-connection correct app Registry plus CreateSession/Bind/List response0, v1 configuration disabled; controlled injected first-Registry timeout then native success PASS (not actual login). Two service restarts, repeated-start duplicate prevention, Quit inactive beyond restart delay and final single enabled/active app PASS.
+- Native public-fixture/Qt input: initial Rectangle image pixel/retrieval/paste PASS; first harness then FAIL (deleted MonitorOverlay). Diagnostic rerun first Rectangle NOT RUN (focus unavailable), Full Screen/repeated Rectangle/real English OCR/Sinhala Unicode transfer and clean shutdown PASS. Two readers compare actual PNG pixels/UTF-8/paste across focus, not just MIME presence. No physical or real Window-picker pass inferred.
+- Initial restricted full suite FAIL: four sandbox socket-bind errors and two systemd-parser failures; authorized host rerun PASS. Focused diagnostic test initially failed on missing Bind method-start tracing; corrected before final 173 pass.
+- Actual requested/assigned: Alt+Shift+S / **Ctrl+Alt+S**; no desktop binding/permission changes.
+- Post-fix physical automatic login/identity/assigned key/overlay/Escape/Rectangle external paste/Window external paste/English OCR external paste/tray Quit/logout/reboot: **NOT RUN**. Stage 3 NOT authorized. See [follow-up report and minimal instructions](background-service-stage-02.md), [selected evidence](background-service-stage-02-login-fix-evidence.txt).

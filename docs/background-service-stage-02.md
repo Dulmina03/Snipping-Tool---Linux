@@ -1,5 +1,65 @@
 # Background service Stage 2 — Automatic GNOME login startup
 
+## Login registration failure follow-up — 2026-11-14
+
+**User observation:** quiet automatic login startup PASS; shortcut registration FAIL, identity stuck at Checking. Screenshot/OCR/Window/Quit/reboot for that login NOT RUN. Stage 1's six accepted physical checks remain historical passes. **Fix implemented and automated/native protocol checks pass; a new physical login/reboot remains NOT RUN. Stage 3 is blocked on acceptance.**
+
+### Confirmed cause and evidence limits
+
+The app's one-shot registration raced portal recovery across logout/login. GNOME session/socket readiness was insufficient to establish portal readiness. Selected monotonic journal times (seconds since boot):
+
+- 6326.280: old portal frontend/backend stopped on logout. Frontend started again at 6326.345 while the session was stopping; backend start failed its session dependency at 6328.856. The initiating caller of this reactivation is not established by the journal.
+- 6337.273: login app PID 118292 started; its GNOME Wayland/session D-Bus environment was valid. The graphical-session target became active immediately afterward. The installed unit waits for gnome-session.target, not portal readiness.
+- 6364.001: Qt host Registry integration reported `org.freedesktop.DBus.Error.NoReply`.
+- 6398.726: application registration's outer 60-second timeout expired, logging only `TimeoutError`; the worker exited permanently while the background app stayed active.
+- 6401.520: frontend reported GNOME backend `StartServiceByName` timeout; frontend itself failed its start timeout at 6416.414.
+- 6447.336/6447.423: GNOME backend/frontend finally ready, approximately 110 seconds after app start and 49 seconds after shortcut registration had given up.
+
+Restarting the **unchanged** app after recovery succeeded (PID 129045, invocation 58be3aac0a194aac8ebb6c04180679f3). This separates the failure from an invalid desktop ID, missing session variables or a persistent shortcut conflict. The genuine host service uses `com.dulmina.aisnippingtool`, backed by its installed desktop entry; no Snap environment or inherited editor cgroup was present. No evidence of duplicate app processes or a persistent binding/session conflict was found on successful native starts.
+
+**Historical precision limit:** the old application log did not identify which D-Bus await exhausted its outer timeout. Qt's NoReply is from its own connection, not proof of a particular failure on the shortcut connection. Identity Checking is consistent with Registry.Register still pending: cancellation is a BaseException and bypassed the existing identity exception handler. There is no historical CreateSession/BindShortcuts response code to report. The new operation/connection/app-ID/elapsed-time/error/response-code logging removes this ambiguity for future failures. No private image or extracted text is logged.
+
+### Smallest fix
+
+Only `shortcuts/global_shortcut.py` production code changed:
+
+- At most three asynchronous startup attempts, each bounded to 60 seconds, with a one-second cancellable backoff for immediate transport failures. Registry.Register on each new connection checks readiness and establishes the correct app identity **before any GlobalShortcuts method on that connection**. This covers the observed portal recovery window without blocking the GUI, a fixed long startup sleep, or a recurring registration loop.
+- Retry only timeout/transient transport failures **before a session handle is received**. Close/disconnect each failed connection first. Never retry consent/binding rejection, reset settings, replace an assigned binding, or create another session after a handle exists. Permanent Registry policy errors retain the existing diagnostic/configuration-blocking behavior; they are not classified as startup transport errors.
+- Explicit pending, failure and successful identity states, including cancellation, prevent terminal Checking. A new connection clears the preceding connection's identity confirmation. Stop interrupts registration/retry and drains tasks.
+- Session.Close carries the supported D-Bus NO_AUTOSTART flag, so shortcut shutdown cannot start a stopped portal during logout. This is preventive: the original logout reactivation caller is unknown.
+
+The service unit, enabling link, environment/identity, desktop launcher and all capture/toolbar/OCR/clipboard/tray production implementations are unchanged. No startup cycle was introduced by adding portal ordering to a service pulled in before graphical-session.target. Automatic startup remains enabled. No GNOME settings, permissions or bindings were edited.
+
+### Verification and actual assignment
+
+- **PASS:** final full regression `QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v`: **173 tests, 20.296s**, including 164 existing tests and nine new checks (eight startup tests plus UI identity-state regression). Includes original capture, PNG saves, mapping, Window success/cancel, OCR/clipboard, worker lifetime, startup/duplicates/shutdown and service parser checks.
+- **PASS:** syntax compilation of changed Python files and `git diff --check`.
+- **PASS, real GNOME protocol:** identified Registry, CreateSession, BindShortcuts and ListShortcuts on connection `:1.2723`; all request responses code 0. Registry 0.004s, CreateSession method 0.005s; binding response arrived ~0.33s later. Tray identity Registered. Portal GlobalShortcuts version **1**; unsupported ConfigureShortcuts remains disabled and uncalled.
+- **PASS, fault-injected native integration:** in a separate genuine user-service process, stall first Registry call to force timeout, then use real portal on a new connection. Correct host registration and actual assignment recovered; process exited 0 in 1.462s, session closed. This is controlled transport injection, **not a genuine login or physical shortcut test**.
+- **PASS, real service lifecycle:** two additional restarts register successfully; repeated start preserves PID; protocol-activated PID-verified tray Quit exits cleanly and stays inactive past RestartSec (four seconds), while enablement stays enabled. Explicit start restores one healthy app. No portal/session/worker probe process remains.
+- **PASS, native public-fixture workflows:** Rectangle PNG integrity and two-reader external pixel/paste checks passed in the first run. Debug rerun passed Full Screen, repeated Rectangle, real English OCR and supplied Sinhala/ZWJ text transfer with exact two-process retrieval/paste across focus changes; shutdown exited 0 in 23.958s. Sinhala transfer does not establish OCR recognition accuracy. These use public backdrops and QTest, not physical input or a real Window picker.
+- **FAIL, initial probe run:** after its Rectangle pass, the existing harness encountered `Internal C++ object (MonitorOverlay) already deleted` and exited 1. Not reproduced on diagnostic rerun; no production capture change was made. The rerun's initial Rectangle was **NOT RUN** because the native surface did not acquire focus; its later repeat passed. This harness/focus instability is recorded rather than silently counted as an uninterrupted full pass.
+- **FAIL, initial sandbox-only suite:** 164 tests ran, with four socket-bind permission errors and two real systemd-parser sandbox failures. Rerunning with authorized host access resolved these environmental failures; final suite above passes. A new focused test initially exposed missing method-start diagnostics around BindShortcuts; wrapper coverage was corrected before final runs.
+
+Requested shortcut remains **Alt+Shift+S** (`ALT+SHIFT+s`); **actual GNOME assignment is Ctrl+Alt+S** (`Press <Control><Alt>s`), returned by Bind/List/ShortcutsChanged and accurately displayed. No binding change or unsupported ConfigureShortcuts call was made.
+
+Last native lifecycle observation: enabled/active, PID **136196**, invocation **7afc7925576f4031b4f30116ee181899**, Result=success, NRestarts=0; exactly one main.py. Valid Wayland/session D-Bus environment, SNAP absent, genuine `app.slice/com.dulmina.aisnippingtool.service` cgroup. See [selected journal, commands and native evidence](background-service-stage-02-login-fix-evidence.txt).
+
+### Remaining physical gate — NOT RUN after this fix
+
+At a convenient **normal logout/login**, leave the service enabled and do not manually launch it. Check quiet startup, then wait for tray identity Registered and an actual assigned key (bounded startup recovery can take up to about three minutes while the portal recovers). Focus another app and press the **displayed assigned key, currently Ctrl+Alt+S**, then Escape. Test Rectangle/image paste, Window picker/image paste, English OCR/text paste, then physical tray Quit and confirm it stays closed. On a later planned reboot/login check quiet startup and the assigned key again. Do not reboot merely for automated testing; no logout/reboot was performed here.
+
+Record separate PASS/FAIL for automatic registration/identity, real key/overlay/Escape, Rectangle/paste, Window/paste, English OCR/paste, physical Quit, clean logout and reboot/next-login. If registration fails or remains Checking, collect `journalctl --user -b -u com.dulmina.aisnippingtool.service -u xdg-desktop-portal.service -u xdg-desktop-portal-gnome.service --no-pager` locally and inspect the new operation-specific errors (avoid sharing private capture paths/content). Startup beyond the bounded recovery window requires diagnosis, not indefinite retries.
+
+### Changed files and provenance
+
+`shortcuts/global_shortcut.py`; `tests/test_shortcut_startup.py`; `tests/test_shortcut_assignment.py`; this report; `docs/background-service-stage-02-login-fix-evidence.txt`; `docs/handoff-summary.md`; `docs/test-matrix.md`. Native helpers/debug scripts and temporary test logs are under /tmp, not production installation. No installed unit or enabling-link changes.
+
+Stayed on `feat/background-service`. Initial observed HEAD 4136879 and three pre-existing documentation edits were superseded externally by **c5eb218**, which was preserved; implementation began with a clean tree at that HEAD. No agent stage/commit/merge/reset/push/branch changes. Index remains empty. Do not begin Stage 3 until physical acceptance resolves the reported login failure. Earlier Stage 2 report below is historical.
+
+---
+
+
 2026-11-14. **Configured and enabled; real logout/login/reboot acceptance is NOT RUN.** No logout or reboot was automated. Stage 1 is now physically accepted by the user: all six shortcut, Escape, Rectangle/paste, English OCR/paste, Window/paste and tray/Quit tests PASS.
 
 ## Initial configuration and Git safety

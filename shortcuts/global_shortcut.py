@@ -9,7 +9,7 @@ from typing import Optional
 import uuid
 import xml.etree.ElementTree as ET
 
-from dbus_next import Message, MessageType, Variant
+from dbus_next import Message, MessageType, MessageFlag, Variant
 from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType
 from PySide6.QtCore import QObject, Signal
@@ -31,6 +31,21 @@ SESSION_INTERFACE = "org.freedesktop.portal.Session"
 SHORTCUT_ID = "open_capture_menu"
 PREFERRED_TRIGGER = "ALT+SHIFT+s"
 REQUEST_TIMEOUT_SECONDS = 60
+STARTUP_ATTEMPTS = 3
+STARTUP_RETRY_SECONDS = 1
+TRANSIENT_DBUS_ERRORS = {
+    'org.freedesktop.DBus.Error.NoReply',
+    'org.freedesktop.DBus.Error.TimedOut',
+    'org.freedesktop.DBus.Error.Timeout',
+    'org.freedesktop.DBus.Error.ServiceUnknown',
+    'org.freedesktop.DBus.Error.NameHasNoOwner',
+    'org.freedesktop.DBus.Error.Disconnected',
+}
+
+
+class PortalStartupError(RuntimeError):
+    """A transient transport/startup failure, never a permission refusal."""
+
 
 
 class GlobalShortcutManager(QObject):
@@ -67,6 +82,7 @@ class GlobalShortcutManager(QObject):
         self._configure_supported = False
         self._identity_blocked = False
         self._identity_status = "Identity not checked"
+        self._registration_operation = "Not started"
         self._commands = queue.Queue()
         self._action_tasks = set()
         self._configuring = False
@@ -140,6 +156,8 @@ class GlobalShortcutManager(QObject):
             self._configure_supported = False
             self._portal_version = None
             self._identity_blocked = False
+            self._identity_status = "Identity not checked"
+            self._registration_operation = "Not started"
             self._configuring = False
             self._commands = queue.Queue()
             self._error = None
@@ -209,7 +227,7 @@ class GlobalShortcutManager(QObject):
     async def _run_session(self):
         if self._shutdown_requested.is_set():
             return
-        registration = asyncio.create_task(asyncio.wait_for(self._register(), REQUEST_TIMEOUT_SECONDS))
+        registration = asyncio.create_task(self._register_at_startup())
         stopping = asyncio.create_task(self._wait_for_stop())
         try:
             done, _ = await asyncio.wait((registration, stopping), return_when=asyncio.FIRST_COMPLETED)
@@ -220,7 +238,8 @@ class GlobalShortcutManager(QObject):
             except Exception as error:
                 with self._lock:
                     self._error = str(error)
-                logger.warning("Shortcut registration failed: %s", type(error).__name__)
+                logger.warning("Shortcut registration failed at %s: %s: %s",
+                               self._registration_operation, type(error).__name__, error)
                 self.registration_failed.emit(str(error))
                 return
             self._ready.set()
@@ -236,7 +255,79 @@ class GlobalShortcutManager(QObject):
                 await asyncio.gather(*tuple(self._action_tasks), return_exceptions=True)
             self.configuration_available_changed.emit(False)
 
+    def _identity_unavailable(self, detail):
+        # Cancellation is a BaseException; the Registry exception handler alone
+        # cannot update this state when the outer registration timeout expires.
+        if not self.identity_status.startswith('Host identity registered:'):
+            status = f'Identity not registered: {detail}'
+            with self._lock:
+                self._identity_status = status
+            self.identity_changed.emit(status)
+
+    async def _register_at_startup(self):
+        """At most three startup attempts; never rebind an existing session.
+
+        The portal can still be restarting after logout when GNOME starts us.
+        Registry.Register on a fresh connection is the readiness/identity check.
+        Only a transport failure before CreateSession may be retried. Consent,
+        backend errors and configured bindings are never reset or retried.
+        """
+        for attempt in range(1, STARTUP_ATTEMPTS + 1):
+            started = asyncio.get_running_loop().time()
+            with self._lock:
+                self._identity_status = f'Waiting for desktop portal (startup attempt {attempt}/{STARTUP_ATTEMPTS})'
+                self._identity_blocked = False
+            self.identity_changed.emit(self.identity_status)
+            try:
+                await asyncio.wait_for(self._register(), REQUEST_TIMEOUT_SECONDS)
+                with self._lock:
+                    self._error = None
+                return
+            except asyncio.CancelledError:
+                self._identity_unavailable('Registration stopped before identity was confirmed.')
+                raise
+            except (TimeoutError, PortalStartupError, ConnectionError, EOFError) as error:
+                detail = (f'{self._registration_operation}: {type(error).__name__}: {error} '
+                          f'(startup attempt {attempt}/{STARTUP_ATTEMPTS})')
+                self._identity_unavailable(detail)
+                logger.warning('%s; elapsed=%.3fs', detail,
+                               asyncio.get_running_loop().time() - started)
+                if self.session_handle or attempt == STARTUP_ATTEMPTS:
+                    raise RuntimeError(detail) from error
+                # A new connection must register its own identity. Close the old
+                # transport before retrying; no sessions/bindings are discarded.
+                await self._close_session()
+                self._bus = None
+                self._request_futures.clear()
+                # Short, cancellable backoff for immediate ServiceUnknown errors;
+                # no GUI blocking, unbounded polling or post-startup retry loop.
+                await asyncio.sleep(STARTUP_RETRY_SECONDS)
+            except Exception as error:
+                self._identity_unavailable(str(error))
+                raise
+
+    async def _call(self, message):
+        operation = f'{message.interface}.{message.member}'
+        self._registration_operation = operation
+        started = asyncio.get_running_loop().time()
+        logger.info('Portal operation=%s connection=%s app_id=%s started',
+                    operation, self._bus.unique_name, APP_ID)
+        try:
+            reply = await self._bus.call(message)
+        except BaseException as error:
+            logger.warning('Portal operation=%s elapsed=%.3fs exception=%s: %s',
+                           operation, asyncio.get_running_loop().time() - started,
+                           type(error).__name__, error)
+            raise
+        logger.info('Portal operation=%s elapsed=%.3fs error=%s', operation,
+                    asyncio.get_running_loop().time() - started,
+                    reply.error_name if reply.message_type == MessageType.ERROR else 'none')
+        if reply.message_type == MessageType.ERROR and reply.error_name in TRANSIENT_DBUS_ERRORS:
+            raise PortalStartupError(f'{operation}: {reply.error_name}: {reply.body}')
+        return reply
+
     async def _register(self) -> None:
+        self._registration_operation = 'Session D-Bus connect'
         ensure_desktop_entry()
 
         try:
@@ -249,6 +340,8 @@ class GlobalShortcutManager(QObject):
         # Establish application identity through the host portal Registry
         try:
             await self._register_identity()
+        except PortalStartupError:
+            raise
         except Exception as ident_error:
             detail = str(ident_error)
             # Never configure another portal-detected identity when our app ID
@@ -275,7 +368,7 @@ class GlobalShortcutManager(QObject):
 
         # Subscribe explicitly: raw message handlers alone do not request
         # broadcast GlobalShortcuts signals from the session bus.
-        match_reply = await self._bus.call(Message(
+        match_reply = await self._call(Message(
             destination='org.freedesktop.DBus', path='/org/freedesktop/DBus',
             interface='org.freedesktop.DBus', member='AddMatch', signature='s',
             body=["type='signal',sender='org.freedesktop.portal.Desktop',interface='org.freedesktop.portal.GlobalShortcuts'"]))
@@ -345,7 +438,7 @@ class GlobalShortcutManager(QObject):
         # is the contract that adds ConfigureShortcuts; require both checks.
         version, supported = None, False
         try:
-            reply = await self._bus.call(Message(
+            reply = await self._call(Message(
                 destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
                 interface='org.freedesktop.DBus.Properties', member='Get',
                 signature='ss', body=[GLOBAL_SHORTCUTS_INTERFACE, 'version']))
@@ -354,7 +447,7 @@ class GlobalShortcutManager(QObject):
         except Exception as error:
             logger.warning('Shortcut version unavailable: %s', type(error).__name__)
         try:
-            reply = await self._bus.call(Message(
+            reply = await self._call(Message(
                 destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
                 interface='org.freedesktop.DBus.Introspectable', member='Introspect'))
             if reply.message_type != MessageType.ERROR:
@@ -428,7 +521,7 @@ class GlobalShortcutManager(QObject):
         try:
             if not self.can_configure:
                 raise RuntimeError('Configuration unavailable for this application identity or portal.')
-            reply = await asyncio.wait_for(self._bus.call(Message(
+            reply = await asyncio.wait_for(self._call(Message(
                 destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
                 interface=GLOBAL_SHORTCUTS_INTERFACE, member='ConfigureShortcuts',
                 signature='osa{sv}', body=[self.session_handle, '', {}])), REQUEST_TIMEOUT_SECONDS)
@@ -454,7 +547,7 @@ class GlobalShortcutManager(QObject):
 
     async def _register_identity(self) -> None:
         """Register application identity via org.freedesktop.host.portal.Registry."""
-        reply = await self._bus.call(
+        reply = await self._call(
             Message(
                 destination=PORTAL_BUS_NAME,
                 path=PORTAL_OBJECT_PATH,
@@ -478,7 +571,7 @@ class GlobalShortcutManager(QObject):
         self._request_futures[path] = future
         actual_path = path
         try:
-            reply = await asyncio.wait_for(self._bus.call(Message(
+            reply = await asyncio.wait_for(self._call(Message(
                 destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
                 interface=GLOBAL_SHORTCUTS_INTERFACE, member=member,
                 signature=signature, body=body)), REQUEST_TIMEOUT_SECONDS)
@@ -489,7 +582,9 @@ class GlobalShortcutManager(QObject):
             actual_path = reply.body[0]
             if actual_path != path:
                 self._request_futures[actual_path] = future
+            self._registration_operation = f'GlobalShortcuts.{member} Response'
             response_code, results = await asyncio.wait_for(future, REQUEST_TIMEOUT_SECONDS)
+            logger.info('Portal response operation=%s code=%s', member, response_code)
             if response_code != 0:
                 raise RuntimeError(f'GlobalShortcuts {member} cancelled or denied (response code {response_code}).')
             return results
@@ -541,12 +636,13 @@ class GlobalShortcutManager(QObject):
 
         try:
             if self._session_handle:
-                reply = await self._bus.call(
+                reply = await self._call(
                     Message(
                         destination=PORTAL_BUS_NAME,
                         path=self._session_handle,
                         interface=SESSION_INTERFACE,
                         member="Close",
+                        flags=MessageFlag.NO_AUTOSTART,
                     )
                 )
 
