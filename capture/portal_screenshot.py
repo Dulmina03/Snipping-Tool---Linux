@@ -1,8 +1,8 @@
 import asyncio
 import os
-import shutil
 import time
 from pathlib import Path
+from utils.screenshot_files import copy_screenshot
 
 from dbus_next import Message, Variant
 from dbus_next.aio import MessageBus
@@ -260,36 +260,7 @@ class PortalScreenshot:
             / "Screenshots"
         )
 
-        screenshot_dir.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        # ---------------------------------------------------------
-        # Create filename.
-        # ---------------------------------------------------------
-
-        filename = (
-            "Screenshot_"
-            + time.strftime(
-                "%Y-%m-%d_%H-%M-%S"
-            )
-            + ".png"
-        )
-
-        destination = (
-            screenshot_dir
-            / filename
-        )
-
-        # ---------------------------------------------------------
-        # Copy screenshot.
-        # ---------------------------------------------------------
-
-        shutil.copy2(
-            source_path,
-            destination
-        )
+        destination = copy_screenshot(Path(source_path), screenshot_dir)
 
         print()
         print(

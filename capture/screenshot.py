@@ -1,9 +1,7 @@
 """Screen capture utilities via XDG Desktop Portal and PySide6."""
 
 import asyncio
-from datetime import datetime
 from pathlib import Path
-import shutil
 from urllib.parse import unquote, urlparse
 import uuid
 
@@ -13,6 +11,7 @@ from PIL import Image
 from PySide6.QtGui import QPixmap
 
 from utils.clipboard import copy_image_to_clipboard
+from utils.screenshot_files import copy_screenshot
 
 
 PORTAL_BUS = "org.freedesktop.portal.Desktop"
@@ -135,8 +134,7 @@ class ScreenshotCapture:
         results = await self._request(options)
         uri = results["uri"].value
 
-        destination = self._create_filename()
-        self._copy_screenshot(uri, destination)
+        destination = self._copy_screenshot(uri, self.screenshot_folder)
 
         try:
             copy_image_to_clipboard(destination)
@@ -169,18 +167,14 @@ class ScreenshotCapture:
         path = await self.capture_full_screen()
         return Image.open(str(path))
 
-    def _create_filename(self):
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        return self.screenshot_folder / f"Screenshot_{timestamp}.png"
-
     @staticmethod
-    def _copy_screenshot(uri, destination):
+    def _copy_screenshot(uri, directory):
         if not uri.startswith("file://"):
             raise RuntimeError(f"Unsupported screenshot URI: {uri}")
 
         parsed_uri = urlparse(uri)
         source = unquote(parsed_uri.path)
-        shutil.copy2(source, destination)
+        return copy_screenshot(Path(source), directory)
 
 
 def capture_screen_pixmap() -> QPixmap:

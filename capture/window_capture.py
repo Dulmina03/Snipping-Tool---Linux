@@ -1,7 +1,4 @@
 import asyncio
-import shutil
-import time
-import uuid
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -10,6 +7,7 @@ from dbus_next import Message, MessageType, Variant
 from dbus_next.constants import BusType
 
 from utils.clipboard import copy_image_to_clipboard
+from utils.screenshot_files import copy_screenshot, cleanup_capture_source
 from capture.screenshot_portal_request import request_screenshot, ScreenshotPortalError
 
 
@@ -86,20 +84,6 @@ def uri_to_path(uri):
     return Path(decoded_path)
 
 
-def unique_destination():
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-    destination = OUTPUT_DIR / f"Screenshot_{timestamp}.png"
-
-    if destination.exists():
-        destination = (
-            OUTPUT_DIR
-            / f"Screenshot_{timestamp}_{uuid.uuid4().hex[:8]}.png"
-        )
-
-    return destination
-
 
 async def take_screenshot(copy_to_clipboard=True):
     try:
@@ -117,9 +101,7 @@ async def take_screenshot(copy_to_clipboard=True):
         print(source_path)
         return None
 
-    destination = unique_destination()
-
-    shutil.copy2(source_path, destination)
+    destination = copy_screenshot(source_path, OUTPUT_DIR)
 
     print()
     print("Screenshot saved:")
@@ -133,17 +115,7 @@ async def take_screenshot(copy_to_clipboard=True):
         print("WARNING: Screenshot saved, but clipboard copy failed:")
         print(error)
 
-    if source_path.resolve() != destination.resolve():
-        try:
-            source_path.unlink()
-            print()
-            print("Temporary screenshot removed.")
-        except OSError as error:
-            print()
-            print(
-                "Could not remove temporary screenshot:",
-                error
-            )
+    cleanup_capture_source(source_path, OUTPUT_DIR)
 
     return destination
 

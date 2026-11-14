@@ -16,6 +16,7 @@ from PySide6.QtWidgets import QApplication
 
 from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard
+from utils.screenshot_files import save_png, cleanup_capture_source
 
 
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
@@ -141,10 +142,6 @@ def get_screen_size() -> tuple[int, int]:
 
 
 def crop_screenshot(source_path: Path, x: int, y: int, width: int, height: int) -> Path:
-    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    filename = f"Screenshot_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png"
-    output_path = SCREENSHOTS_DIR / filename
-
     with Image.open(source_path) as image:
         screen_width, screen_height = get_screen_size()
         scale_x = image.width / screen_width
@@ -170,9 +167,7 @@ def crop_screenshot(source_path: Path, x: int, y: int, width: int, height: int) 
             raise RuntimeError("Invalid crop coordinates.")
 
         cropped = image.crop((left, top, right, bottom))
-        cropped.save(output_path, "PNG")
-
-    return output_path
+        return save_png(cropped, SCREENSHOTS_DIR)
 
 
 async def main() -> Path | None:
@@ -197,7 +192,7 @@ async def main() -> Path | None:
         if area is None:
             print("Selection cancelled.")
             try:
-                source_path.unlink()
+                cleanup_capture_source(source_path, SCREENSHOTS_DIR)
             except OSError:
                 pass
             return None
@@ -220,7 +215,7 @@ async def main() -> Path | None:
         print("Saved to:", output_path)
 
         try:
-            source_path.unlink()
+            cleanup_capture_source(source_path, SCREENSHOTS_DIR)
             print("Temporary full screenshot removed.")
         except OSError:
             pass

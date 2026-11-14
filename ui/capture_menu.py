@@ -16,7 +16,6 @@ import asyncio
 import os
 import inspect
 import logging
-import time
 from pathlib import Path
 from urllib.parse import unquote
 import sys
@@ -52,6 +51,7 @@ from utils.ocr_process import extract_text_async
 from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 from utils.capture_diagnostics import trace, image_trace
+from utils.screenshot_files import copy_screenshot, save_png, cleanup_capture_source
 
 
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
@@ -74,8 +74,6 @@ def _get_virtual_size() -> tuple[int, int]:
 
 
 def _crop_and_save(source: Path, x: int, y: int, w: int, h: int) -> Path:
-    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    out = SCREENSHOTS_DIR / f"Screenshot_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png"
     with Image.open(source) as img:
         sw, sh = _get_virtual_size()
         sx, sy = img.width / sw, img.height / sh
@@ -83,16 +81,11 @@ def _crop_and_save(source: Path, x: int, y: int, w: int, h: int) -> Path:
         top    = max(0, round(y * sy))
         right  = min(img.width,  round((x + w) * sx))
         bottom = min(img.height, round((y + h) * sy))
-        img.crop((left, top, right, bottom)).save(out, "PNG")
-    return out
+        return save_png(img.crop((left, top, right, bottom)), SCREENSHOTS_DIR)
 
 
 def _save_full(source: Path) -> Path:
-    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    out = SCREENSHOTS_DIR / f"Screenshot_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png"
-    import shutil
-    shutil.copy2(source, out)
-    return out
+    return copy_screenshot(source, SCREENSHOTS_DIR)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -294,6 +287,9 @@ class CaptureMenu(QWidget):
             return
         if self._shutting_down or self._overlay is not None or self.busy:
             return
+        self.last_capture_path = None
+        self.last_extracted_text = None
+        self._clipboard_pending = None
         self._pending = self.jobs.submit(self._launch_overlay())
 
     @property
@@ -578,11 +574,7 @@ class CaptureMenu(QWidget):
 
     @staticmethod
     def _cleanup_source(source_path: Path | None) -> None:
-        if source_path and source_path.exists():
-            try:
-                source_path.unlink()
-            except OSError:
-                pass
+        cleanup_capture_source(source_path, SCREENSHOTS_DIR)
 
     # ── Slots wired by main.py ────────────────────────────────────────────────
 
