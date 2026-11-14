@@ -1,0 +1,16 @@
+*   [33md964ebb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Merge branch 'fix/phase-01-app-lifecycle'
+[31m|[m[32m\[m  
+[31m|[m * [33m7b54f54[m[33m ([m[1;32mfix/phase-01-app-lifecycle[m[33m)[m feat: update overlay styles for improved readability and add toolbar tests
+[31m|[m * [33m01d6de5[m feat: enhance shortcut status UI with compact layout and user guidance for Alt+Shift+S confirmation
+[31m|[m * [33mdd89101[m feat: update global shortcut from Ctrl+Shift+S to Alt+Shift+S and adjust related documentation
+[31m|[m * [33m024a99e[m Implement Phase 1 delivery evidence and diagnostics
+[31m|[m * [33mf62fc02[m Fix physical failure and permission handling in screenshot capture
+[31m|[m * [33m1f6a461[m refactor: migrate screenshot portal handling to new module and update related imports
+[31m|[m * [33ma5b6d11[m feat: refactor screenshot handling and improve permission prompts in UI
+[31m|[m * [33m4a1a7c2[m Enhance clipboard functionality and testing framework
+[31m|[m * [33m68e48a6[m feat: enhance global shortcut configuration support and add clipboard tests
+[31m|[m * [33m2504a3b[m feat: update Phase 1 verification documentation and add GNOME evidence log; clarify acceptance outcomes and test results
+[31m|[m * [33mccdfb6b[m Implement shortcut correction and logging enhancements
+[31m|[m * [33m9755ff4[m feat: implement shortcut assignment handling and diagnostics in UI; add global shortcut management updates
+[31m|[m * [33m79a7fd9[m feat: add Phase 1 acceptance documentation and update global shortcut test setup
+[31m|[m * [33mf9858ca[m feat: implement Phase 1 updates including lifecycle tests, desktop entry migration, and GNOME theme fallback handling
