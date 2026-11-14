@@ -1,0 +1,63 @@
+Phase 0, 2026-11-14 Asia/Colombo. No production edits.
+GUI scripts below use QT_QPA_PLATFORM=offscreen HOME=/tmp/snipping-phase00-home; this is not a Wayland verification.
+
+$ .venv/bin/python -m pip check
+python-debian 1.0.1+ubuntu2 requires charset-normalizer, which is not installed.
+shiboken6-generator 6.10.2 has requirement shiboken6==6.10.2, but you have shiboken6 6.11.2.
+Exit: 1
+
+$ .venv/bin/python -m compileall -q main.py capture ui ocr shortcuts utils docs/phase-00-checks.py test_area.py test_capture_menu.py test_clipboard.py test_global_shortcut.py test_ocr.py test_overlay.py test_screenshot.py test_window.py
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --smoke
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+CAPTURE MENU SMOKE TEST PASS
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --cancel
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+CAPTURE MENU CANCELLATION TEST PASS
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --ai
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+CAPTURE MENU AI TEST FAIL
+Exit: 1
+
+$ timeout 45s .venv/bin/python docs/phase-00-checks.py
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+PASS: 12 production-module imports (no entry points invoked)
+OBSERVED: controller isVisible=True, size=1x1
+PASS: synthetic rectangle selection signal; freeform disabled confirmed
+PASS: offscreen PNG MIME and Sinhala/English/ZWJ UTF-8 clipboard round-trip
+OBSERVED: single synthetic English fixture CER=0.0000, WER=0.0000; raw strings compared, no normalization, not a release benchmark
+PASS: local sin model loads in Tesseract; Sinhala accuracy NOT RUN
+OBSERVED: two same-second full saves reuse pathname=True
+OBSERVED: OCR punctuation cleanup 'item' from "- item"
+Exit: 0
+
+$ desktop-file-validate com.dulmina.aisnippingtool.desktop
+com.dulmina.aisnippingtool.desktop: hint: value "Utility;Graphics;" for key "Categories" in group "Desktop Entry" contains more than one main category; application might appear more than once in the application menu
+Exit: 0
+
+$ tesseract --list-langs
+List of available languages in "/usr/share/tesseract-ocr/5/tessdata/" (2):
+eng
+osd
+Exit: 0
+
+$ tesseract --tessdata-dir ocr/tessdata --list-langs
+List of available languages in "ocr/tessdata/" (3):
+eng
+osd
+sin
+Exit: 0
+
+$ /tmp/snipping-phase00-clean-venv/bin/python -m pip install --no-index -r requirements.txt
+ERROR: Could not find a version that satisfies the requirement dbus-next==0.2.3 (from versions: none)
+ERROR: No matching distribution found for dbus-next==0.2.3
+Exit: 1
+
+$ git diff --check
+Exit: 0
+
