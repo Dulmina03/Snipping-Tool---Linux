@@ -1,3 +1,58 @@
+## Latest verification — genuine GNOME session, 2026-11-14
+
+This section supersedes earlier current-status statements below. **Phase 1 remains OPEN; Phase 2 must not begin.** Verification only: no production/test source or GNOME settings changed. Native session access was possible through normal D-Bus interfaces, improving on the earlier environment assessment. Physical input was not performed.
+
+### Git safety
+
+Started and rechecked clean on `fix/phase-01-app-lifecycle`, HEAD `ccdfb6b` (`Implement shortcut correction and logging enhancements`). No staged files or pre-existing unstaged changes. Read status, branch, latest eight commits, last twelve reflog entries and both diff stats before documentation edits. Commits `79a7fd9`, `9755ff4`, `ccdfb6b` appeared after the earlier reported `f9858ca`; reflog records commits at 07:34:34, 07:41:23 and 07:49:43 +0530. This agent did not create them; their initiating process remains unidentified. No reset, clean, checkout, unstage, stage, commit, merge or push. Existing history/index preserved.
+
+### Session, identity and automation boundary
+
+- PASS: genuine GNOME Shell 50.1 / Wayland session and session/a11y buses reachable with authorized host access. Agent itself inherits `snap.code.code-7eb1f933-73f2-44ce-84c5-bd8b232bea75.scope`. A direct launch from that scope is not evidence of unsandboxed identity.
+- PASS: independently discovered existing canonical app PID 75703 in `app-gnome-com.dulmina.aisnippingtool-75703.scope`; tray reports `Host identity registered: com.dulmina.aisnippingtool`. This establishes genuine GNOME app-launch context, but an actual icon click was not observed.
+- PASS: ordinary D-Bus-activated GNOME Terminal Factory0/Terminal0 launch produces children under `app-org.gnome.Terminal.slice/vte-spawn-….scope`, not the Snap scope. Instrumented canonical `main.main()` there successfully registers the same desktop app ID. No cgroup movement, sandbox impersonation or desktop security bypass. Direct `gnome-terminal` CLI initially aborted on missing XSettings `antialiasing`; its normal service interface worked. No settings changed.
+- PASS: requested `CTRL+SHIFT+s`; actual portal description **`Press <Shift><Control>s`**, matching Ctrl+Shift+S. Confirmed from live `ShortcutsChanged`, `ListShortcuts` and tray labels. Earlier Ctrl+Alt+S observations remain historical. No shortcut configuration action was invoked in this run and no mapping was reset.
+- FAIL — installed backend capability: portal advertises ConfigureShortcuts, but the existing genuine-host app's tooltip records backend `org.freedesktop.DBus.Error.UnknownMethod`: `Method ConfigureShortcuts is not implemented on interface org.freedesktop.portal.GlobalShortcuts`. Host identity no longer blocks that launch, but configuration UI is unavailable in this backend. This was inspected existing state, not a new configuration attempt.
+- PASS — accessibility discovery: system GI/Atspi available and Shell tray labels readable. `org.a11y.Status` IsEnabled/ScreenReaderEnabled false, left unchanged. Tray items expose no actionable AT-SPI Action interface. Shell Introspect.GetWindows returns AccessDenied, respected.
+- FAIL — AT-SPI synthetic input: generate_keyboard_event(Escape) returned True but the live overlay remained open. API success is not interaction success. Qt QTest synthetic Escape worked. Neither is a physical keypress. No working supported cross-application key/mouse injector was established; no unsafe Shell Eval, X11 interception, uinput or security-setting changes used.
+
+### Acceptance outcomes
+
+Each PASS below names its evidence level; no programmatic event is physical acceptance.
+
+1. **PASS — quiet native startup:** canonical main produced hidden controller and no initial overlay. Visual task-switcher/desktop inspection **NOT RUN**.
+2. **PASS — no blank controller in Qt state:** live overlay visible on native Wayland while controller remained hidden. Visual ghost-window inspection **NOT RUN**.
+3. **PASS — single-instance guard:** host main probe rejected while the discovered app was running. After normal tray Quit, harness acquired the lock; final test processes exited. Not a long-duration race/stress test.
+4. **PASS — portal registration and assigned shortcut:** correct host app ID and actual Ctrl+Shift+S description, rather than preference-only reporting.
+5. **NOT RUN — physical Ctrl+Shift+S with another app focused:** no real hardware/compositor shortcut activation observed. Signal/QAction tests do not prove this.
+6. **PASS — synthetic native Qt Escape cancellation; NOT RUN — physical Escape.** AT-SPI Escape attempt separately **FAIL**, overlay unchanged until Qt event.
+7. **PASS — bounded native repeated workflow:** three real screenshot portal returns (1920×1080), cancellation/fullscreen/rectangle completed without orphan overlay or visible controller. Longer/repeated physical workflow **NOT RUN**.
+8. **PASS — programmatic tray protocols/actions:** real StatusNotifier DBusMenu Capture/Quit Events accepted; discovered app exited, later lock acquired. Instrumented main's tray QAction capture and Quit also succeeded. Physical tray clicks **NOT RUN**. Initial DBusMenu Capture reply alone was not treated as proof of image completion.
+9. **PASS — fullscreen/rectangle saving with synthetic UI input:** fullscreen PNG bytes match real portal source; rectangle 301×201 saved after Qt synthetic drag. Window Screenshot request **PASS**; actual selected-window capture **NOT RUN**. Same-connection Request.Close returned METHOD_RETURN; waiting coroutine remained pending until shutdown, as Close emits no Response by contract. Shutdown canceled it cleanly; not a user-cancel-response test.
+10. **FAIL — automated native cross-process screenshot paste:** active second native Qt app received no matching image through clipboard/read/paste after capture. Physical Ctrl+V **NOT RUN**. Synthetic producer interaction may affect compositor focus/selection; root cause not established.
+11. **PASS — existing local English OCR fixture:** exact `Offline English screenshot test 123.` from generated public image via existing OCR subprocess, with local trained data, no new download/engine. **FAIL — automated native cross-process OCR text paste.** Physical text paste **NOT RUN**. Control diagnostic using the unchanged helper from a focused visible producer **PASS**, including cross-process native text paste. Concurrent/inactive producer diagnostic failed first; repeated alone with producer/consumer active passed. This narrows, but does not prove, an application lifecycle/focus defect. One English fixture is not a Sinhala/mixed accuracy benchmark.
+12. **PASS — installed entry point/context:** existing genuine GNOME app process executes checkout `.venv/bin/python .../main.py` under correct desktop app scope. Physical app-grid icon click **NOT RUN**; no launcher/settings edits made.
+13. **PASS — host identity; FAIL — Snap-inherited launch compatibility:** genuine host registration succeeds. Earlier Registry `io.snapcraft` rejection remains valid for Snap scope; do not label it harmless or spoof identity. Backend ConfigureShortcuts incompatibility remains separately reported above.
+14. **PASS — clean shutdown:** canonical instrumented main exit 0, shortcut thread stopped (21.26 seconds total workflow). Separate pending-window-request shutdown also exit 0/thread stopped. Final process query found no matching test-app interpreter process. Physical tray-Quit click **NOT RUN**.
+15. **PASS — regression suite:** 43 tests in 2.814s. Source compileall and staged/unstaged whitespace checks exit 0. Offscreen warnings in retained output do not establish native regressions.
+
+### Evidence, limitations and next acceptance gate
+
+[Retained command/result evidence](phase-01-gnome-evidence.txt) contains live ledger, logs, focused clipboard diagnostic, window-request cancellation and regression output. Temporary instrumentation invoked canonical main and wrapped functions in memory only; Qt widgets/clipboard stayed on its GUI thread. Capture output redirected in memory to `/tmp/snipping-native-output/`; native desktop screenshots remain local there and were not copied into Git or uploaded. Temporary scripts are under `/tmp/snipping-*.py` and are ephemeral. Clipboard was exercised with images/public English text; previous clipboard contents were not preserved. Normal tray Quit stopped the discovered app; no test app was left running.
+
+Supported-interface references: [GNOME Terminal D-Bus API](https://raw.githubusercontent.com/GNOME/gnome-terminal/master/src/org.gnome.Terminal.xml), [AT-SPI device-controller Wayland limitations](https://gnome.pages.gitlab.gnome.org/at-spi2-core/devel-docs/de-controller.html), [Request.Close contract: no Response emitted](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Request.html).
+
+Minimum remaining manual check (no configuration changes):
+
+1. Press Super, search **AI Snipping Tool**, open its app-grid icon. Confirm no blank window; read assigned Ctrl+Shift+S and registered host identity in its tray menu.
+2. Focus another app, physically press **Ctrl+Shift+S**, then **Esc**. Repeat once; confirm only the overlay appears and closes. Use real tray Capture once.
+3. Capture a rectangle, paste with **Ctrl+V** into another image-capable app immediately and after five seconds. Also test Full Screen and choose a real Window in GNOME's picker. Record image presence/dimensions.
+4. Display the public English line above, capture it in Extract Text mode, paste into an external editor and compare. Click real tray Quit; verify exit within five seconds.
+
+Do not mark these physical steps PASS until observed/reported. Clipboard workflow failures and pending physical activation/paste/window/tray acceptance block Phase 1 closure. Configuration UI incompatibility remains a known host issue. Investigate clipboard focus/selection with genuine input before deciding on a production fix. No Phase 2, AI, OCR improvement or PDF work started.
+
+---
+
 Latest status: shortcut request/reporting corrections are implemented; **43 automated tests PASS**. Requested `CTRL+SHIFT+s`, observed assignment Ctrl+Alt+S. Host app-grid identity and physical acceptance remain unverified. See the final shortcut update below.
 
 # Phase 1 acceptance verification — 2026-11-14

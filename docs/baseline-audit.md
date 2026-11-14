@@ -108,3 +108,8 @@ Two earlier uncertainties are now concrete: Registry rejects the process as `io.
 ## Phase 1 shortcut correction — 2026-11-14
 
 The later preference-syntax/assignment-reporting defects are fixed in code: XDG `CTRL+SHIFT+s`, actual portal description displayed, ListShortcuts verification, ShortcutsChanged updates and explicit capability-gated configuration. Remembered choices remain untouched; current observed assignment is still Ctrl+Alt+S. Detailed Registry rejection remains visible; configuration is blocked when host identity cannot be registered. No Snap spoofing/bypass and no capture/clipboard/OCR changes. 43 tests PASS; real bounded Wayland display/state/shutdown checks PASS. Genuine app-grid host identity and physical acceptance remain NOT RUN, so Phase 1 cannot close. See the latest [acceptance update](phase-01-acceptance.md) and [command log](phase-01-shortcut-log.txt).
+
+
+## Native GNOME verification follow-up — 2026-11-14
+
+Supersedes older environment/assignment/identity statements above: genuine host identity **PASS**, actual assigned Ctrl+Shift+S **PASS**, 43 regressions **PASS**. Real portal/fullscreen/rectangle saving, bounded repeat workflow, local English fixture OCR, synthetic Qt cancellation and shutdown **PASS**. App-workflow native cross-process image/text paste **FAIL** with synthetic producer input; focused public-text control **PASS**, root cause unresolved. AT-SPI Escape synthesis **FAIL** despite API True; real keyboard/tray clicks/window selection/paste **NOT RUN**. Backend ConfigureShortcuts UnknownMethod remains. No GNOME settings/source changes. **Phase 1 cannot close; Phase 2 must not begin.** All individual acceptance outcomes, physical steps and retained evidence: [phase-01-acceptance.md](phase-01-acceptance.md).

@@ -1,0 +1,300 @@
+Phase 1 GNOME verification — 2026-11-14, Asia/Colombo
+Verification only; HEAD ccdfb6b, fix/phase-01-app-lifecycle.
+
+Commands/interfaces used (not a complete shell history; failed probes retained in acceptance narrative):
+- git status --short; git branch --show-current; git log -8 --oneline --decorate
+- git reflog -12 --date=iso; git diff --stat; git diff --cached --stat
+- read AGENTS.md, CODEX_START.md, build plan and Phase 1 docs/source
+- /usr/bin/python3 /tmp/snipping-terminal-launch.py <checkout>/.venv/bin/python /tmp/snipping-native-acceptance.py
+- same legitimate Terminal launcher for snipping-host-context.py, snipping-host-live.py,
+  snipping-window-cancel.py, snipping-native-clipboard-diagnostic.py
+- GNOME Terminal CreateInstance(a{sv}) then Terminal0.Exec(a{sv},aay), ordinary session service
+- StatusNotifierItem/DBusMenu GetLayout(labels only), Event(capture/quit,'clicked',...,0)
+- org.a11y.Status Properties.GetAll, GI Atspi tree discovery, generate_keyboard_event(Escape)
+- org.gnome.Shell.Introspect.GetWindows: AccessDenied, no bypass
+- QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+- .venv/bin/python -m compileall -q main.py ui capture shortcuts ocr utils tests: exit 0
+- git diff --check; git diff --cached --check: each exit 0
+- pgrep -af '^/home/dulmina/Projects/ai-snipping-tool/.venv/bin/python': exit 1/no match after tests
+- broad rg --files /tmp: partial discovery exit 2 for inaccessible system-private paths; no bypass
+
+No screenshot bytes or private OCR text retained here. Test scripts/files under /tmp remain local.
+The focused clipboard log below is the isolated rerun; first concurrent producer was inactive
+and returned false. Primary workflow clipboard FAIL results are preserved separately.
+
+
+=== Native main structured ledger ===
+[
+  {
+    "test": "quiet_startup",
+    "status": "PASS",
+    "controller_visible": false,
+    "initial_overlay": false
+  },
+  {
+    "test": "host_identity",
+    "status": "PASS",
+    "identity": "Host identity registered: com.dulmina.aisnippingtool",
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-458bdf56-45ca-4a47-98f2-18d2ab0137e2.scope"
+  },
+  {
+    "test": "actual_assignment",
+    "status": "PASS",
+    "requested": "CTRL+SHIFT+s",
+    "actual": "Press <Shift><Control>s"
+  },
+  {
+    "test": "real_screenshot_portal",
+    "status": "PASS",
+    "image_size": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "test": "live_overlay",
+    "status": "PASS",
+    "visible": true,
+    "controller_visible": false,
+    "platform": "wayland"
+  },
+  {
+    "test": "AT_SPI_synthetic_Escape",
+    "status": "FAIL",
+    "api_result": "True",
+    "overlay_closed": false,
+    "physical": false
+  },
+  {
+    "test": "Qt_synthetic_Escape",
+    "status": "PASS",
+    "physical": false
+  },
+  {
+    "test": "real_screenshot_portal",
+    "status": "PASS",
+    "image_size": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "test": "fullscreen_capture",
+    "status": "PASS",
+    "path": "/tmp/snipping-native-output/Screenshot_2026-11-14_08-02-25.png",
+    "source_bytes_preserved": true,
+    "synthetic_toolbar_click": true
+  },
+  {
+    "test": "native_cross_app_image_paste",
+    "status": "FAIL",
+    "mode": "image",
+    "pass": false,
+    "window_active": true,
+    "cross_process": true,
+    "input": "programmatic native GUI paste/read"
+  },
+  {
+    "test": "real_screenshot_portal",
+    "status": "PASS",
+    "image_size": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "test": "rectangular_capture",
+    "status": "PASS",
+    "size": [
+      301,
+      201
+    ],
+    "path": "/tmp/snipping-native-output/Screenshot_2026-11-14_08-02-33.png",
+    "synthetic_Qt_drag": true
+  },
+  {
+    "test": "public_English_OCR",
+    "status": "PASS",
+    "exact_reference_match": true,
+    "raw_document_text_logged": false
+  },
+  {
+    "test": "native_cross_app_text_paste",
+    "status": "FAIL",
+    "mode": "text",
+    "pass": false,
+    "window_active": true,
+    "cross_process": true,
+    "input": "programmatic native GUI paste/read"
+  },
+  {
+    "test": "repeated_live_captures",
+    "status": "PASS",
+    "portal_calls": 3,
+    "remaining_overlay": false,
+    "controller_visible": false
+  },
+  {
+    "test": "physical_shortcut_and_mouse",
+    "status": "NOT RUN",
+    "reason": "No hardware input; programmatic checks labeled separately"
+  },
+  {
+    "test": "clean_shutdown",
+    "status": "PASS",
+    "exit": 0,
+    "thread_alive": false,
+    "elapsed": 21.26
+  }
+]
+
+=== Native main log ===
+HOST_CGROUP: 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-458bdf56-45ca-4a47-98f2-18d2ab0137e2.scope
+{"test": "quiet_startup", "status": "PASS", "controller_visible": false, "initial_overlay": false}
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+{"test": "host_identity", "status": "PASS", "identity": "Host identity registered: com.dulmina.aisnippingtool", "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-458bdf56-45ca-4a47-98f2-18d2ab0137e2.scope"}
+{"test": "actual_assignment", "status": "PASS", "requested": "CTRL+SHIFT+s", "actual": "Press <Shift><Control>s"}
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "live_overlay", "status": "PASS", "visible": true, "controller_visible": false, "platform": "wayland"}
+{"test": "AT_SPI_synthetic_Escape", "status": "FAIL", "api_result": "True", "overlay_closed": false, "physical": false}
+{"test": "Qt_synthetic_Escape", "status": "PASS", "physical": false}
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "fullscreen_capture", "status": "PASS", "path": "/tmp/snipping-native-output/Screenshot_2026-11-14_08-02-25.png", "source_bytes_preserved": true, "synthetic_toolbar_click": true}
+{"test": "native_cross_app_image_paste", "status": "FAIL", "mode": "image", "pass": false, "window_active": true, "cross_process": true, "input": "programmatic native GUI paste/read"}
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "rectangular_capture", "status": "PASS", "size": [301, 201], "path": "/tmp/snipping-native-output/Screenshot_2026-11-14_08-02-33.png", "synthetic_Qt_drag": true}
+{"test": "public_English_OCR", "status": "PASS", "exact_reference_match": true, "raw_document_text_logged": false}
+{"test": "native_cross_app_text_paste", "status": "FAIL", "mode": "text", "pass": false, "window_active": true, "cross_process": true, "input": "programmatic native GUI paste/read"}
+{"test": "repeated_live_captures", "status": "PASS", "portal_calls": 3, "remaining_overlay": false, "controller_visible": false}
+{"test": "physical_shortcut_and_mouse", "status": "NOT RUN", "reason": "No hardware input; programmatic checks labeled separately"}
+{"test": "clean_shutdown", "status": "PASS", "exit": 0, "thread_alive": false, "elapsed": 21.26}
+
+
+=== Host single-instance rejection ===
+HOST_CGROUP: 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-db9b4d5d-828d-4c7a-b787-a5d11df821e6.scope
+PROBE_PID: 81909
+AI Snipping Tool is already running, or its runtime lock is unavailable.
+MAIN_EXIT: 0
+PHYSICAL_KEY_TRAY_ESC_CAPTURE_PASTE: NOT RUN
+
+
+=== Focused clipboard control (rerun alone) ===
+Producer active before copy: True
+Same process owns clipboard: True
+{"mode": "text", "pass": true, "window_active": true, "cross_process": true, "input": "programmatic native GUI paste/read"}
+
+
+=== Window request Close and shutdown ===
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+Connecting to Screenshot portal...
+Connected to portal.
+
+================================
+          WINDOW CAPTURE
+================================
+
+Ubuntu will open its screenshot selection interface.
+Choose Window, then click the window.
+
+Creating screenshot request...
+Screenshot request created:
+/org/freedesktop/portal/desktop/request/1_1793/window_8569898f83784703a13ffea2cae02e80
+
+Waiting for screenshot...
+
+Use Ubuntu's screenshot UI to select the window.
+
+NORMAL_REQUEST_CLOSE_REPLY: METHOD_RETURN
+WINDOW_CAPTURE_PENDING_AFTER_CLOSE: True
+EXIT: 0
+THREAD_ALIVE: False
+
+
+=== 43-test regression output ===
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart) ... ok
+test_generated_launcher_and_custom_entry_preservation (test_phase01.EntryTests.test_generated_launcher_and_custom_entry_preservation) ... ok
+test_gnome_theme_fallback_and_explicit_preference (test_phase01.EntryTests.test_gnome_theme_fallback_and_explicit_preference) ... ok
+test_instance_lock (test_phase01.EntryTests.test_instance_lock) ... ok
+test_migrate_legacy_launcher (test_phase01.EntryTests.test_migrate_legacy_launcher) ... ok
+test_old_standalone_entry_delegates (test_phase01.EntryTests.test_old_standalone_entry_delegates) ... ok
+test_shutdown_during_shortcut_registration (test_phase01.EntryTests.test_shutdown_during_shortcut_registration) ... ok
+test_tray_and_shortcut_share_route_and_start_quietly (test_phase01.EntryTests.test_tray_and_shortcut_share_route_and_start_quietly) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_denied_portal_keeps_controller_hidden_and_retry_works (test_phase01.LifecycleTests.test_denied_portal_keeps_controller_hidden_and_retry_works) ... This plugin does not support raise()
+ok
+test_fullscreen_completion_closes_overlay (test_phase01.LifecycleTests.test_fullscreen_completion_closes_overlay) ... This plugin does not support raise()
+ok
+test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread (test_phase01.LifecycleTests.test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread) ... ok
+test_quiet_start_and_repeat_activation (test_phase01.LifecycleTests.test_quiet_start_and_repeat_activation) ... [CAPTURE MENU] Overlay launched via shortcut/tray
+[CAPTURE MENU] Overlay launched via shortcut/tray
+This plugin does not support raise()
+ok
+test_real_ocr_process_boundary_error_and_cancel (test_phase01.LifecycleTests.test_real_ocr_process_boundary_error_and_cancel) ... Background operation failed: Local OCR failed; check Tesseract and language data.
+ok
+test_rectangle_completion_closes_overlay_before_clipboard (test_phase01.LifecycleTests.test_rectangle_completion_closes_overlay_before_clipboard) ... This plugin does not support raise()
+ok
+test_shutdown_cancels_ocr_before_any_clipboard_delivery (test_phase01.LifecycleTests.test_shutdown_cancels_ocr_before_any_clipboard_delivery) ... ok
+test_slow_portal_heartbeat_and_shutdown (test_phase01.LifecycleTests.test_slow_portal_heartbeat_and_shutdown) ... ok
+test_window_cancel_does_not_report_success (test_phase01.LifecycleTests.test_window_cancel_does_not_report_success) ... ok
+test_window_portal_and_clipboard_remain_on_gui_thread (test_phase01.LifecycleTests.test_window_portal_and_clipboard_remain_on_gui_thread) ... ok
+test_cancel_during_bus_connect_disconnects (test_phase01.PortalCleanupTests.test_cancel_during_bus_connect_disconnects) ... ok
+test_early_response_and_cancel_cleanup (test_phase01.PortalCleanupTests.test_early_response_and_cancel_cleanup) ... ok
+test_close_session_closes_exact_handle_and_disconnects (test_shortcut_assignment.AssignmentTests.test_close_session_closes_exact_handle_and_disconnects) ... ok
+test_configuration_explicit_only_and_refreshes_list (test_shortcut_assignment.AssignmentTests.test_configuration_explicit_only_and_refreshes_list) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_unknown_method_disables_action (test_shortcut_assignment.AssignmentTests.test_configuration_unknown_method_disables_action) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_denied_binding_reports_registration_error (test_shortcut_assignment.AssignmentTests.test_denied_binding_reports_registration_error) ... ok
+test_failed_list_retains_last_reported_assignment (test_shortcut_assignment.AssignmentTests.test_failed_list_retains_last_reported_assignment) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Active shortcut verification failed: RuntimeError
+ok
+test_host_registry_failure_is_not_treated_as_confirmed_identity (test_shortcut_assignment.AssignmentTests.test_host_registry_failure_is_not_treated_as_confirmed_identity) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ['Desktop application ID not found']. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_identity_first_same_connection_and_exact_app_id (test_shortcut_assignment.AssignmentTests.test_identity_first_same_connection_and_exact_app_id) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_localized_description_preserved_without_guessing (test_shortcut_assignment.AssignmentTests.test_localized_description_preserved_without_guessing) ... ok
+test_missing_description_never_substitutes_requested_key (test_shortcut_assignment.AssignmentTests.test_missing_description_never_substitutes_requested_key) ... ok
+test_new_binding_request_and_actual_response (test_shortcut_assignment.AssignmentTests.test_new_binding_request_and_actual_response) ... ok
+test_registration_failure_signal_keeps_error (test_shortcut_assignment.AssignmentTests.test_registration_failure_signal_keeps_error) ... Shortcut registration failed: RuntimeError
+ok
+test_remembered_choice_not_replaced_by_preference (test_shortcut_assignment.AssignmentTests.test_remembered_choice_not_replaced_by_preference) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_shortcuts_changed_updates_and_filters_session (test_shortcut_assignment.AssignmentTests.test_shortcuts_changed_updates_and_filters_session) ... ok
+test_shutdown_cancels_pending_configuration (test_shortcut_assignment.AssignmentTests.test_shutdown_cancels_pending_configuration) ... ok
+test_snap_identity_error_kept_and_configuration_blocked (test_shortcut_assignment.AssignmentTests.test_snap_identity_error_kept_and_configuration_blocked) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ["Could not register app ID: Can't manually register a io.snapcraft application"]. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_stale_list_does_not_overwrite_new_signal (test_shortcut_assignment.AssignmentTests.test_stale_list_does_not_overwrite_new_signal) ... ok
+test_unrelated_nonstandard_property_does_not_break_capabilities (test_shortcut_assignment.AssignmentTests.test_unrelated_nonstandard_property_does_not_break_capabilities) ... ok
+test_v1_without_method_v1_backport_v2_and_signature (test_shortcut_assignment.AssignmentTests.test_v1_without_method_v1_backport_v2_and_signature) ... ok
+test_xdg_base_keysym_and_stable_id (test_shortcut_assignment.AssignmentTests.test_xdg_base_keysym_and_stable_id) ... ok
+test_actual_assignment_in_action_tooltip_status_and_mismatch_warning (test_shortcut_assignment.PresentationTests.test_actual_assignment_in_action_tooltip_status_and_mismatch_warning) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_action_is_explicit_and_capability_gated (test_shortcut_assignment.PresentationTests.test_configuration_action_is_explicit_and_capability_gated) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_registration_error_removes_stale_assignment (test_shortcut_assignment.PresentationTests.test_registration_error_removes_stale_assignment) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_worker_assignment_is_delivered_to_gui_thread (test_shortcut_assignment.PresentationTests.test_worker_assignment_is_delivered_to_gui_thread) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 2.814s
+
+OK
