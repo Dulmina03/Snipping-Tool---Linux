@@ -212,6 +212,15 @@ class MonitorOverlay(Overlay):
                       rect.width() * self.width() / logical.width,
                       rect.height() * self.height() / logical.height)
 
+    def selection_pixel_size(self):
+        rect = self.session.selection()
+        try:
+            left, top, right, bottom = self.session.capture_mapping.crop_box(
+                Rect(rect.x(), rect.y(), rect.width(), rect.height()))
+            return right - left, bottom - top
+        except DisplayMappingError:
+            return None
+
     def mousePressEvent(self, event):
         if self._processing or self._mode != SnipMode.RECTANGULAR:
             return

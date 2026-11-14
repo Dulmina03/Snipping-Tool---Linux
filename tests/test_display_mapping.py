@@ -224,6 +224,7 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(self.mapping.crop_box(Rect(rect.x(), rect.y(), rect.width(), rect.height())),
                          (25, 25, 50, 50))
         self.assertEqual(view.get_selection_rect(), QRectF(10, 10, 10, 10))
+        self.assertEqual(view.selection_pixel_size(), (25, 25))
 
     def test_changed_geometry_and_gap_abort_without_output(self):
         failures, areas = [], []

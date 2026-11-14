@@ -782,7 +782,9 @@ class Overlay(QWidget):
             painter.drawRect(rect)
 
             # 4. Dimensions badge (Linear style)
-            dim_text = f"{rect.width():g} × {rect.height():g}"
+            pixel_size = getattr(self, 'selection_pixel_size', None)
+            size = pixel_size() if pixel_size is not None else (rect.width(), rect.height())
+            dim_text = f"{size[0]:g} × {size[1]:g}" if size else 'Invalid area'
             font = QFont("Inter", 9, QFont.Medium)
             font.setStyleHint(QFont.SansSerif)
             painter.setFont(font)
