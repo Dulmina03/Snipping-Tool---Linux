@@ -3,6 +3,7 @@
 import sys
 import os
 import subprocess
+import logging
 import signal
 from pathlib import Path
 
@@ -122,6 +123,7 @@ def main() -> int:
         except (OSError, RuntimeError, ValueError) as error:
             print(str(error), file=sys.stderr)
             return 1
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     prepare_qt_environment()
     application = QApplication(sys.argv)
     lock = acquire_instance_lock()

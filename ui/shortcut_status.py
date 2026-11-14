@@ -34,7 +34,7 @@ class ShortcutStatus(QObject):
         self.capture_action.setText('Capture' if state == 'unbound' else f'Capture ({actual})')
         self.assignment_text = f'Requested: {requested}; assigned: {actual}'
         if state == 'different':
-            self.assignment_text += ' — Desktop chose a different shortcut. Use Configure Shortcut to change it.'
+            self.assignment_text += ' — Desktop chose a different shortcut. Use Configure Shortcut when available to change it.'
         elif state == 'unknown':
             self.assignment_text += ' — Compare the desktop assignment with your request.'
         elif state == 'unbound':

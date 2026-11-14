@@ -134,3 +134,9 @@ Latest detailed results for **all 13 user acceptance tests**: [phase-01-acceptan
 - NOT RUN: visual blank-window check, actual physical key/Esc/tray clicks, repeated real captures, all three capture modes, cross-app image/OCR paste, independent genuine GNOME app-grid context.
 
 **Phase 1 cannot close and Phase 2 must not begin.** No production source or user shortcut settings changed during this verification. Existing dirty command log/manual harness additions preserved; no Git mutation commands executed.
+
+## Shortcut correction results — 2026-11-14
+
+Latest [acceptance update and manual procedure](phase-01-acceptance.md) supersede the earlier preference-syntax/false-reporting code failures. **43 automated tests PASS**, including all original 20. Syntax, existing smoke/cancel and whitespace PASS. The new suite covers assigned-description display, mismatch/localized/missing values, remembered user choices, Bind/List/ShortcutsChanged, Registry ordering/errors, real method detection across versions/backports, explicit configuration and shutdown. [Exact output](phase-01-shortcut-log.txt).
+
+Live reporting PASS: requested `CTRL+SHIFT+s`; actual `Press <Control><Alt>s`; tray agrees. Existing choice preserved. Installed portal version=1 advertises ConfigureShortcuts, but configuration is disabled for the observed `io.snapcraft` identity rejection. No live configuration dialog invoked or settings altered. Genuine app-grid identity, desired assignment, physical shortcut/Esc/tray and external image/text paste remain **NOT RUN**. Full Phase 1 gate remains open; Phase 2 has not started.

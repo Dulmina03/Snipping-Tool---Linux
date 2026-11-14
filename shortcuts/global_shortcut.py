@@ -7,6 +7,7 @@ import queue
 import threading
 from typing import Optional
 import uuid
+import xml.etree.ElementTree as ET
 
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
@@ -250,7 +251,9 @@ class GlobalShortcutManager(QObject):
             await self._register_identity()
         except Exception as ident_error:
             detail = str(ident_error)
-            blocked = "can't manually register a" in detail.lower()
+            # Never configure another portal-detected identity when our app ID
+            # could not be confirmed (including an inherited editor sandbox).
+            blocked = True
             context = ""
             try:
                 if 'snap.' in Path('/proc/self/cgroup').read_text():
@@ -270,6 +273,14 @@ class GlobalShortcutManager(QObject):
                 self._identity_status = status
             self.identity_changed.emit(status)
 
+        # Subscribe explicitly: raw message handlers alone do not request
+        # broadcast GlobalShortcuts signals from the session bus.
+        match_reply = await self._bus.call(Message(
+            destination='org.freedesktop.DBus', path='/org/freedesktop/DBus',
+            interface='org.freedesktop.DBus', member='AddMatch', signature='s',
+            body=["type='signal',sender='org.freedesktop.portal.Desktop',interface='org.freedesktop.portal.GlobalShortcuts'"]))
+        if match_reply.message_type == MessageType.ERROR:
+            raise RuntimeError('Could not subscribe to desktop shortcut changes.')
         await self._inspect_capabilities()
 
         session_token = f"ai_snipping_{uuid.uuid4().hex}"
@@ -307,6 +318,7 @@ class GlobalShortcutManager(QObject):
             ]
         ]
 
+        revision_before_bind = self._assignment_revision
         bind_results = await self._portal_request(
             member="BindShortcuts",
             signature="oa(sa{sv})sa{sv}",
@@ -321,28 +333,43 @@ class GlobalShortcutManager(QObject):
         bound_shortcuts = self._variant_value(bind_results.get("shortcuts", []))
         if not any(entry[0] == self.shortcut_id for entry in bound_shortcuts):
             raise RuntimeError("Desktop did not bind the capture shortcut; it may have been cancelled or denied.")
-        self._apply_assignment(bound_shortcuts, 'BindShortcuts')
+        if revision_before_bind == self._assignment_revision:
+            self._apply_assignment(bound_shortcuts, 'BindShortcuts')
         await self._refresh_assignment()
         if self.is_registered:
             self.registration_succeeded.emit(self.assigned_trigger or 'Assigned key not supplied by desktop')
         self.configuration_available_changed.emit(self.can_configure)
 
     async def _inspect_capabilities(self):
-        # Some installed portals advertise ConfigureShortcuts with version 1.
-        # Require the actual supported method/signature instead of assuming v2.
+        # Detect the actual method/signature, including version-1 backports.
+        version, supported = None, False
         try:
-            version_reply = await self._bus.call(Message(
+            reply = await self._bus.call(Message(
                 destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
                 interface='org.freedesktop.DBus.Properties', member='Get',
                 signature='ss', body=[GLOBAL_SHORTCUTS_INTERFACE, 'version']))
-            version = self._variant_value(version_reply.body[0]) if version_reply.message_type != MessageType.ERROR else None
-            node = await self._bus.introspect(PORTAL_BUS_NAME, PORTAL_OBJECT_PATH)
-            supported = any(interface.name == GLOBAL_SHORTCUTS_INTERFACE and any(
-                method.name == 'ConfigureShortcuts' and method.in_signature == 'osa{sv}'
-                for method in interface.methods) for interface in node.interfaces)
+            if reply.message_type != MessageType.ERROR:
+                version = self._variant_value(reply.body[0])
+        except Exception as error:
+            logger.warning('Shortcut version unavailable: %s', type(error).__name__)
+        try:
+            reply = await self._bus.call(Message(
+                destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
+                interface='org.freedesktop.DBus.Introspectable', member='Introspect'))
+            if reply.message_type != MessageType.ERROR:
+                # dbus-next 0.2.3 cannot parse this machine's unrelated
+                # power-saver-enabled property. Inspect only the needed method.
+                root = ET.fromstring(reply.body[0])
+                for interface in root.findall('interface'):
+                    if interface.get('name') != GLOBAL_SHORTCUTS_INTERFACE:
+                        continue
+                    for method in interface.findall('method'):
+                        signature = ''.join(arg.get('type', '') for arg in method.findall('arg')
+                                            if arg.get('direction', 'in') == 'in')
+                        if method.get('name') == 'ConfigureShortcuts' and signature == 'osa{sv}':
+                            supported = True
         except Exception as error:
             logger.warning('Shortcut capability inspection unavailable: %s', type(error).__name__)
-            version, supported = None, False
         with self._lock:
             self._portal_version, self._configure_supported = version, supported
 
@@ -435,48 +462,33 @@ class GlobalShortcutManager(QObject):
             )
 
     async def _portal_request(self, member: str, signature: str, body: list) -> dict:
-        reply = await self._bus.call(
-            Message(
-                destination=PORTAL_BUS_NAME,
-                path=PORTAL_OBJECT_PATH,
-                interface=GLOBAL_SHORTCUTS_INTERFACE,
-                member=member,
-                signature=signature,
-                body=body,
-            )
-        )
-
-        if reply.message_type == MessageType.ERROR:
-            raise RuntimeError(
-                f"GlobalShortcuts {member} failed: {reply.error_name}"
-            )
-
-        if not reply.body:
-            raise RuntimeError(f"GlobalShortcuts {member} returned no request handle.")
-
-        request_path = reply.body[0]
-        response_future = asyncio.get_running_loop().create_future()
-        self._request_futures[request_path] = response_future
-
+        token = self._variant_value(body[-1]['handle_token'])
+        sender = self._bus.unique_name[1:].replace('.', '_')
+        path = f'/org/freedesktop/portal/desktop/request/{sender}/{token}'
+        future = asyncio.get_running_loop().create_future()
+        self._request_futures[path] = future
+        actual_path = path
         try:
-            response_code, results = await asyncio.wait_for(
-                response_future,
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            )
+            reply = await asyncio.wait_for(self._bus.call(Message(
+                destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
+                interface=GLOBAL_SHORTCUTS_INTERFACE, member=member,
+                signature=signature, body=body)), REQUEST_TIMEOUT_SECONDS)
+            if reply.message_type == MessageType.ERROR:
+                raise RuntimeError(f'GlobalShortcuts {member} failed: {reply.error_name}: {reply.body}')
+            if not reply.body:
+                raise RuntimeError(f'GlobalShortcuts {member} returned no request handle.')
+            actual_path = reply.body[0]
+            if actual_path != path:
+                self._request_futures[actual_path] = future
+            response_code, results = await asyncio.wait_for(future, REQUEST_TIMEOUT_SECONDS)
+            if response_code != 0:
+                raise RuntimeError(f'GlobalShortcuts {member} cancelled or denied (response code {response_code}).')
+            return results
         except asyncio.TimeoutError as error:
-            raise RuntimeError(
-                f"Timed out waiting for GlobalShortcuts {member}."
-            ) from error
+            raise RuntimeError(f'Timed out waiting for GlobalShortcuts {member}.') from error
         finally:
-            self._request_futures.pop(request_path, None)
-
-        if response_code != 0:
-            raise RuntimeError(
-                f"GlobalShortcuts {member} was cancelled or denied "
-                f"(response code {response_code})."
-            )
-
-        return results
+            self._request_futures.pop(path, None)
+            self._request_futures.pop(actual_path, None)
 
     def _message_handler(self, message) -> None:
         if message.message_type != MessageType.SIGNAL:

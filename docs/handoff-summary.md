@@ -1,3 +1,5 @@
+Latest status: shortcut request/reporting corrections are implemented; **43 automated tests PASS**. Requested `CTRL+SHIFT+s`, observed assignment Ctrl+Alt+S. Host app-grid identity and physical acceptance remain unverified. See the final shortcut update below.
+
 # Current handoff — Phase 1, 2026-11-14
 
 Phase 1 implementation is ready for review on `fix/phase-01-app-lifecycle`; physical acceptance is still pending. Phase 2 has not started. The Phase 0 handoff below is preserved verbatim, including its pre-existing uncommitted note.
@@ -42,3 +44,15 @@ Read-only Git inspection started at `f9858ca` on `fix/phase-01-app-lifecycle`, w
 Fresh result: 20 automated tests PASS. Canonical main and installed GIO launcher run on Wayland; hidden controller/no startup overlay in Qt state, one actual launcher process, duplicate rejection and cleanup confirmed. Physical key/Esc/tray/visual/capture/paste checks remain NOT RUN.
 
 New confirmed issues: portal returned **Ctrl+Alt+S**, while app reports **Ctrl+Shift+S**; preference also uses non-XDG syntax. Registry specifically rejects `io.snapcraft` callers, consistent with inherited Snap VS Code scope. Successful binding does not prove intended app identity. Genuine GNOME app-grid launch outside this context is still required. No binding/settings changes or portal bypass attempted. Fix these Phase 1 issues and finish manual acceptance before advancing.
+
+## Current shortcut implementation update — 2026-11-14
+
+Phase 1 only. **43 automated tests PASS; Phase 1 closure still pending physical acceptance and genuine app-grid host identity. Phase 2 must not begin.** Detailed updated procedure/results: [phase-01-acceptance.md](phase-01-acceptance.md), final update section. Exact commands/live results: [phase-01-shortcut-log.txt](phase-01-shortcut-log.txt).
+
+- Request now `CTRL+SHIFT+s`; stable ID `open_capture_menu`. Actual local assignment is still **Press <Control><Alt>s**. It is now shown truthfully in tray Capture, tooltip and status, with a mismatch warning. Existing remembered choices are preserved, not overwritten.
+- BindShortcuts descriptions, ListShortcuts verification and ShortcutsChanged drive actual state. Localized descriptions are displayed without guessing; missing/unbound/stale responses do not claim the preferred shortcut is active.
+- Explicit tray Configure Shortcut action detects the actual method/signature, including this installed version-1 interface advertising the method. It never opens automatically or resets bindings. It is disabled when Registry identity fails, to avoid configuring the inherited editor identity. Live dialog remains NOT RUN.
+- Registry runs first on the same connection using `com.dulmina.aisnippingtool`; detailed `io.snapcraft` rejection is preserved/displayed. No bypass/spoofing attempted. True GNOME app-grid host launch is still NOT RUN; agent-side GIO launches inherit the same editor context.
+- Live bounded native Wayland check: requested/actual display correct, version=1, ConfigureShortcuts advertised but blocked by identity, hidden controller, no startup overlay, duplicate instance rejected, clean Quit/thread stop. Physical keys/Esc/tray/paste still NOT RUN.
+- Started clean on `fix/phase-01-app-lifecycle` at external `79a7fd9`. External `9755ff4` appeared during implementation and was preserved. This agent ran no stage, commit, reset, clean, branch switch, merge or push commands; recheck HEAD/status before resuming.
+- Files authored/updated: `shortcuts/global_shortcut.py`, new `shortcuts/assignment.py`, `main.py`, new `ui/shortcut_status.py`, `test_global_shortcut.py`, `tests/test_phase01.py`, new `tests/test_shortcut_assignment.py`, `docs/phase-01-acceptance.md`, `docs/handoff-summary.md`, `docs/test-matrix.md`, `docs/baseline-audit.md`, new `docs/phase-01-shortcut-log.txt`. No capture/clipboard/OCR/PDF/AI implementation changes or dependencies.
