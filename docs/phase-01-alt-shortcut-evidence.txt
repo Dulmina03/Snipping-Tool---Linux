@@ -1,0 +1,88 @@
+Phase 1 Alt+Shift+S change — 2026-11-14
+
+Git: initial branch fix/phase-01-app-lifecycle, HEAD 024a99e; status/diff/index empty.
+External commit 024a99e preserved. No agent Git mutations.
+
+Inspection commands:
+pwd; git status --short; git branch --show-current; git log -5 --oneline;
+git diff --stat; git diff --cached --stat.
+Read AGENTS.md, CODEX_START.md, build plan, latest acceptance/handoff/test matrix,
+main.py, shortcuts/global_shortcut.py, shortcuts/assignment.py,
+ui/shortcut_status.py, controller references and tests. rg located current
+Ctrl+Shift+S references; historical evidence preserved.
+
+Primary references:
+https://specifications.freedesktop.org/shortcuts/latest/
+https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.GlobalShortcuts.html
+https://raw.githubusercontent.com/GNOME/gnome-control-center/main/panels/applications/cc-applications-panel.c
+Installed gresource extraction confirms Settings application row/dialog title Global Shortcuts.
+No ConfigureShortcuts v1 invocation, settings mutation, reset or ID change.
+
+Native commands (authorized real session access):
+cat /proc/self/cgroup -> agent inherits snap.code scope.
+gdbus Properties.Get GlobalShortcuts version -> uint32 1.
+/usr/bin/python3 /tmp/snipping-tray-inspect.py -> old PID tray requested CTRL+SHIFT+s,
+actual Press <Shift><Control>s, host identity registered.
+/usr/bin/python3 /tmp/snipping-native-tray-quit.py 194387 -> PID-verified Quit.
+/usr/bin/python3 /tmp/snipping-terminal-launch.py /usr/bin/python3 /tmp/snipping-launch-alt.py
+ -> standard GNOME Terminal D-Bus service/Exec, then /usr/bin/gio launch installed
+ com.dulmina.aisnippingtool.desktop. First receiver exited too early, no durable
+ app observed. Repeat kept receiver alive; exact main.py PID 200574 ran.
+/usr/bin/python3 /tmp/snipping-tray-inspect.py -> same stable app ID; host identity
+ registered; requested ALT+SHIFT+s; actual Press <Shift><Control>s; mismatch warning;
+ Configure Shortcut disabled.
+gsettings get org.gnome.settings-daemon.global-shortcuts applications
+ -> ['com.dulmina.aisnippingtool', 'code_code']
+gsettings get org.gnome.settings-daemon.global-shortcuts.application:/org/gnome/settings-daemon/global-shortcuts/com.dulmina.aisnippingtool/ shortcuts
+ -> [('open_capture_menu', {'shortcuts': <['<Shift><Control>s']>,
+     'description': <'Open AI Snipping Tool capture menu'>})]
+These settings reads were read-only; no conflict with Alt+Shift+S has been established.
+
+Regression commands:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+ -> baseline after preference update: 74 PASS; after two new cases: 76 PASS.
+Final run: Ran 76 tests in 4.309s, OK.
+.venv/bin/python -m compileall -q main.py shortcuts ui test_global_shortcut.py tests -> exit 0.
+QT_QPA_PLATFORM=offscreen .venv/bin/python -c 'import main, shortcuts.global_shortcut, shortcuts.assignment, ui.shortcut_status' -> exit 0.
+git diff --check; git diff --cached --check -> exit 0.
+
+Native cleanup:
+/usr/bin/python3 /tmp/snipping-native-tray-quit.py 200574 -> success.
+/proc/200574 disappeared within bounded 3-second poll (first check exited).
+Stopped only own PID-verified /tmp/snipping-launch-alt.py receiver using SIGTERM.
+This is programmatic tray protocol activation, not physical input.
+Late real Activated signal and screenshot response 0 observed below; key/input
+source and visual overlay/capture outcome unconfirmed. Not an Alt+Shift+S PASS.
+
+Native application log:
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Shift><Control>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Shift><Control>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Shift><Control>s
+INFO shortcuts.global_shortcut: Portal Activated signal for open_capture_menu
+INFO capture.screenshot_portal_request: Screenshot identity registered: app=com.dulmina.aisnippingtool connection=:1.3775
+INFO capture.screenshot_portal_request: Screenshot portal version=2
+INFO capture.screenshot_portal_request: Screenshot request: connection=:1.3775 parent='' interactive=False modal=True token=snip_6d943606dddf4afe8a517416241af1bb
+INFO capture.screenshot_portal_request: Screenshot request handle=/org/freedesktop/portal/desktop/request/1_3775/snip_6d943606dddf4afe8a517416241af1bb
+INFO capture.screenshot_portal_request: Screenshot response code=0 payload={'uri': '<local screenshot URI>'}
+INFO __main__: Tray Quit action received; scheduling QApplication.quit
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+
+Physical results: user reports prior grid startup, rectangle paste, English OCR
+paste, Window paste, Escape and tray Quit PASS. New Alt+Shift+S binding, restart
+persistence and post-change physical regression checks NOT RUN/pending confirmation.
+Goal remains blocked by retained GNOME binding, not falsely marked registered.
+Safe migration: user explicitly edits this action in Settings > Apps > AI Snipping
+Tool > Global Shortcuts, confirms Alt+Shift+S, cancels conflicts, then retests.
+No Phase 2 work; no AI.
+
+
+## Settings navigation follow-up — 2026-11-14
+
+User could not find the previously named Keyboard Shortcuts option. Opened the genuine app page with `gnome-control-center applications com.dulmina.aisnippingtool`. AT-SPI readback confirms **Apps → AI Snipping Tool → Permissions → Global Shortcuts**, labelled **1 action**. A later readback shows a Global Shortcuts dialog and a **Set Shortcut** dialog saying “Enter new shortcut to change Open AI Snipping Tool capture menu”. Input/binding confirmation remains the user's action. An attempted accessibility navigation action returned “No action with index 0”; it is not counted as successful navigation or physical interaction. No settings writes/Remove All Shortcuts/reset/ConfigureShortcuts calls were made by the agent. The dialog temporarily showed Disabled; do not infer a completed assignment from this in-progress editor. The next step is physically pressing Alt+Shift+S in Set Shortcut and confirming; then verify the portal/tray assignment and physical workflow. Phase 1 remains open.

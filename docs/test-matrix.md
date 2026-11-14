@@ -78,3 +78,109 @@ These are **future tests**, not results. Task: canonical production launcher plu
 7. **Regression check:** rerun compileall, isolated menu cancellation and updated lifecycle tests; report every command/exit code. Do not carry forward the old `menu.isVisible()` shortcut success criterion or add an AI placeholder implementation.
 
 The full Phase 1 gate also requires responsive denied/delayed portal requests, safe worker/main-thread boundaries, cancellation/shutdown and duplicate-instance prevention. Those remain separate work after this smallest slice. Passing these launcher tests alone does not complete Phase 1.
+
+## Phase 1 results — 2026-11-14
+
+This section supersedes the Phase 0 expectations where code changed; preceding results remain historical. Full output: [phase-01-command-log.txt](phase-01-command-log.txt). Run only `unittest discover -s tests` for the automated suite; root `test_overlay.py` still launches an interactive GUI on import.
+
+| ID | Check | Result | Evidence / limit |
+|---|---|---|---|
+| P01 | Lifecycle suite | PASS | `.venv/bin/python -m unittest discover -s tests -v`: 20 tests |
+| P02 | Compile/import checks | PASS | compileall across production/tests; isolated Phase 0 probe imports 12 modules |
+| P03 | Existing menu smoke | PASS | offscreen `test_capture_menu.py --smoke`, now asserts quiet hidden-controller startup |
+| P04 | Existing mocked cancellation | PASS | offscreen `test_capture_menu.py --cancel`; hidden controller remains hidden |
+| P05 | Obsolete AI placeholder | NOT RUN | `--ai` explicitly prints NOT RUN and exits without capture/AI; no placeholder implementation added |
+| P06 | Launcher generation/migration | PASS | quoted paths with spaces; legacy migration, custom preservation, desktop-file validation |
+| P07 | Installed desktop launcher | PASS | actual `main.py --install-desktop` and validation, Exec now targets main.py with current .venv Python |
+| P08 | Canonical startup/legacy delegation | PASS | alternate controller entry delegates; no overlay or shown controller at construction |
+| P09 | Single instance/process restart | PASS | actual headless main.py subprocess rejects second launch; SIGTERM exits, releases lock; repeat startup passes |
+| P10 | Shortcut/tray activation routing | PASS | synthetic signal and QAction route to same async workflow; not a physical shortcut check |
+| P11 | Overlay lifecycle | PASS | repeat activation coalesced; cancel, rectangle and fullscreen dispose overlay; controller hidden |
+| P12 | Delayed/denied portal responsiveness | PASS | simulated delay with continuing Qt heartbeat; denial/retry; no fallback overlay |
+| P13 | Portal cleanup | PASS | early-response handling; cancellation during connection/method disconnects, removes handler, closes Request |
+| P14 | Thread boundaries | PASS | window backend and image/text clipboard deliveries observed on app.thread(); OCR behind process boundary |
+| P15 | OCR shutdown | PASS | real worker error protocol; long-lived real process killed/reaped by jobs.close; no late text clipboard delivery |
+| P16 | Shortcut startup/shutdown | PASS | duplicate manager.start rejected; quitting during simulated registration cancels worker and joins thread |
+| P17 | Existing clipboard/OCR smoke | PASS | unchanged isolated PNG MIME/UTF-8/ZWJ checks; synthetic English CER/WER remain zero; no new accuracy claim |
+| P18 | GNOME default theme startup | FAIL → PASS | initially aborts on missing XSettings key; conditional generic fallback passes automated test and live startup |
+| P19 | Real Wayland startup/heartbeat/Quit action | PASS | native Qt state: controller hidden, no startup overlay, tray reported available; 84 heartbeats/8.42s; shortcut thread stops |
+| P20 | Real portal registration | PASS | final live run completes BindShortcuts for requested Ctrl+Shift+S; not physical key verification |
+| P21 | Whitespace | PASS | git diff --check and git diff --cached --check, exit 0 |
+| P22 | Physical Ctrl+Shift+S opens only overlay | NOT RUN | no native keyboard/visual-control tool in this session; unit signal emission is not proof |
+| P23 | Visual blank-window/task-switcher check | NOT RUN | Qt hidden state confirmed, but desktop appearance not visually inspected |
+| P24 | Cross-app clipboard after overlay closes | NOT RUN | existing clipboard helper/anchor preserved; real Wayland paste needed |
+| P25 | Physical tray Capture/Quit clicks | NOT RUN | native tray availability and QAction shutdown tested, not a human click |
+| P26 | Interactive portal Cancel/denial/delay | NOT RUN | automated simulations only; no live screenshot request made |
+
+Known remaining problems: host Registry emits `org.freedesktop.portal.Error.Failed` in live test even though shortcut registration succeeds; exact desktop attribution/physical trigger need acceptance. Existing dependency conflicts, output filename collisions, OCR punctuation/accuracy/model-download risks remain recorded in Phase 0. No crop/clipboard engine changes or AI/PDF/Freeform implementation were made. The old `--run selected_area` compatibility harness is now rejected explicitly; test rectangles through the production toolbar. This removes the obsolete nested-loop test route without removing the production feature.
+
+### Physical acceptance steps still required
+
+1. Quit any existing instance. Run `.venv/bin/python main.py` or the installed GNOME launcher. Expect background startup, no blank controller or immediate overlay. Use `.venv/bin/python main.py --install-desktop` after moving this checkout/interpreter; do not copy the template directly.
+2. Authorize the portal shortcut, focus another app and physically press its assigned Ctrl+Shift+S. Only the intended selection overlay should appear. Repeat ten times, alternating rectangle completion, Esc and toolbar X. Check Alt+Tab/task-switcher for a blank controller.
+3. Paste screenshots into another GUI application immediately and five seconds after overlay/toast closure. Verify exact pixels/dimensions. Repeat Extract Text with a public fixture and compare Sinhala/English/ZWJ output against reference. No private document output should be logged/shared.
+4. Exercise portal cancellation/denial/delay and use tray Quit while waiting. Check no stuck UI, orphan process or late clipboard delivery. Restart from the launcher and repeat capture.
+5. Verify tray Capture and Quit by actual clicks. Confirm the launched PID exits within five seconds and another launch registers normally.
+
+The user asked the agent to perform checks independently; a bounded real Wayland smoke was run. Physical-key/visual/paste checks remain explicitly NOT RUN because this session has no native desktop controls. **Phase 1 implementation is ready for review; the full phase exit gate is pending those manual checks. Do not proceed to Phase 2.**
+
+## Phase 1 acceptance follow-up — 2026-11-14
+
+Latest detailed results for **all 13 user acceptance tests**: [phase-01-acceptance.md](phase-01-acceptance.md). This supersedes any inference that the earlier registration PASS proves Ctrl+Shift+S is bound.
+
+- PASS: 20 automated regressions; quiet native main runtime state; single-instance rejection; exactly one actual GIO-launched main.py process; installed launcher execution; bounded programmatic Quit/SIGTERM cleanup.
+- FAIL: intended shortcut assignment/truthful reporting. Portal returns `Press <Control><Alt>s`; app emits preferred `<Ctrl><Shift>S`. Preferred string also differs from the portal's specified XDG syntax.
+- FAIL in this launch context: host Registry identity. Detailed response identifies caller as `io.snapcraft`; both tests inherit the Snap VS Code cgroup. Do not classify this as harmless or assume successful host app identity.
+- NOT RUN: visual blank-window check, actual physical key/Esc/tray clicks, repeated real captures, all three capture modes, cross-app image/OCR paste, independent genuine GNOME app-grid context.
+
+**Phase 1 cannot close and Phase 2 must not begin.** No production source or user shortcut settings changed during this verification. Existing dirty command log/manual harness additions preserved; no Git mutation commands executed.
+
+## Shortcut correction results — 2026-11-14
+
+Latest [acceptance update and manual procedure](phase-01-acceptance.md) supersede the earlier preference-syntax/false-reporting code failures. **43 automated tests PASS**, including all original 20. Syntax, existing smoke/cancel and whitespace PASS. The new suite covers assigned-description display, mismatch/localized/missing values, remembered user choices, Bind/List/ShortcutsChanged, Registry ordering/errors, real method detection across versions/backports, explicit configuration and shutdown. [Exact output](phase-01-shortcut-log.txt).
+
+Live reporting PASS: requested `CTRL+SHIFT+s`; actual `Press <Control><Alt>s`; tray agrees. Existing choice preserved. Installed portal version=1 advertises ConfigureShortcuts, but configuration is disabled for the observed `io.snapcraft` identity rejection. No live configuration dialog invoked or settings altered. Genuine app-grid identity, desired assignment, physical shortcut/Esc/tray and external image/text paste remain **NOT RUN**. Full Phase 1 gate remains open; Phase 2 has not started.
+
+
+## Native GNOME verification follow-up — 2026-11-14
+
+Supersedes older environment/assignment/identity statements above: genuine host identity **PASS**, actual assigned Ctrl+Shift+S **PASS**, 43 regressions **PASS**. Real portal/fullscreen/rectangle saving, bounded repeat workflow, local English fixture OCR, synthetic Qt cancellation and shutdown **PASS**. App-workflow native cross-process image/text paste **FAIL** with synthetic producer input; focused public-text control **PASS**, root cause unresolved. AT-SPI Escape synthesis **FAIL** despite API True; real keyboard/tray clicks/window selection/paste **NOT RUN**. Backend ConfigureShortcuts UnknownMethod remains. No GNOME settings/source changes. **Phase 1 cannot close; Phase 2 must not begin.** All individual acceptance outcomes, physical steps and retained evidence: [phase-01-acceptance.md](phase-01-acceptance.md).
+
+
+## Clipboard reliability follow-up — 2026-11-14
+
+50 regressions PASS; focused native two-process exact PNG and Sinhala/English/ZWJ text transfer/paste PASS. Final traced unmapped/delayed/controller delivery and canonical synthetic-workflow image/text paste FAIL, with active event loops and GUI-thread writes. Zero/stale selection serials/focus loss and a prior text-only image receiver explain testing limitations; physical behavior remains NOT RUN, not cleared. ConfigureShortcuts v1 advertisement is now rejected by the v2 capability gate; shortcut binding unchanged. No clipboard/capture/OCR behavior rewritten. Phase 1 OPEN; Phase 2 blocked. [Latest acceptance, pipeline, provenance, reproduction and manual gate](phase-01-acceptance.md); [raw evidence](phase-01-clipboard-evidence.txt).
+
+
+## Physical failure and permission fix — 2026-11-14
+
+User reported physical app-grid PASS; capture/Esc/rectangle/OCR/window/tray FAIL. Journal confirms background GNOME access-dialog focus rejection, not observed user cancellation. Identified background probe returned `[2, {}]`; focused Qt probe exposed GNOME consent dialog. User confirmed Allow. New shared screenshot connection registration, typed errors, explicit focused recovery/clean recapture and request cleanup implemented. Post-consent native capture/recovery and programmatic tray Quit PASS; 66 regressions PASS. Physical post-fix keyboard/window/tray/paste NOT RUN; clipboard handoff remains unresolved. Phase 1 OPEN, Phase 2 blocked. Legacy screenshot experiment restored exactly; no overlay/clipboard/OCR algorithm changes. [Latest acceptance and provenance](phase-01-acceptance.md), [evidence](phase-01-physical-failure-evidence.txt).
+
+
+## Capture-to-clipboard integration fix — 2026-11-14
+
+Physical startup, Ctrl+Shift+S overlay, Escape and tray Quit now user-confirmed PASS. Image/OCR paste and Window remain pre-fix FAIL. Fixed publication after overlay teardown; OCR retains surface/result, defers unfocused delivery to click/Enter, GUI-thread guard, standard Clipboard only, no fake anchor/nested event pump. Native production handlers + two separate readers PASS for rectangle/fullscreen/repeat, real English OCR and supplied Sinhala/English/ZWJ punctuation. 74 tests PASS. Real Window picker opens (Screenshot v2); selected-window completion and all post-fix physical paste acceptance NOT RUN/pending user. Window success/cancel mocks are separate; no claim of complete Window root cause. Phase 1 OPEN; no Phase 2. [Details](phase-01-acceptance.md), [evidence](phase-01-delivery-evidence.txt).
+
+
+## Alt+Shift+S final shortcut change — 2026-11-14
+
+- PASS: 76 automated tests; requested `ALT+SHIFT+s`, stable app/action IDs, old remembered binding preserved, new Alt assignment parsing, actual display, mismatch, ShortcutsChanged, v1 configuration gate, capture/OCR/clipboard lifecycle regressions. Syntax/import and both diff whitespace checks PASS.
+- PASS: genuine host installed-desktop-entry execution, Registry identity, one main.py instance, actual assignment retrieved by List and displayed truthfully. Prior process quit through PID-verified tray protocol; no physical click simulated as PASS.
+- FAIL / pending migration: desired Alt+Shift+S is not yet assigned. GNOME still returns `Press <Shift><Control>s`, and read-only stored settings agree. No Alt conflict has been established. User must edit this app's action in Settings → Apps → AI Snipping Tool → Global Shortcuts and confirm; cancel any conflict. No settings were silently changed; ConfigureShortcuts v1 was not called.
+- PASS (user report before this shortcut change): grid startup, rectangle screenshot/paste, English OCR/paste, Window screenshot/paste, Escape, tray Quit. This supersedes earlier physical delivery failures.
+- NOT RUN after this change: physical Alt+Shift+S, Escape, rectangle/OCR/Window external paste, physical tray Quit, persistence across restart. Automated routing does not prove these. Phase 1 remains OPEN until the user confirms the new binding and no regressions. Phase 2 has not started.
+
+Detailed evidence and minimum acceptance: [phase-01-acceptance.md](phase-01-acceptance.md), [phase-01-alt-shortcut-evidence.txt](phase-01-alt-shortcut-evidence.txt).
+
+Final native cleanup PASS: PID-verified DBusMenu Quit on updated PID 200574 logged aboutToQuit, capture-job/session cleanup and Shutdown complete; PID no longer exists. Own terminal test harness stopped. A real Activated signal + screenshot response 0 appeared late in the session, but without key/source attribution or user visual confirmation; physical Alt+Shift+S remains NOT RUN.
+
+
+## Compact status layout / current binding — 2026-11-14
+
+- PASS: 81 regression tests; readable XDG/portal key display; unknown/localized text preserved; compact tray actions; requested/actual/registration/identity separated; errors and instructions in collapsed details; explicit-only status opening; narrow 320×480 logical geometry, wrapping, plaintext and left alignment; existing capture/clipboard/OCR/window/Escape/Quit automation retained.
+- PASS: 31 shortcut/presentation cases at QT_SCALE_FACTOR=2; compile/import and both whitespace checks. Generated 288×340 narrow offscreen render visually inspected with Close/details visible.
+- PASS: native host registered identity and actual ListShortcuts/ShortcutsChanged **Ctrl+Alt+S**, while request is **Alt+Shift+S**; truthful compact tray labels. One main.py instance observed. Portal v1 configuration remains disabled; no settings mutation.
+- NOT RUN: native visual/scaling confirmation (AT-SPI could not expose dialog), physical Alt+Shift+S and post-layout rectangle/OCR/Window paste, Escape, tray interactions. Prior user-confirmed physical passes remain historical evidence. Programmatic tray status activation is not a physical click.
+- PENDING: explicit GNOME Settings → Apps → AI Snipping Tool → Permissions → Global Shortcuts → capture action → Set Shortcut confirmation. Cancel conflicts; no binding reset/replacement automated. Phase 1 open; no Phase 2.
+
+[Current detailed acceptance](phase-01-acceptance.md), [evidence](phase-01-status-ui-evidence.txt).

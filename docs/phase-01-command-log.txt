@@ -1,0 +1,114 @@
+Phase 1, 2026-11-14 Asia/Colombo
+Starting HEAD: 24d741c, branch chore/phase-00-baseline-audit.
+Starting unstaged: docs/handoff-summary.md and docs/phase-00-command-log.txt. No staged changes. Preserved.
+Created fix/phase-01-app-lifecycle using authorized git switch -c. No stage/commit/push/merge/reset/unstage commands executed by this agent.
+
+Final automated runs below use QT_QPA_PLATFORM=offscreen HOME=/tmp/snipping-phase00-home.
+
+$ .venv/bin/python -m unittest discover -s tests -v
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart) ... ok
+test_generated_launcher_and_custom_entry_preservation (test_phase01.EntryTests.test_generated_launcher_and_custom_entry_preservation) ... ok
+test_gnome_theme_fallback_and_explicit_preference (test_phase01.EntryTests.test_gnome_theme_fallback_and_explicit_preference) ... ok
+test_instance_lock (test_phase01.EntryTests.test_instance_lock) ... ok
+test_migrate_legacy_launcher (test_phase01.EntryTests.test_migrate_legacy_launcher) ... ok
+test_old_standalone_entry_delegates (test_phase01.EntryTests.test_old_standalone_entry_delegates) ... ok
+test_shutdown_during_shortcut_registration (test_phase01.EntryTests.test_shutdown_during_shortcut_registration) ... ok
+test_tray_and_shortcut_share_route_and_start_quietly (test_phase01.EntryTests.test_tray_and_shortcut_share_route_and_start_quietly) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_denied_portal_keeps_controller_hidden_and_retry_works (test_phase01.LifecycleTests.test_denied_portal_keeps_controller_hidden_and_retry_works) ... This plugin does not support raise()
+ok
+test_fullscreen_completion_closes_overlay (test_phase01.LifecycleTests.test_fullscreen_completion_closes_overlay) ... This plugin does not support raise()
+ok
+test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread (test_phase01.LifecycleTests.test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread) ... ok
+test_quiet_start_and_repeat_activation (test_phase01.LifecycleTests.test_quiet_start_and_repeat_activation) ... [CAPTURE MENU] Overlay launched via shortcut/tray
+[CAPTURE MENU] Overlay launched via shortcut/tray
+This plugin does not support raise()
+ok
+test_real_ocr_process_boundary_error_and_cancel (test_phase01.LifecycleTests.test_real_ocr_process_boundary_error_and_cancel) ... Background operation failed: Local OCR failed; check Tesseract and language data.
+ok
+test_rectangle_completion_closes_overlay_before_clipboard (test_phase01.LifecycleTests.test_rectangle_completion_closes_overlay_before_clipboard) ... This plugin does not support raise()
+ok
+test_shutdown_cancels_ocr_before_any_clipboard_delivery (test_phase01.LifecycleTests.test_shutdown_cancels_ocr_before_any_clipboard_delivery) ... ok
+test_slow_portal_heartbeat_and_shutdown (test_phase01.LifecycleTests.test_slow_portal_heartbeat_and_shutdown) ... ok
+test_window_cancel_does_not_report_success (test_phase01.LifecycleTests.test_window_cancel_does_not_report_success) ... ok
+test_window_portal_and_clipboard_remain_on_gui_thread (test_phase01.LifecycleTests.test_window_portal_and_clipboard_remain_on_gui_thread) ... ok
+test_cancel_during_bus_connect_disconnects (test_phase01.PortalCleanupTests.test_cancel_during_bus_connect_disconnects) ... ok
+test_early_response_and_cancel_cleanup (test_phase01.PortalCleanupTests.test_early_response_and_cancel_cleanup) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 3.257s
+
+OK
+Exit: 0
+
+$ .venv/bin/python -m compileall -q main.py capture ui ocr shortcuts utils tests test_area.py test_capture_menu.py test_clipboard.py test_global_shortcut.py test_ocr.py test_overlay.py test_screenshot.py test_window.py
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --smoke
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+CAPTURE MENU SMOKE TEST PASS
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --cancel
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+CAPTURE MENU CANCELLATION TEST PASS
+Exit: 0
+
+$ timeout 15s .venv/bin/python test_capture_menu.py --ai
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+NOT RUN: obsolete AI placeholder test; AI remains the final phase.
+Exit: 0
+
+$ timeout 45s .venv/bin/python docs/phase-00-checks.py
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+PASS: 12 production-module imports (no entry points invoked)
+OBSERVED: controller isVisible=False, size=640x480
+PASS: synthetic rectangle selection signal; freeform disabled confirmed
+PASS: offscreen PNG MIME and Sinhala/English/ZWJ UTF-8 clipboard round-trip
+OBSERVED: single synthetic English fixture CER=0.0000, WER=0.0000; raw strings compared, no normalization, not a release benchmark
+PASS: local sin model loads in Tesseract; Sinhala accuracy NOT RUN
+OBSERVED: two same-second full saves reuse pathname=True
+OBSERVED: OCR punctuation cleanup 'item' from "- item"
+Exit: 0
+
+$ desktop-file-validate com.dulmina.aisnippingtool.desktop
+Exit: 0
+
+$ desktop-file-validate /home/dulmina/.local/share/applications/com.dulmina.aisnippingtool.desktop
+Exit: 0
+
+$ git diff --check
+Exit: 0
+
+$ git diff --cached --check
+Exit: 0
+
+Earlier runs and investigated failures:
+- First lifecycle suite: 12 tests, FAIL: shutdown during registration took 5 seconds. Diagnosed asyncio thread wakeup not waking the selector in this confined environment. Fixed with bounded stop-event polling on the portal loop; cancellation now interrupts registration and closes its session.
+- Expanded suite: 16 tests, FAIL: test mock returned a coroutine instead of awaiting it. Corrected test mock; production process boundary was not the cause.
+- Subsequent suites: 12, 16, 17, 18, 19 and 20 tests PASS as coverage grew. Final complete output above is authoritative.
+- .venv/bin/python main.py --install-desktop: authorized execution, exit 0; migrated the app's legacy launcher at ~/.local/share/applications/com.dulmina.aisnippingtool.desktop. Generated Exec uses the current .venv Python and main.py, both quoted. Custom entries are preserved by generator tests.
+- First live Wayland smoke harness: FAIL before QApplication startup, GLib-GIO-ERROR: schema org.gnome.settings-daemon.plugins.xsettings lacks antialiasing. gsettings list-keys for inherited and /usr/share schemas both confirmed the key absent.
+- Live retry with QT_QPA_PLATFORMTHEME=generic: PASS process/Qt startup and Quit; portal registration awaited permission at eight-second timeout. No keypress asserted.
+- Final live retry without manual theme override, after prepare_qt_environment fallback: PASS startup and Quit; real portal BindShortcuts succeeded. Exact output:
+Qt platform: wayland
+Startup controller visible: False
+Startup overlay: None
+Qt reports tray available: True
+Application identity registration warning: Portal Registry registration failed: org.freedesktop.portal.Error.Failed
+Portal registration succeeded: <Ctrl><Shift>S
+Heartbeat count: 84
+Elapsed seconds: 8.42
+Shortcut thread alive after Quit: False
+Registration outcome: [True]
+Physical keypress, visual inspection and external paste: NOT RUN
+
+Live command: .venv/bin/python /tmp/snipping-phase01-live.py (authorized sandbox escape for actual session bus/Wayland). Harness used main.configure_application(), prepare_qt_environment() and instance lock; printed Qt state; connected registration signals; counted a 100ms heartbeat; programmatically triggered the existing Quit QAction at 8 seconds; called menu.shutdown(), jobs.close(), shortcuts.stop(), tray.hide() and lock.unlock(). It requested no screenshot and did not change the clipboard. An existing instance would be left untouched. This is native Qt runtime evidence, not visual observation or a physical tray click.
+
+Inspection commands: git status --short; git branch -vv; git log -5 --oneline; git diff --stat; git diff --cached --stat; git diff of the two original dirty docs; cat AGENTS.md, CODEX_START.md, build plan, audit, matrix, Phase 0 log, handoff, main/controller/shortcut/tests; sed on relevant plan/source sections; git diff 24d741c --stat/--name-only and focused production files; Python inspect.getsource(MessageBus.connect/disconnect); printenv for QT theme/GSettings/XDG data variables only; gsettings list-keys org.gnome.settings-daemon.plugins.xsettings and the same command with GSETTINGS_SCHEMA_DIR=/usr/share/glib-2.0/schemas. No private document contents inspected.
+
+Final strengthening: the real-process cancellation test now calls menu.shutdown() and jobs.close() directly (rather than only cancelling a task while Qt keeps pumping). Command: QT_QPA_PLATFORM=offscreen timeout 20s .venv/bin/python -m unittest discover -s tests -v. Result: 20 tests PASS, 2.648 seconds, exit 0.
+The manual test_global_shortcut.py harness also calls the same GNOME theme preparation before QApplication; physical execution remains NOT RUN.
+Final observed HEAD during documentation: 1e9ca1b (externally created). Earlier external Phase 1 commits: eb6b625, 072d0bd, a739762, 89387d5, 236bf76. None was created by a command from this agent.
+Final git diff --check and git diff --cached --check: PASS, exit 0. Production capture/*, ocr/*, utils/clipboard.py, ui/overlay.py and requirements.txt have no diff against starting Phase 1 HEAD 24d741c.

@@ -1,0 +1,332 @@
+Phase 1 capture delivery — 2026-11-14, Asia/Colombo
+Git start: clean fix/phase-01-app-lifecycle, f62fc02. No agent Git mutation.
+User pre-change physical report: startup/shortcut/Escape/tray PASS;
+rectangle paste, English OCR paste, focus-switched OCR and Window FAIL.
+
+Commands/probes:
+- git status --short; git branch --show-current; git log -5 --oneline
+- git diff --stat; git diff --cached --stat
+- Read AGENTS, acceptance, handoff, matrix and latest physical/clipboard evidence/source
+- QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+- .venv/bin/python -m compileall -q main.py ui capture shortcuts ocr utils tests
+- offscreen import main, ui.capture_menu, ui.overlay, utils.clipboard,
+  utils.ocr_process, capture.screenshot_portal_request, capture.window_capture: PASS
+- git diff --check; git diff --cached --check: PASS
+- legitimate GNOME Terminal Factory0/Terminal0 launch via /tmp/snipping-terminal-launch.py
+- native tests/production_clipboard_probe.py via /tmp/snipping-run-production-delivery.py
+- native real Window mode via /tmp/snipping-window-workflow.py
+- read-only AT-SPI inspection of GNOME screenshot controls: no Action methods;
+  after diagnostic cancellation controls SHOWING=false, no visible orphan picker.
+- one updated canonical app launched with SNIPPING_DIAGNOSTICS=1 for pending
+  physical user test, stdout/stderr /tmp/snipping-physical-delivery-session.log.
+
+Limits/corrections:
+- Native integration mocks only public portal backdrop; actual production result
+  handlers/save/Qt clipboard and real English OCR child execute.
+- Unicode case supplies recognizer text to isolate transfer, not Sinhala recognition.
+- Reader compares actual PNG pixels or UTF-8 bytes plus actual inserted editor
+  contents, twice with separate processes/focus changes. No containsText-only PASS.
+- Synthetic Qt mouse/key events are never physical input.
+- Window picker interaction incomplete: no selected-window success claimed.
+- Initial discovery collision and new crop-fixture-size assertion failed, then
+  fixed in test harness; final complete suite below is authoritative.
+- Earlier standalone focus-dependent failures retained in prior evidence, not erased.
+- Diagnostic lines record paths/dimensions/lengths only; no image bytes/private OCR text.
+
+
+=== Native public-fixture production integration ===
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; remembered binding=False
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/tmp/snipping-production-zsu4eh6r/rectangle.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 8620}
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "screenshot", "mode": "rectangle"}
+INFO snipping.diagnostics: {"event": "post_capture", "path": "/tmp/snipping-production-zsu4eh6r/saved/Screenshot_2026-11-14_09-07-37.png", "exists": true, "valid": true, "dimensions": [1181, 301], "bytes": 1809, "action": "screenshot"}
+INFO snipping.diagnostics: {"event": "clipboard_delivery", "kind": "image", "overlay_visible": true}
+INFO snipping.diagnostics: {"event": "clipboard_write", "kind": "image", "gui_thread": true, "qt_owned": true, "formats": ["application/x-qt-image", "image/png", "image/x-png"], "application_alive": true}
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/tmp/snipping-production-zsu4eh6r/fullscreen.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 8620}
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "screenshot", "mode": "fullscreen"}
+INFO snipping.diagnostics: {"event": "post_capture", "path": "/tmp/snipping-production-zsu4eh6r/saved/Screenshot_2026-11-14_09-07-41.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 8620, "action": "screenshot"}
+INFO snipping.diagnostics: {"event": "clipboard_delivery", "kind": "image", "overlay_visible": true}
+INFO snipping.diagnostics: {"event": "clipboard_write", "kind": "image", "gui_thread": true, "qt_owned": true, "formats": ["application/x-qt-image", "image/png", "image/x-png"], "application_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/tmp/snipping-production-zsu4eh6r/rectangle_repeat.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 8620}
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "screenshot", "mode": "rectangle"}
+INFO snipping.diagnostics: {"event": "post_capture", "path": "/tmp/snipping-production-zsu4eh6r/saved/Screenshot_2026-11-14_09-07-46.png", "exists": true, "valid": true, "dimensions": [1181, 301], "bytes": 1808, "action": "screenshot"}
+INFO snipping.diagnostics: {"event": "clipboard_delivery", "kind": "image", "overlay_visible": true}
+INFO snipping.diagnostics: {"event": "clipboard_write", "kind": "image", "gui_thread": true, "qt_owned": true, "formats": ["application/x-qt-image", "image/png", "image/x-png"], "application_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/tmp/snipping-production-zsu4eh6r/english_ocr.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 15759}
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "extract_text", "mode": "rectangle"}
+INFO snipping.diagnostics: {"event": "post_capture", "path": "/tmp/snipping-production-zsu4eh6r/saved/Screenshot_2026-11-14_09-07-50.png", "exists": true, "valid": true, "dimensions": [1181, 301], "bytes": 8524, "action": "extract_text"}
+INFO snipping.diagnostics: {"event": "ocr_started"}
+INFO snipping.diagnostics: {"event": "ocr_returned", "characters": 36}
+INFO snipping.diagnostics: {"event": "clipboard_delivery", "kind": "text", "overlay_visible": true}
+INFO snipping.diagnostics: {"event": "clipboard_write", "kind": "text", "characters": 36, "gui_thread": true, "qt_owned": true, "formats": ["text/plain", "text/plain;charset=utf-8", "UTF8_STRING"], "application_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/tmp/snipping-production-zsu4eh6r/unicode_transfer.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 15759}
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "extract_text", "mode": "rectangle"}
+INFO snipping.diagnostics: {"event": "post_capture", "path": "/tmp/snipping-production-zsu4eh6r/saved/Screenshot_2026-11-14_09-07-57.png", "exists": true, "valid": true, "dimensions": [1181, 301], "bytes": 8524, "action": "extract_text"}
+INFO snipping.diagnostics: {"event": "ocr_started"}
+INFO snipping.diagnostics: {"event": "ocr_returned", "characters": 71}
+INFO snipping.diagnostics: {"event": "clipboard_delivery", "kind": "text", "overlay_visible": true}
+INFO snipping.diagnostics: {"event": "clipboard_write", "kind": "text", "characters": 71, "gui_thread": true, "qt_owned": true, "formats": ["text/plain", "text/plain;charset=utf-8", "UTF8_STRING"], "application_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO main: Tray Quit action received; scheduling QApplication.quit
+INFO main: QApplication aboutToQuit emitted
+INFO main: Shutdown: stopping capture jobs
+INFO main: Shutdown: closing shortcut portal session
+INFO main: Shutdown complete
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+PROBE_EXIT 0
+
+=== Real Window request and picker (incomplete interaction) ===
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+INFO snipping.diagnostics: {"event": "event_loop_heartbeat", "clipboard_owned": false, "application_alive": true, "capture_jobs": 1}
+INFO capture.screenshot_portal_request: Screenshot identity registered: app=com.dulmina.aisnippingtool connection=:1.3271
+INFO capture.screenshot_portal_request: Screenshot portal version=2
+INFO capture.screenshot_portal_request: Screenshot request: connection=:1.3271 parent='' interactive=False modal=True token=snip_9673c005d91442148c5c9eb394cff102
+INFO capture.screenshot_portal_request: Screenshot request handle=/org/freedesktop/portal/desktop/request/1_3271/snip_9673c005d91442148c5c9eb394cff102
+INFO capture.screenshot_portal_request: Screenshot response code=0 payload={'uri': '<local screenshot URI>'}
+INFO snipping.diagnostics: {"event": "portal_return", "response": 0, "path": "/home/dulmina/Pictures/Screenshot-1.png", "exists": true, "bytes": 417776, "interactive": false}
+INFO snipping.diagnostics: {"event": "portal_source", "path": "/home/dulmina/Pictures/Screenshot-1.png", "exists": true, "valid": true, "dimensions": [1920, 1080], "bytes": 417776}
+OVERLAY_READY True
+INFO snipping.diagnostics: {"event": "capture_selected", "action": "screenshot", "mode": "window"}
+INFO snipping.diagnostics: {"event": "event_loop_heartbeat", "clipboard_owned": false, "application_alive": true, "capture_jobs": 2}
+INFO capture.screenshot_portal_request: Screenshot identity registered: app=com.dulmina.aisnippingtool connection=:1.3272
+INFO capture.screenshot_portal_request: Screenshot portal version=2
+INFO capture.screenshot_portal_request: Screenshot request: connection=:1.3272 parent='' interactive=True modal=True token=snip_6f975f8f33ce4c5f8593b50cd29025a8
+INFO capture.screenshot_portal_request: Screenshot request handle=/org/freedesktop/portal/desktop/request/1_3272/snip_6f975f8f33ce4c5f8593b50cd29025a8
+NATIVE_PICKER_ACCESSIBLE [{"name": "Capture", "role": "label", "actions": []}, {"name": "Take Screenshot", "role": "label", "actions": []}, {"name": "Window", "role": "label", "actions": []}, {"name": "Screen", "role": "label", "actions": []}, {"name": "Selection", "role": "label", "actions": []}, {"name": "Capture", "role": "label", "actions": []}, {"name": "Take Screenshot", "role": "button", "actions": []}]
+WINDOW_BUSY True
+WINDOW_RESULT None Requested: CTRL+SHIFT+s; assigned: Press <Shift><Control>s
+Host identity registered: com.dulmina.aisnippingtool
+Shortcut configuration unavailable: this desktop backend does not support the required GlobalShortcuts version 2 method. The assigned shortcut remains active.
+INFO main: Tray Quit action received; scheduling QApplication.quit
+INFO main: QApplication aboutToQuit emitted
+INFO main: Shutdown: stopping capture jobs
+INFO main: Shutdown: closing shortcut portal session
+INFO main: Shutdown complete
+EXIT 0
+[Omitted 43 additional heartbeat records; raw log remains under /tmp.]
+
+=== Final headless regression output ===
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+test_async_ocr_retains_surface_through_text_delivery (test_capture_delivery.DeliveryTests.test_async_ocr_retains_surface_through_text_delivery) ... This plugin does not support raise()
+ok
+test_escape_during_ocr_cancels_and_never_delivers_late_text (test_capture_delivery.DeliveryTests.test_escape_during_ocr_cancels_and_never_delivers_late_text) ... This plugin does not support raise()
+ok
+test_failed_copy_does_not_report_success_or_destroy_retry_surface (test_capture_delivery.DeliveryTests.test_failed_copy_does_not_report_success_or_destroy_retry_surface) ... This plugin does not support raise()
+Clipboard delivery failed
+Traceback (most recent call last):
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 532, in _deliver_pending_clipboard
+    copy_image_to_clipboard(value)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+RuntimeError: test copy failure
+ok
+test_rectangular_image_is_copied_before_surface_teardown (test_capture_delivery.DeliveryTests.test_rectangular_image_is_copied_before_surface_teardown) ... This plugin does not support raise()
+ok
+test_unfocused_ocr_defers_until_genuine_delivery_action (test_capture_delivery.DeliveryTests.test_unfocused_ocr_defers_until_genuine_delivery_action) ... This plugin does not support raise()
+ok
+test_window_cancellation_cleans_retained_surface_without_copy (test_capture_delivery.DeliveryTests.test_window_cancellation_cleans_retained_surface_without_copy) ... This plugin does not support raise()
+ok
+test_window_result_restores_surface_before_single_copy (test_capture_delivery.DeliveryTests.test_window_result_restores_surface_before_single_copy) ... This plugin does not support raise()
+This plugin does not support raise()
+ok
+test_worker_thread_clipboard_call_rejected_without_qt_write (test_capture_delivery.DeliveryTests.test_worker_thread_clipboard_call_rejected_without_qt_write) ... This plugin does not support raise()
+ok
+test_clipboard_survives_overlay_cancel_and_controller_shutdown (test_clipboard.ClipboardTests.test_clipboard_survives_overlay_cancel_and_controller_shutdown) ... ok
+test_image_and_async_ocr_deliver_on_gui_thread (test_clipboard.ClipboardTests.test_image_and_async_ocr_deliver_on_gui_thread) ... ok
+test_png_bytes_decode_to_exact_pixels (test_clipboard.ClipboardTests.test_png_bytes_decode_to_exact_pixels) ... ok
+test_reader_supports_png_paste_and_fresh_reference (test_clipboard.ClipboardTests.test_reader_supports_png_paste_and_fresh_reference) ... ok
+test_shutdown_prevents_late_async_clipboard_write (test_clipboard.ClipboardTests.test_shutdown_prevents_late_async_clipboard_write) ... ok
+test_sinhala_zwj_and_english_exact_utf8_formats (test_clipboard.ClipboardTests.test_sinhala_zwj_and_english_exact_utf8_formats) ... ok
+test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart) ... ok
+test_generated_launcher_and_custom_entry_preservation (test_phase01.EntryTests.test_generated_launcher_and_custom_entry_preservation) ... ok
+test_gnome_theme_fallback_and_explicit_preference (test_phase01.EntryTests.test_gnome_theme_fallback_and_explicit_preference) ... ok
+test_instance_lock (test_phase01.EntryTests.test_instance_lock) ... ok
+test_migrate_legacy_launcher (test_phase01.EntryTests.test_migrate_legacy_launcher) ... ok
+test_old_standalone_entry_delegates (test_phase01.EntryTests.test_old_standalone_entry_delegates) ... ok
+test_shutdown_during_shortcut_registration (test_phase01.EntryTests.test_shutdown_during_shortcut_registration) ... ok
+test_tray_and_shortcut_share_route_and_start_quietly (test_phase01.EntryTests.test_tray_and_shortcut_share_route_and_start_quietly) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Unexpected capture failure
+Traceback (most recent call last):
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 305, in _launch_overlay
+    source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 2333, in _execute_mock_call
+    raise effect
+RuntimeError: denied
+Unexpected capture failure
+Traceback (most recent call last):
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 305, in _launch_overlay
+    source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 2333, in _execute_mock_call
+    raise effect
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 305, in _launch_overlay
+    source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 2333, in _execute_mock_call
+    raise effect
+RuntimeError: denied
+ok
+test_denied_portal_keeps_controller_hidden_and_retry_works (test_phase01.LifecycleTests.test_denied_portal_keeps_controller_hidden_and_retry_works) ... Unexpected capture failure
+Traceback (most recent call last):
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 305, in _launch_overlay
+    source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 2333, in _execute_mock_call
+    raise effect
+RuntimeError: denied
+This plugin does not support raise()
+ok
+test_fullscreen_completion_closes_overlay (test_phase01.LifecycleTests.test_fullscreen_completion_closes_overlay) ... This plugin does not support raise()
+ok
+test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread (test_phase01.LifecycleTests.test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread) ... ok
+test_quiet_start_and_repeat_activation (test_phase01.LifecycleTests.test_quiet_start_and_repeat_activation) ... [CAPTURE MENU] Overlay launched via shortcut/tray
+[CAPTURE MENU] Overlay launched via shortcut/tray
+This plugin does not support raise()
+ok
+test_real_ocr_process_boundary_error_and_cancel (test_phase01.LifecycleTests.test_real_ocr_process_boundary_error_and_cancel) ... Background operation failed: Local OCR failed; check Tesseract and language data.
+ok
+test_rectangle_completion_closes_overlay_before_clipboard (test_phase01.LifecycleTests.test_rectangle_completion_closes_overlay_before_clipboard) ... This plugin does not support raise()
+Clipboard delivery failed
+Traceback (most recent call last):
+  File "/home/dulmina/Projects/ai-snipping-tool/ui/capture_menu.py", line 532, in _deliver_pending_clipboard
+    copy_image_to_clipboard(value)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1247, in _execute_mock_call
+    result = effect(*args, **kwargs)
+  File "/home/dulmina/Projects/ai-snipping-tool/tests/test_phase01.py", line 196, in <lambda>
+    side_effect=lambda _: self.assertIsNone(self.menu._overlay)):
+                          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/case.py", line 1321, in assertIsNone
+    self.fail(self._formatMessage(msg, standardMsg))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/case.py", line 750, in fail
+    raise self.failureException(msg)
+AssertionError: <ui.overlay.Overlay(0x32474c20) at 0x73bb15537f00> is not None
+ok
+test_shutdown_cancels_ocr_before_any_clipboard_delivery (test_phase01.LifecycleTests.test_shutdown_cancels_ocr_before_any_clipboard_delivery) ... ok
+test_slow_portal_heartbeat_and_shutdown (test_phase01.LifecycleTests.test_slow_portal_heartbeat_and_shutdown) ... ok
+test_window_cancel_does_not_report_success (test_phase01.LifecycleTests.test_window_cancel_does_not_report_success) ... ok
+test_window_portal_and_clipboard_remain_on_gui_thread (test_phase01.LifecycleTests.test_window_portal_and_clipboard_remain_on_gui_thread) ... ok
+test_cancel_during_bus_connect_disconnects (test_phase01.PortalCleanupTests.test_cancel_during_bus_connect_disconnects) ... ok
+test_early_response_and_cancel_cleanup (test_phase01.PortalCleanupTests.test_early_response_and_cancel_cleanup) ... ok
+test_cancelled_portal_does_not_auto_retry_or_open_permission_window (test_screenshot_permission.PermissionWindowTests.test_cancelled_portal_does_not_auto_retry_or_open_permission_window) ... Capture failed: kind=cancelled response=1 detail=cancelled
+ok
+test_escape_closing_permission_window_cancels_pending_request (test_screenshot_permission.PermissionWindowTests.test_escape_closing_permission_window_cancels_pending_request) ... This plugin does not support propagateSizeHints()
+This plugin does not support raise()
+ok
+test_explicit_continue_discards_permission_window_capture_and_recaptures (test_screenshot_permission.PermissionWindowTests.test_explicit_continue_discards_permission_window_capture_and_recaptures) ... Capture failed: kind=unexpected response=2 detail=response 2
+This plugin does not support propagateSizeHints()
+This plugin does not support raise()
+This plugin does not support raise()
+ok
+test_focus_failure_offers_real_window_without_showing_controller (test_screenshot_permission.PermissionWindowTests.test_focus_failure_offers_real_window_without_showing_controller) ... Capture failed: kind=unexpected response=2 detail=response 2
+This plugin does not support propagateSizeHints()
+This plugin does not support raise()
+ok
+test_background_focus_rejection_response_two_is_not_user_cancel (test_screenshot_permission.RequestTests.test_background_focus_rejection_response_two_is_not_user_cancel) ... ok
+test_cancel_closes_pending_request_and_disconnects (test_screenshot_permission.RequestTests.test_cancel_closes_pending_request_and_disconnects) ... ok
+test_independent_connection_registers_before_screenshot (test_screenshot_permission.RequestTests.test_independent_connection_registers_before_screenshot) ... ok
+test_permission_missing_backend_and_other_method_errors_keep_details (test_screenshot_permission.RequestTests.test_permission_missing_backend_and_other_method_errors_keep_details) ... ok
+test_rejected_registry_never_falls_back_to_anonymous_request (test_screenshot_permission.RequestTests.test_rejected_registry_never_falls_back_to_anonymous_request) ... ok
+test_response_before_reply_on_changed_handle (test_screenshot_permission.RequestTests.test_response_before_reply_on_changed_handle) ... ok
+test_response_one_reports_portal_cancellation_with_permission_ambiguity (test_screenshot_permission.RequestTests.test_response_one_reports_portal_cancellation_with_permission_ambiguity) ... ok
+test_timeout_keeps_distinct_error_and_disconnects (test_screenshot_permission.RequestTests.test_timeout_keeps_distinct_error_and_disconnects) ... ok
+test_unsupported_uri_is_unexpected_error (test_screenshot_permission.RequestTests.test_unsupported_uri_is_unexpected_error) ... ok
+test_quit_action_is_queued_to_application_not_capture_work (test_screenshot_permission.WindowAndQuitTests.test_quit_action_is_queued_to_application_not_capture_work) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_window_capture_uses_identified_request_and_existing_save_copy (test_screenshot_permission.WindowAndQuitTests.test_window_capture_uses_identified_request_and_existing_save_copy) ... ok
+test_window_response_two_is_not_silently_returned_as_cancel (test_screenshot_permission.WindowAndQuitTests.test_window_response_two_is_not_silently_returned_as_cancel) ... ok
+test_close_session_closes_exact_handle_and_disconnects (test_shortcut_assignment.AssignmentTests.test_close_session_closes_exact_handle_and_disconnects) ... ok
+test_configuration_explicit_only_and_refreshes_list (test_shortcut_assignment.AssignmentTests.test_configuration_explicit_only_and_refreshes_list) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_unknown_method_disables_action (test_shortcut_assignment.AssignmentTests.test_configuration_unknown_method_disables_action) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_denied_binding_reports_registration_error (test_shortcut_assignment.AssignmentTests.test_denied_binding_reports_registration_error) ... ok
+test_failed_list_retains_last_reported_assignment (test_shortcut_assignment.AssignmentTests.test_failed_list_retains_last_reported_assignment) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Active shortcut verification failed: RuntimeError
+ok
+test_host_registry_failure_is_not_treated_as_confirmed_identity (test_shortcut_assignment.AssignmentTests.test_host_registry_failure_is_not_treated_as_confirmed_identity) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ['Desktop application ID not found']. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_identity_first_same_connection_and_exact_app_id (test_shortcut_assignment.AssignmentTests.test_identity_first_same_connection_and_exact_app_id) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_localized_description_preserved_without_guessing (test_shortcut_assignment.AssignmentTests.test_localized_description_preserved_without_guessing) ... ok
+test_missing_description_never_substitutes_requested_key (test_shortcut_assignment.AssignmentTests.test_missing_description_never_substitutes_requested_key) ... ok
+test_new_binding_request_and_actual_response (test_shortcut_assignment.AssignmentTests.test_new_binding_request_and_actual_response) ... ok
+test_registration_failure_signal_keeps_error (test_shortcut_assignment.AssignmentTests.test_registration_failure_signal_keeps_error) ... Shortcut registration failed: RuntimeError
+ok
+test_remembered_choice_not_replaced_by_preference (test_shortcut_assignment.AssignmentTests.test_remembered_choice_not_replaced_by_preference) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_shortcuts_changed_updates_and_filters_session (test_shortcut_assignment.AssignmentTests.test_shortcuts_changed_updates_and_filters_session) ... ok
+test_shutdown_cancels_pending_configuration (test_shortcut_assignment.AssignmentTests.test_shutdown_cancels_pending_configuration) ... ok
+test_snap_identity_error_kept_and_configuration_blocked (test_shortcut_assignment.AssignmentTests.test_snap_identity_error_kept_and_configuration_blocked) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ["Could not register app ID: Can't manually register a io.snapcraft application"]. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_stale_list_does_not_overwrite_new_signal (test_shortcut_assignment.AssignmentTests.test_stale_list_does_not_overwrite_new_signal) ... ok
+test_unrelated_nonstandard_property_does_not_break_capabilities (test_shortcut_assignment.AssignmentTests.test_unrelated_nonstandard_property_does_not_break_capabilities) ... ok
+test_v1_advertised_stub_never_called_and_explained (test_shortcut_assignment.AssignmentTests.test_v1_advertised_stub_never_called_and_explained) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_v1_advertised_stub_v2_and_signature (test_shortcut_assignment.AssignmentTests.test_v1_advertised_stub_v2_and_signature) ... ok
+test_xdg_base_keysym_and_stable_id (test_shortcut_assignment.AssignmentTests.test_xdg_base_keysym_and_stable_id) ... ok
+test_actual_assignment_in_action_tooltip_status_and_mismatch_warning (test_shortcut_assignment.PresentationTests.test_actual_assignment_in_action_tooltip_status_and_mismatch_warning) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_action_is_explicit_and_capability_gated (test_shortcut_assignment.PresentationTests.test_configuration_action_is_explicit_and_capability_gated) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_registration_error_removes_stale_assignment (test_shortcut_assignment.PresentationTests.test_registration_error_removes_stale_assignment) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_worker_assignment_is_delivered_to_gui_thread (test_shortcut_assignment.PresentationTests.test_worker_assignment_is_delivered_to_gui_thread) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 4.260s
+
+OK
+
+Screenshot saved:
+/tmp/tmp3hm9cklt/saved/Screenshot_2026-11-14_09-13-36.png
+Copied to clipboard.
+
+Temporary screenshot removed.

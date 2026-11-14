@@ -1,13 +1,22 @@
 """Main entry point for AI Snipping Tool background daemon."""
 
 import sys
+import os
+import subprocess
+import logging
+import signal
+from pathlib import Path
 
-from PySide6.QtCore import Qt
+from utils.desktop_entry import APP_ID, ensure_desktop_entry
+
+from PySide6.QtCore import QLockFile, QStandardPaths, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from shortcuts.global_shortcut import GlobalShortcutManager
 from ui.capture_menu import CaptureMenu
+from ui.shortcut_status import ShortcutStatus
+from utils.capture_diagnostics import trace
 
 
 def create_tray_icon() -> QIcon:
@@ -37,25 +46,69 @@ def create_tray_icon() -> QIcon:
     return QIcon(pixmap)
 
 
-def main() -> int:
-    application = QApplication(sys.argv)
-    application.setQuitOnLastWindowClosed(False)
+def prepare_qt_environment():
+    """Avoid the observed Qt GTK theme abort on GNOME without XSettings keys.
 
+    Respect an explicitly selected theme. This only selects a Qt fallback;
+    it does not modify GNOME settings or installed schemas.
+    """
+    if os.environ.get("QT_QPA_PLATFORMTHEME") or "gnome" not in os.environ.get("XDG_CURRENT_DESKTOP", "").lower():
+        return
+    try:
+        result = subprocess.run(
+            ["gsettings", "list-keys", "org.gnome.settings-daemon.plugins.xsettings"],
+            capture_output=True, text=True, timeout=2)
+    except (OSError, subprocess.TimeoutExpired):
+        return
+    if result.returncode == 0 and "antialiasing" not in result.stdout.splitlines():
+        os.environ["QT_QPA_PLATFORMTHEME"] = "generic"
+
+
+def acquire_instance_lock():
+    runtime = QStandardPaths.writableLocation(QStandardPaths.RuntimeLocation)
+    lock = QLockFile(str(Path(runtime) / f"{APP_ID}.lock"))
+    if not lock.tryLock(0):
+        return None
+    return lock
+
+
+def configure_application(application):
+    """Build a quiet background app; expose owned objects for lifecycle tests."""
+    application.setQuitOnLastWindowClosed(False)
+    application.setApplicationName(APP_ID)
+    application.setDesktopFileName(APP_ID)
     menu = CaptureMenu()
     shortcut_manager = GlobalShortcutManager()
+    if os.environ.get('SNIPPING_DIAGNOSTICS') == '1':
+        heartbeat = QTimer(menu)
+        heartbeat.setInterval(1000)
+        heartbeat.timeout.connect(lambda: trace('event_loop_heartbeat',
+            clipboard_owned=application.clipboard().ownsClipboard(),
+            application_alive=QApplication.instance() is application,
+            capture_jobs=len(menu.jobs.tasks)))
+        heartbeat.start()
 
     # System Tray setup
     tray_icon = QSystemTrayIcon(create_tray_icon(), application)
-    tray_icon.setToolTip("AI Snipping Tool\nPress Ctrl+Shift+S to capture")
+    tray_icon.setToolTip("AI Snipping Tool\nShortcut assignment pending")
 
     tray_menu = QMenu()
-    capture_action = tray_menu.addAction("Capture (Ctrl+Shift+S)")
+    capture_action = tray_menu.addAction("Capture")
     capture_action.triggered.connect(menu.launch_overlay)
 
     tray_menu.addSeparator()
 
+    shortcut_status_action = tray_menu.addAction("Shortcut assignment pending")
+    shortcut_status_action.setEnabled(False)
+    identity_action = tray_menu.addAction("Application identity: checking")
+    identity_action.setEnabled(False)
+    configure_action = tray_menu.addAction("Configure Shortcut (unavailable)")
+    tray_menu.addSeparator()
     quit_action = tray_menu.addAction("Quit")
-    quit_action.triggered.connect(application.quit)
+    def request_quit():
+        logging.getLogger(__name__).info('Tray Quit action received; scheduling QApplication.quit')
+        QTimer.singleShot(0, application.quit)
+    quit_action.triggered.connect(request_quit)
 
     tray_icon.setContextMenu(tray_menu)
     tray_icon.activated.connect(
@@ -67,19 +120,48 @@ def main() -> int:
 
     # Wire global shortcut signals
     shortcut_manager.shortcut_activated.connect(menu.launch_overlay)
-    shortcut_manager.registration_succeeded.connect(
-        menu.set_global_shortcut_registered
-    )
-    shortcut_manager.registration_failed.connect(menu.set_global_shortcut_error)
-    application.aboutToQuit.connect(shortcut_manager.stop)
+    menu.shortcut_status = ShortcutStatus(menu, shortcut_manager, tray_icon, capture_action,
+        shortcut_status_action, identity_action, configure_action)
+    application.aboutToQuit.connect(
+        lambda: logging.getLogger(__name__).info('QApplication aboutToQuit emitted'))
+    application.aboutToQuit.connect(menu.shutdown)
 
-    print("AI Snipping Tool started in background.")
-    print("Press Ctrl+Shift+S to capture or use the system tray icon.")
+    return menu, shortcut_manager, tray_icon, tray_menu
 
-    shortcut_manager.start()
 
-    # Start quietly in the background without opening menu/overlay
-    return application.exec()
+def main() -> int:
+    if "--install-desktop" in sys.argv:
+        try:
+            print(ensure_desktop_entry())
+            return 0
+        except (OSError, RuntimeError, ValueError) as error:
+            print(str(error), file=sys.stderr)
+            return 1
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    prepare_qt_environment()
+    application = QApplication(sys.argv)
+    lock = acquire_instance_lock()
+    if lock is None:
+        print("AI Snipping Tool is already running, or its runtime lock is unavailable.", file=sys.stderr)
+        return 0
+    menu, shortcut_manager, tray_icon, tray_menu = configure_application(application)
+    previous_handlers = {}
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        previous_handlers[sig] = signal.signal(sig, lambda *_: application.quit())
+    try:
+        shortcut_manager.start()
+        return application.exec()
+    finally:
+        logging.getLogger(__name__).info('Shutdown: stopping capture jobs')
+        menu.shutdown()
+        menu.jobs.close()
+        logging.getLogger(__name__).info('Shutdown: closing shortcut portal session')
+        shortcut_manager.stop()
+        tray_icon.hide()
+        lock.unlock()
+        logging.getLogger(__name__).info('Shutdown complete')
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,89 @@
+Compact shortcut status UI — 2026-11-14
+
+Starting Git: fix/phase-01-app-lifecycle at dd89101.
+Pre-existing unstaged docs/handoff-summary.md, docs/phase-01-acceptance.md,
+docs/phase-01-alt-shortcut-evidence.txt preserved. Index empty.
+No stage/commit/reset/checkout/merge/push commands performed.
+
+Source findings: unrestricted QAction row held entire mismatch/migration paragraph.
+Qt QMenu rows do not wrap. Parentless hidden QLabel was also found; no current
+show call demonstrated it as the visible window. No screenshot attachment was
+available to inspect in this turn. Actual source and rendered widgets inspected.
+
+Changes authored this task:
+shortcuts/assignment.py — readable recognized trigger display, localized fallback.
+ui/shortcut_status.py — bounded tray rows, explicit compact status dialog,
+wrapped plaintext, logical screen bounds, scroll content, Close button,
+collapsible errors/identity/raw portal details; no background window showing.
+ui/capture_menu.py — parent hidden compatibility label; no capture algorithm edit.
+tests/test_shortcut_assignment.py — presentation/layout/formatting regression coverage.
+tests/test_phase01.py — fake manager preferred_trigger property.
+docs/phase-01-acceptance.md, docs/handoff-summary.md, docs/test-matrix.md,
+this evidence file — accurate current status and physical gate.
+main.py and shortcuts/global_shortcut.py inspected, unchanged.
+ALT+SHIFT+s and stable app/action IDs already correct, unchanged.
+
+Automated commands/results:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Initial run: 81 executed, 2 errors: older FakeShortcuts missing preferred_trigger.
+Fixture corrected; final run: Ran 81 tests in 4.482s, OK.
+QT_SCALE_FACTOR=2 QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -p test_shortcut_assignment.py -v
+Final run: Ran 31 tests in 0.200s, OK.
+.venv/bin/python -m compileall -q main.py shortcuts ui tests -> exit 0.
+QT_QPA_PLATFORM=offscreen .venv/bin/python -c 'import main, shortcuts.assignment, ui.shortcut_status' -> exit 0.
+git diff --check; git diff --cached --check -> exit 0.
+
+Generated visual QA:
+QT_QPA_PLATFORM=offscreen .venv/bin/python /tmp/snipping-status-render.py
+rendered /tmp/snipping-status-compact.png and /tmp/snipping-status-narrow.png.
+Narrow simulated logical screen 320x480 => dialog 288x340, summary 248x85.
+Inspected narrow screenshot: requested Alt+Shift+S, actual Ctrl+Alt+S, registration
+mismatch wraps, identity Registered, expanded details scroll, Close visible.
+Offscreen plugin lacks raise(), expected; not native visual/physical proof.
+
+Native commands/results (genuine GNOME session, authorized diagnostics):
+Read current stored binding via gsettings get only -> <Control><Alt>s.
+ps verifies existing main.py PID 204479; PID-verified DBusMenu Quit sent.
+/usr/bin/python3 /tmp/snipping-terminal-launch.py /usr/bin/python3 /tmp/snipping-status-host.py
+Standard GNOME Terminal D-Bus service starts canonical main.py with logs.
+No cgroup identity spoofing or permission changes. One main.py PID 212764.
+/usr/bin/python3 /tmp/snipping-tray-inspect.py
+Native tray: Capture (Ctrl+Alt+S); Shortcut status: Registered — different shortcut…;
+Application identity: Registered; Configure Shortcut (unavailable); Quit.
+User instructions and raw strings no longer placed in long tray rows.
+/usr/bin/python3 /tmp/snipping-status-native-probe.py 212764
+PID-verified explicit status QAction DBusMenu Event succeeded. Programmatic, not physical.
+AT-SPI inspection before/after returned no Qt nodes. Native dialog visual check NOT RUN;
+empty accessibility data is NOT proof a window is hidden. Automated Qt tests prove
+startup-hidden/explicit-only behavior; native visual acceptance remains user-required.
+/usr/bin/python3 /tmp/snipping-native-tray-quit.py 212764
+Quit event returned success, /proc/212764 disappeared, host receiver exited.
+App logs Quit -> aboutToQuit -> jobs/session cleanup -> Shutdown complete.
+Programmatic shutdown PASS, no diagnostic app left running.
+
+Portal log (actual ListShortcuts/ShortcutsChanged, not simulated):
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO __main__: Tray Quit action received; scheduling QApplication.quit
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+
+Manual acceptance NOT RUN after this change:
+Native visual appearance/scaling, physical Alt+Shift+S, Escape, rectangle/English
+OCR/Window external paste, tray clicking, new binding persistence. Prior user
+physical capture/paste/Esc/Quit results remain PASS as historical reports.
+
+Binding migration requires explicit user confirmation:
+Settings > Apps > AI Snipping Tool > Permissions > Global Shortcuts >
+Open AI Snipping Tool capture menu > Set Shortcut. Physically press Alt+Shift+S,
+confirm, cancel on conflict. Verify actual portal/tray result, relaunch from grid,
+then physical workflow tests. No ConfigureShortcuts on portal v1, no system reset,
+other shortcuts changes, new IDs or silent override.
+Phase 1 OPEN; Phase 2/AI not started.

@@ -61,3 +61,53 @@ Exit: 1
 $ git diff --check
 Exit: 0
 
+Inspection/environment command inventory (executed during this audit; source reads omitted from test totals):
+pwd
+git status --short
+git branch -vv
+git log -5 --oneline
+git remote -v
+git rev-parse HEAD
+git diff --stat
+git diff --numstat
+git diff -- .gitignore main.py ocr/ocr_engine.py ui/capture_menu.py ui/overlay.py utils/clipboard.py
+git switch -c chore/phase-00-baseline-audit
+  Initial sandbox attempt failed to lock refs; authorized retry succeeded.
+git show -s --format=fuller HEAD
+git show --stat --oneline aaf6cab
+git show --stat --oneline 29e61f5
+git diff ee0c132 HEAD --stat
+git reflog -5 --format='%h %gs'
+git ls-files
+git ls-files docs
+git check-ignore ocr/tessdata/sin.traineddata
+cat /etc/os-release
+python3 --version
+.venv/bin/python --version
+printenv XDG_SESSION_TYPE XDG_CURRENT_DESKTOP DESKTOP_SESSION WAYLAND_DISPLAY DISPLAY
+gnome-shell --version
+dpkg-query -W python3-venv tesseract-ocr tesseract-ocr-eng tesseract-ocr-sin xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+  Exit 1 because tesseract-ocr-sin absent; other package versions recorded in audit.
+tesseract --version
+ls -l ocr/tessdata
+sha256sum ocr/tessdata/sin.traineddata
+cat .venv/pyvenv.cfg
+cat /home/dulmina/.local/share/applications/com.dulmina.aisnippingtool.desktop
+command -v desktop-file-validate
+mkdir -p /tmp/snipping-phase00-home
+python3 -m venv /tmp/snipping-phase00-clean-venv
+timeout 10s gdbus introspect --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop
+  First attempt sandbox-denied; authorized retry exit 0. No capture method called.
+
+Source reads used cat/sed on AGENTS.md, CODEX_START.md, the build plan, both original audit documents, main.py, all capture/*.py, both native C sources (headers/FD/frame/main sections), ui/capture_menu.py, ui/overlay.py, ui/selection_overlay.py, shortcuts/global_shortcut.py, ocr/ocr_engine.py, utils/clipboard.py, requirements.txt, repository desktop entry and every test_*.py. rg --files inventoried tracked/source/document paths. rg -n searched Python/C references for screen_capture, pipewire, PortalScreenshot, selection_overlay, SelectionOverlay, URLs, requests, urllib, extract_text, function definitions and disabled controls. importlib.metadata and PySide6.QtCore.qVersion inspected exact installed versions; pytest not installed. The canvas SKILL.md was read to resolve presentation guidance; it excludes existing-file/targeted development tasks, so no canvas was created.
+
+Documentation writes: apply_patch created docs/phase-00-checks.py; shell heredocs updated docs/baseline-audit.md and docs/test-matrix.md and created docs/handoff-summary.md; Python subprocess runner created this command log. compileall generated only ignored bytecode. Temporary HOME/venv and synthetic probes were confined to /tmp. No git add/commit/push/merge/reset or user-file deletion command was executed by this agent.
+
+Final checks:
+$ git diff --check
+Exit: 0 (current worktree)
+$ git diff --cached --check
+Exit: 2; docs/phase-00-command-log.txt:63: new blank line at EOF.
+The index was populated externally during the audit; this agent did not stage files. The current command log contains later content, so that indexed EOF warning is not present in the worktree. No index mutation attempted.
+$ git diff HEAD -- main.py ui/capture_menu.py ui/overlay.py ocr/ocr_engine.py utils/clipboard.py .gitignore
+Exit: 0, no production diff against the concurrently updated HEAD.

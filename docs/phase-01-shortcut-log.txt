@@ -1,0 +1,145 @@
+Phase 1 shortcut correction — 2026-11-14 Asia/Colombo
+Starting branch: fix/phase-01-app-lifecycle
+Starting HEAD: 79a7fd9 (new external commit since previously reported f9858ca).
+Starting status: clean index and worktree; no pre-existing uncommitted changes to overwrite.
+External commit 9755ff4 appeared during implementation; preserved. No stage/commit/push/merge/reset/clean/switch/unstage command executed by this agent.
+
+Commands: git status --short; git branch --show-current; git log -8 --oneline --decorate; git diff --stat; git diff --cached --stat; git diff; source/test/document reads; relevant reference search with rg.
+References checked: official XDG shortcuts specification, GlobalShortcuts API and host Registry API. Preferred trigger is CTRL+SHIFT+s; stable shortcut ID remains open_capture_menu.
+
+Installed portal inspection (read-only, authorized session-bus access):
+$ timeout 10s gdbus introspect --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop --xml
+GlobalShortcuts advertises ConfigureShortcuts(session_handle:o, parent_window:s, options:a{sv}), plus ListShortcuts and ShortcutsChanged.
+
+First new suite: 38 tests PASS. Live capability inspection initially failed because dbus-next 0.2.3 Node.parse rejects unrelated property power-saver-enabled. Separate read-only bus.introspect probe confirmed InvalidMemberNameError with that property name. Fixed by reading raw Introspect XML and inspecting only the needed interface/method/signature. Added regression coverage. Subsequent 39 and 43 tests passed.
+
+Final suite command:
+$ QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart) ... ok
+test_generated_launcher_and_custom_entry_preservation (test_phase01.EntryTests.test_generated_launcher_and_custom_entry_preservation) ... ok
+test_gnome_theme_fallback_and_explicit_preference (test_phase01.EntryTests.test_gnome_theme_fallback_and_explicit_preference) ... ok
+test_instance_lock (test_phase01.EntryTests.test_instance_lock) ... ok
+test_migrate_legacy_launcher (test_phase01.EntryTests.test_migrate_legacy_launcher) ... ok
+test_old_standalone_entry_delegates (test_phase01.EntryTests.test_old_standalone_entry_delegates) ... ok
+test_shutdown_during_shortcut_registration (test_phase01.EntryTests.test_shutdown_during_shortcut_registration) ... ok
+test_tray_and_shortcut_share_route_and_start_quietly (test_phase01.EntryTests.test_tray_and_shortcut_share_route_and_start_quietly) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_denied_portal_keeps_controller_hidden_and_retry_works (test_phase01.LifecycleTests.test_denied_portal_keeps_controller_hidden_and_retry_works) ... This plugin does not support raise()
+ok
+test_fullscreen_completion_closes_overlay (test_phase01.LifecycleTests.test_fullscreen_completion_closes_overlay) ... This plugin does not support raise()
+ok
+test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread (test_phase01.LifecycleTests.test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread) ... ok
+test_quiet_start_and_repeat_activation (test_phase01.LifecycleTests.test_quiet_start_and_repeat_activation) ... [CAPTURE MENU] Overlay launched via shortcut/tray
+[CAPTURE MENU] Overlay launched via shortcut/tray
+This plugin does not support raise()
+ok
+test_real_ocr_process_boundary_error_and_cancel (test_phase01.LifecycleTests.test_real_ocr_process_boundary_error_and_cancel) ... Background operation failed: Local OCR failed; check Tesseract and language data.
+ok
+test_rectangle_completion_closes_overlay_before_clipboard (test_phase01.LifecycleTests.test_rectangle_completion_closes_overlay_before_clipboard) ... This plugin does not support raise()
+ok
+test_shutdown_cancels_ocr_before_any_clipboard_delivery (test_phase01.LifecycleTests.test_shutdown_cancels_ocr_before_any_clipboard_delivery) ... ok
+test_slow_portal_heartbeat_and_shutdown (test_phase01.LifecycleTests.test_slow_portal_heartbeat_and_shutdown) ... ok
+test_window_cancel_does_not_report_success (test_phase01.LifecycleTests.test_window_cancel_does_not_report_success) ... ok
+test_window_portal_and_clipboard_remain_on_gui_thread (test_phase01.LifecycleTests.test_window_portal_and_clipboard_remain_on_gui_thread) ... ok
+test_cancel_during_bus_connect_disconnects (test_phase01.PortalCleanupTests.test_cancel_during_bus_connect_disconnects) ... ok
+test_early_response_and_cancel_cleanup (test_phase01.PortalCleanupTests.test_early_response_and_cancel_cleanup) ... ok
+test_close_session_closes_exact_handle_and_disconnects (test_shortcut_assignment.AssignmentTests.test_close_session_closes_exact_handle_and_disconnects) ... ok
+test_configuration_explicit_only_and_refreshes_list (test_shortcut_assignment.AssignmentTests.test_configuration_explicit_only_and_refreshes_list) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_unknown_method_disables_action (test_shortcut_assignment.AssignmentTests.test_configuration_unknown_method_disables_action) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_denied_binding_reports_registration_error (test_shortcut_assignment.AssignmentTests.test_denied_binding_reports_registration_error) ... ok
+test_failed_list_retains_last_reported_assignment (test_shortcut_assignment.AssignmentTests.test_failed_list_retains_last_reported_assignment) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Active shortcut verification failed: RuntimeError
+ok
+test_host_registry_failure_is_not_treated_as_confirmed_identity (test_shortcut_assignment.AssignmentTests.test_host_registry_failure_is_not_treated_as_confirmed_identity) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ['Desktop application ID not found']. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_identity_first_same_connection_and_exact_app_id (test_shortcut_assignment.AssignmentTests.test_identity_first_same_connection_and_exact_app_id) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_localized_description_preserved_without_guessing (test_shortcut_assignment.AssignmentTests.test_localized_description_preserved_without_guessing) ... ok
+test_missing_description_never_substitutes_requested_key (test_shortcut_assignment.AssignmentTests.test_missing_description_never_substitutes_requested_key) ... ok
+test_new_binding_request_and_actual_response (test_shortcut_assignment.AssignmentTests.test_new_binding_request_and_actual_response) ... ok
+test_registration_failure_signal_keeps_error (test_shortcut_assignment.AssignmentTests.test_registration_failure_signal_keeps_error) ... Shortcut registration failed: RuntimeError
+ok
+test_remembered_choice_not_replaced_by_preference (test_shortcut_assignment.AssignmentTests.test_remembered_choice_not_replaced_by_preference) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_shortcuts_changed_updates_and_filters_session (test_shortcut_assignment.AssignmentTests.test_shortcuts_changed_updates_and_filters_session) ... ok
+test_shutdown_cancels_pending_configuration (test_shortcut_assignment.AssignmentTests.test_shutdown_cancels_pending_configuration) ... ok
+test_snap_identity_error_kept_and_configuration_blocked (test_shortcut_assignment.AssignmentTests.test_snap_identity_error_kept_and_configuration_blocked) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ["Could not register app ID: Can't manually register a io.snapcraft application"]. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_stale_list_does_not_overwrite_new_signal (test_shortcut_assignment.AssignmentTests.test_stale_list_does_not_overwrite_new_signal) ... ok
+test_unrelated_nonstandard_property_does_not_break_capabilities (test_shortcut_assignment.AssignmentTests.test_unrelated_nonstandard_property_does_not_break_capabilities) ... ok
+test_v1_without_method_v1_backport_v2_and_signature (test_shortcut_assignment.AssignmentTests.test_v1_without_method_v1_backport_v2_and_signature) ... ok
+test_xdg_base_keysym_and_stable_id (test_shortcut_assignment.AssignmentTests.test_xdg_base_keysym_and_stable_id) ... ok
+test_actual_assignment_in_action_tooltip_status_and_mismatch_warning (test_shortcut_assignment.PresentationTests.test_actual_assignment_in_action_tooltip_status_and_mismatch_warning) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_action_is_explicit_and_capability_gated (test_shortcut_assignment.PresentationTests.test_configuration_action_is_explicit_and_capability_gated) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_registration_error_removes_stale_assignment (test_shortcut_assignment.PresentationTests.test_registration_error_removes_stale_assignment) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_worker_assignment_is_delivered_to_gui_thread (test_shortcut_assignment.PresentationTests.test_worker_assignment_is_delivered_to_gui_thread) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 2.760s
+
+OK
+
+Exit: 0
+
+$ QT_QPA_PLATFORM=offscreen HOME=/tmp/snipping-phase00-home timeout 15s .venv/bin/python test_capture_menu.py --smoke
+CAPTURE MENU SMOKE TEST PASS
+Exit: 0
+$ QT_QPA_PLATFORM=offscreen HOME=/tmp/snipping-phase00-home timeout 15s .venv/bin/python test_capture_menu.py --cancel
+CAPTURE MENU CANCELLATION TEST PASS
+Exit: 0
+Both scripts emitted the known sandbox Settings.ReadAll disconnection warning; neither is a physical desktop test.
+
+$ .venv/bin/python -m compileall -q main.py capture ui ocr shortcuts utils tests test_*.py
+Exit: 0
+$ git diff --check
+Exit: 0
+$ git diff --cached --check
+Exit: 0
+
+Live check command (authorized Wayland/session bus):
+$ .venv/bin/python /tmp/snipping-phase01-verify.py
+The temporary in-memory instrumentation invokes canonical main.main(), records actual Registry/BindShortcuts responses, samples GUI status on a Qt timer, rejects a second launch and triggers only its own Quit QAction after ten seconds. It does not open shortcut configuration, simulate keys, request capture, or alter the clipboard.
+Final live result:
+PLATFORM: wayland
+CONTROLLER_VISIBLE: False
+STARTUP_OVERLAY: False
+VISIBLE_TOP_LEVEL_TYPES: []
+TRAY_AVAILABLE: True
+SECOND_INSTANCE_EXIT: 0 (already running/runtime lock message)
+REGISTRY_REPLY: ERROR org.freedesktop.portal.Error.Failed ["Could not register app ID: Can't manually register a io.snapcraft application"]
+BOUND_SHORTCUTS: [('open_capture_menu', {'description': 'Open AI Snipping Tool capture menu', 'trigger_description': 'Press <Control><Alt>s'})]
+REGISTRATION_PASS: Press <Control><Alt>s
+REQUESTED: CTRL+SHIFT+s
+ASSIGNED: Press <Control><Alt>s
+PORTAL_VERSION: 1
+CONFIGURE_SUPPORTED: True
+CONFIGURE_ALLOWED: False
+TRAY_CAPTURE_LABEL: Capture (Press <Control><Alt>s)
+GUI_STATUS: requested/actual shown separately with different-assignment warning and the full identity error.
+MAIN_EXIT: 0
+HEARTBEATS: 104
+SHORTCUT_THREAD_ALIVE: False
+Physical keys, native tray clicks, external paste and genuine GNOME app-grid identity: NOT RUN.
+ConfigureShortcuts live dialog/confirmation: NOT RUN; intentionally not invoked without an explicit user click and confirmed host identity.
+No GNOME shortcut settings were reset or changed. Existing remembered Ctrl+Alt+S was preserved.
+
+The user asked the agent to perform manual checks itself; no physical test result or genuine host app-grid identity was supplied. This session has no native desktop controls. Those checks remain NOT RUN; no synthetic keyboard/tray actions are counted as physical acceptance.
+Final documentation/whitespace checks: git diff --check and git diff --cached --check PASS. No source behavior changed after the 43-test final run apart from documentation.
