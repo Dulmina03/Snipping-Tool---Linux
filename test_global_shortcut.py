@@ -8,10 +8,11 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
-from main import acquire_instance_lock, configure_application
+from main import acquire_instance_lock, configure_application, prepare_qt_environment
 
 
 def main():
+    prepare_qt_environment()
     app = QApplication(sys.argv)
     lock = acquire_instance_lock()
     if lock is None:

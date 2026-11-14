@@ -123,3 +123,14 @@ Known remaining problems: host Registry emits `org.freedesktop.portal.Error.Fail
 5. Verify tray Capture and Quit by actual clicks. Confirm the launched PID exits within five seconds and another launch registers normally.
 
 The user asked the agent to perform checks independently; a bounded real Wayland smoke was run. Physical-key/visual/paste checks remain explicitly NOT RUN because this session has no native desktop controls. **Phase 1 implementation is ready for review; the full phase exit gate is pending those manual checks. Do not proceed to Phase 2.**
+
+## Phase 1 acceptance follow-up — 2026-11-14
+
+Latest detailed results for **all 13 user acceptance tests**: [phase-01-acceptance.md](phase-01-acceptance.md). This supersedes any inference that the earlier registration PASS proves Ctrl+Shift+S is bound.
+
+- PASS: 20 automated regressions; quiet native main runtime state; single-instance rejection; exactly one actual GIO-launched main.py process; installed launcher execution; bounded programmatic Quit/SIGTERM cleanup.
+- FAIL: intended shortcut assignment/truthful reporting. Portal returns `Press <Control><Alt>s`; app emits preferred `<Ctrl><Shift>S`. Preferred string also differs from the portal's specified XDG syntax.
+- FAIL in this launch context: host Registry identity. Detailed response identifies caller as `io.snapcraft`; both tests inherit the Snap VS Code cgroup. Do not classify this as harmless or assume successful host app identity.
+- NOT RUN: visual blank-window check, actual physical key/Esc/tray clicks, repeated real captures, all three capture modes, cross-app image/OCR paste, independent genuine GNOME app-grid context.
+
+**Phase 1 cannot close and Phase 2 must not begin.** No production source or user shortcut settings changed during this verification. Existing dirty command log/manual harness additions preserved; no Git mutation commands executed.

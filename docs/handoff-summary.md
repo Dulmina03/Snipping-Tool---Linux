@@ -32,3 +32,13 @@ Phase 0 audit recorded; Phase 1 not implemented. Read [baseline-audit.md](baseli
 - No AI integration/API keys/dependencies added. Complete offline Sinhala/English/mixed OCR and image/PDF workflows and the non-AI release before Ask AI.
 
 Final index observation: documentation was staged by an external actor during the audit (this agent ran no `git add`). `git diff --cached --check` reports an extra blank line at EOF in the staged command-log snapshot. The current worktree command log has subsequent content and `git diff --check` passes. Preserve/review the external index before any approved commit; do not claim staged whitespace validation passed.
+
+## Latest acceptance follow-up — 2026-11-14
+
+**Phase 1 cannot close; Phase 2 must not begin.** Read [phase-01-acceptance.md](phase-01-acceptance.md), which supersedes earlier assumptions about the successful registration message.
+
+Read-only Git inspection started at `f9858ca` on `fix/phase-01-app-lifecycle`, with no staged files and the same two prior unstaged edits (`docs/phase-01-command-log.txt`, `test_global_shortcut.py`). Both preserved byte-for-byte. Historical commits' initiating process remains unidentified; metadata alone is not provenance. No Git mutation or production-source edits performed in this verification.
+
+Fresh result: 20 automated tests PASS. Canonical main and installed GIO launcher run on Wayland; hidden controller/no startup overlay in Qt state, one actual launcher process, duplicate rejection and cleanup confirmed. Physical key/Esc/tray/visual/capture/paste checks remain NOT RUN.
+
+New confirmed issues: portal returned **Ctrl+Alt+S**, while app reports **Ctrl+Shift+S**; preference also uses non-XDG syntax. Registry specifically rejects `io.snapcraft` callers, consistent with inherited Snap VS Code scope. Successful binding does not prove intended app identity. Genuine GNOME app-grid launch outside this context is still required. No binding/settings changes or portal bypass attempted. Fix these Phase 1 issues and finish manual acceptance before advancing.
