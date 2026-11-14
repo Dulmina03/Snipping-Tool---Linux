@@ -1,3 +1,35 @@
+# Compact shortcut status UI — 2026-11-14
+
+**Phase 1 OPEN.** Requested **Alt+Shift+S**; current genuine GNOME portal **ListShortcuts** reports **Ctrl+Alt+S** (`Press <Control><Alt>s`). This supersedes the previous Ctrl+Shift+S observation. The default remains XDG `ALT+SHIFT+s`; app/action IDs, activation route, capture, clipboard and OCR algorithms are unchanged. No desktop binding has been changed by this task.
+
+## Layout findings and fix
+
+The old `ShortcutStatus._render()` placed a complete assignment/mismatch paragraph in a QMenu QAction. Tray rows do not word-wrap, so the long row could force a menu wider than the available screen. The legacy hidden controller QLabel was also parentless (a potential accidental top-level widget); no current production path was found that explicitly showed it. No attached screenshot file was available in this turn, so this finding is based on source inspection, reproduced layout and generated UI renders rather than claiming inspection of the supplied screenshot.
+
+- Tray rows now contain short registration/identity summaries and a readable actual capture key. Arbitrary backend descriptions are elided to a logical screen-width cap. Tooltip lists requested, assigned, registration and identity without technical errors or migration paragraphs.
+- Existing tray status row is now an explicit **Shortcut status…** action. It opens a compact nonmodal dialog with left-aligned plain text, word wrapping, a scrolling content region, and a persistent Close button. Detailed error/identity/portal values and migration instructions are separately available through **Show details**, collapsed by default. Background updates only change text; they do not show/raise the window. Startup remains quiet.
+- Geometry uses Qt logical available-screen pixels, maximum width/height and decoration margins, with no manual device-pixel multiplier or fixed font size. A 320×480 logical test screen yields a 288×340 dialog with controls visible; resize/narrow-screen tests and 200% Qt scaling pass. Parent the hidden compatibility status label to its controller so it cannot become an independent window.
+- Recognized XDG and English GNOME descriptions display as Alt+Shift+S or Ctrl+Alt+S. Unknown/localized prose is preserved and wrapped; raw portal values remain in details and logs. Requested and assigned values remain distinct, including mismatches or registration errors.
+
+## Verification and current binding
+
+- **PASS — 81 automated tests** (previous 76 plus five new display/layout cases). Updated presentation assertions test the compact summaries and separate diagnostics; the existing lifecycle fake now supplies the manager's preferred-trigger property. Existing capture/clipboard/OCR/window/Escape/shutdown regressions pass.
+- **PASS — 31 shortcut/presentation tests with QT_SCALE_FACTOR=2.** Includes 320-logical-pixel geometry, wrapping/plaintext/alignment, long errors and descriptions, explicit-only opening, hidden details, truthful mismatch and readable formatting.
+- **PASS — syntax/import and staged/unstaged whitespace checks.** Initial full run exposed two outdated FakeShortcuts fixtures missing preferred_trigger; corrected fixture and reran successfully. No test failures remain.
+- **PASS — genuine host registration/portal/tray protocol:** stopped verified old PID 204479 through tray protocol; launched canonical main.py through ordinary GNOME Terminal host service. One main.py PID 212764 observed. Tray reports host identity registered, requested Alt+Shift+S (tooltip/dialog summary) and actual Ctrl+Alt+S (Capture action). ShortcutsChanged and two ListShortcuts verifications agree. ConfigureShortcuts v1 remains disabled and was not invoked. Registered does not mean the requested key was granted. Updated PID 212764 subsequently quit through its PID-verified tray protocol, logged aboutToQuit/job/session cleanup/Shutdown complete and exited; no diagnostic app was left running. This is programmatic clean shutdown PASS, not a physical click.
+- **PASS — generated offscreen visual QA:** inspected narrow render with details expanded; text wraps inside its viewport and Close stays visible. Native tray status activation was programmatic, not a physical click. AT-SPI did not expose this Qt dialog, so native visual confirmation is **NOT RUN**, not inferred from an empty accessibility tree.
+- **PASS (previous user report):** startup, rectangle image paste, English OCR paste, Window image paste, Escape and tray Quit. These physical workflows were not repeated during this layout-only task. **NOT RUN after this change:** native visual/scaling check, physical Alt+Shift+S, all physical workflow regressions and new-binding persistence. No simulated key event is counted as a physical PASS.
+
+## User-confirmed migration / remaining acceptance
+
+Open **Settings → Apps → AI Snipping Tool → Permissions → Global Shortcuts → Open AI Snipping Tool capture menu → Set Shortcut**. Select the action/its shortcut row, physically press Alt+Shift+S and confirm. Cancel any conflict with another action and report it. This is **Global Shortcuts**, not Keyboard Shortcuts. Do not remove all shortcuts or create a separate custom launcher binding. After confirmation, the app's ShortcutsChanged/ListShortcuts should update the assigned key; restart from the application grid if necessary and check tray **Shortcut status…**. On GlobalShortcuts v1 ConfigureShortcuts is unavailable; no unsupported call or settings reset is used.
+
+Then check the compact status at your GNOME scaling, close it, focus another application and physically use Alt+Shift+S → Escape; repeat rectangle/image paste, English OCR/paste, Window/image paste and tray Quit. Confirm no blank controller/automatic status popup or duplicate instances. Phase 1 can close only after the user confirms the actual new key and no regressions. No Phase 2/AI work has begun.
+
+Git: branch `fix/phase-01-app-lifecycle`, HEAD `dd89101`; existing unstaged edits to handoff, acceptance and alt-shortcut evidence preserved. No staged files at entry. No agent stage/commit/reset/merge/push. [Evidence](phase-01-status-ui-evidence.txt). Earlier sections below are historical.
+
+---
+
 # Latest Phase 1 shortcut change — 2026-11-14
 
 **Phase 1 OPEN; Phase 2 has not begun.** The user now confirms physical application-grid startup, rectangle image paste, English OCR paste, Window image paste, Escape and tray Quit **PASS**. These supersede the older delivery failures recorded below. This change requests **Alt+Shift+S** (`ALT+SHIFT+s`), while GNOME currently still assigns **Ctrl+Shift+S** (`Press <Shift><Control>s`). Physical acceptance of the new binding remains pending.
@@ -384,3 +416,8 @@ Only shortcut protocol/presentation/tests/docs changed. Capture, clipboard, OCR 
 7. Click tray **Quit**. Confirm the launched process exits within five seconds, then reopen through the application grid and repeat activation. Record PASS/FAIL for every step and the requested/assigned/identity text. Until reported/observed, physical rows stay NOT RUN.
 
 Remaining Phase 1 blockers: independent host identity verification, any portal/backend limitation discovered in the explicit configuration dialog, desired assignment confirmation and all outstanding physical acceptance. No Phase 2 work is authorized by this update.
+
+
+## Settings navigation follow-up — 2026-11-14
+
+User could not find the previously named Keyboard Shortcuts option. Opened the genuine app page with `gnome-control-center applications com.dulmina.aisnippingtool`. AT-SPI readback confirms **Apps → AI Snipping Tool → Permissions → Global Shortcuts**, labelled **1 action**. A later readback shows a Global Shortcuts dialog and a **Set Shortcut** dialog saying “Enter new shortcut to change Open AI Snipping Tool capture menu”. Input/binding confirmation remains the user's action. An attempted accessibility navigation action returned “No action with index 0”; it is not counted as successful navigation or physical interaction. No settings writes/Remove All Shortcuts/reset/ConfigureShortcuts calls were made by the agent. The dialog temporarily showed Disabled; do not infer a completed assignment from this in-progress editor. The next step is physically pressing Alt+Shift+S in Set Shortcut and confirming; then verify the portal/tray assignment and physical workflow. Phase 1 remains open.

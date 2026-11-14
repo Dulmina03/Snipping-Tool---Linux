@@ -81,3 +81,8 @@ Goal remains blocked by retained GNOME binding, not falsely marked registered.
 Safe migration: user explicitly edits this action in Settings > Apps > AI Snipping
 Tool > Global Shortcuts, confirms Alt+Shift+S, cancels conflicts, then retests.
 No Phase 2 work; no AI.
+
+
+## Settings navigation follow-up — 2026-11-14
+
+User could not find the previously named Keyboard Shortcuts option. Opened the genuine app page with `gnome-control-center applications com.dulmina.aisnippingtool`. AT-SPI readback confirms **Apps → AI Snipping Tool → Permissions → Global Shortcuts**, labelled **1 action**. A later readback shows a Global Shortcuts dialog and a **Set Shortcut** dialog saying “Enter new shortcut to change Open AI Snipping Tool capture menu”. Input/binding confirmation remains the user's action. An attempted accessibility navigation action returned “No action with index 0”; it is not counted as successful navigation or physical interaction. No settings writes/Remove All Shortcuts/reset/ConfigureShortcuts calls were made by the agent. The dialog temporarily showed Disabled; do not infer a completed assignment from this in-progress editor. The next step is physically pressing Alt+Shift+S in Set Shortcut and confirming; then verify the portal/tray assignment and physical workflow. Phase 1 remains open.

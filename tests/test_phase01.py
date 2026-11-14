@@ -25,7 +25,7 @@ from PySide6.QtWidgets import QApplication
 import main
 from ui.capture_menu import CaptureMenu
 from utils.desktop_entry import APP_ID, desktop_entry, ensure_desktop_entry
-from shortcuts.global_shortcut import GlobalShortcutManager
+from shortcuts.global_shortcut import GlobalShortcutManager, PREFERRED_TRIGGER
 
 app = QApplication.instance() or QApplication([])
 app.setQuitOnLastWindowClosed(False)
@@ -42,6 +42,7 @@ def spin_until(predicate, seconds=3):
 
 
 class FakeShortcuts(QObject):
+    preferred_trigger = PREFERRED_TRIGGER
     shortcut_activated = Signal()
     registration_succeeded = Signal(str)
     registration_failed = Signal(str)

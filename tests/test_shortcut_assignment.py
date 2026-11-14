@@ -7,12 +7,12 @@ import threading
 from unittest.mock import AsyncMock, patch
 
 from dbus_next import MessageType, Variant
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, QRect, Qt
 
 # Reuse the isolated QApplication/environment from the original Phase 1 suite.
 from test_phase01 import app, spin_until
 from main import configure_application
-from shortcuts.assignment import comparison
+from shortcuts.assignment import comparison, display_shortcut
 from shortcuts.global_shortcut import (GlobalShortcutManager, GLOBAL_SHORTCUTS_INTERFACE,
     REGISTRY_INTERFACE, PREFERRED_TRIGGER, SHORTCUT_ID, APP_ID, PORTAL_OBJECT_PATH)
 
@@ -327,6 +327,7 @@ class PresentationTests(unittest.TestCase):
         self.menu, self.manager, self.tray, self.tray_menu = configure_application(app)
         self.status = self.menu.shortcut_status
     def tearDown(self):
+        self.status.dialog.close()
         self.menu.shutdown()
         self.menu.jobs.close()
         self.tray.hide()
@@ -334,13 +335,16 @@ class PresentationTests(unittest.TestCase):
 
     def test_actual_assignment_in_action_tooltip_status_and_mismatch_warning(self):
         self.manager._apply_assignment(entries(), 'test')
-        self.assertIn('Press <Control><Alt>s', self.tray_menu.actions()[0].text())
-        self.assertIn('assigned: Press <Control><Alt>s', self.tray.toolTip())
-        self.assertIn('Desktop chose a different shortcut', self.menu.status_label.text())
-        self.assertIn('Requested: ALT+SHIFT+s', self.menu.status_label.text())
-        self.assertIn('Settings → Apps → AI Snipping Tool → Global Shortcuts', self.menu.status_label.text())
-        self.assertIn('cancel if it conflicts', self.menu.status_label.text())
+        self.assertIn('Ctrl+Alt+S', self.tray_menu.actions()[0].text())
+        self.assertIn('Assigned shortcut: Ctrl+Alt+S', self.tray.toolTip())
+        self.assertIn('different shortcut', self.menu.status_label.text())
+        self.assertIn('Requested shortcut: Alt+Shift+S', self.menu.status_label.text())
+        detail = self.status.dialog.details.toPlainText()
+        self.assertIn('Permissions → Global Shortcuts', detail)
+        self.assertIn('Set Shortcut', detail)
+        self.assertNotIn('Settings', self.status.status_action.text())
         self.assertFalse(self.menu.isVisible())
+        self.assertFalse(self.status.dialog.isVisible())
 
     def test_worker_assignment_is_delivered_to_gui_thread(self):
         threads = []
@@ -372,5 +376,60 @@ class PresentationTests(unittest.TestCase):
         self.manager._apply_assignment(entries(), 'test')
         self.manager.registration_failed.emit('Portal denied registration')
         self.assertEqual(self.tray_menu.actions()[0].text(), 'Capture')
-        self.assertIn('Portal denied registration', self.menu.status_label.text())
+        self.assertIn('Registration failed', self.menu.status_label.text())
+        self.assertIn('Portal denied registration', self.status.dialog.details.toPlainText())
+        self.assertNotIn('Portal denied registration', self.tray.toolTip())
         self.assertNotIn('registered: ALT+SHIFT+s', self.tray.toolTip())
+
+    def test_dialog_opens_only_on_explicit_status_action(self):
+        self.manager._apply_assignment(entries(), 'ListShortcuts')
+        self.manager.identity_changed.emit('Host identity registered: test.app')
+        self.manager.configuration_message.emit('Details ' * 100)
+        self.assertFalse(self.status.dialog.isVisible())
+        self.status.status_action.trigger()
+        self.assertTrue(self.status.dialog.isVisible())
+        self.assertFalse(self.menu.isVisible())
+        self.assertFalse(self.status.dialog.details.isVisible())
+        self.status.dialog.details_button.click()
+        self.assertTrue(self.status.dialog.details.isVisible())
+        self.assertIn('Details', self.status.dialog.details.toPlainText())
+
+    def test_dialog_wraps_and_fits_narrow_logical_screen(self):
+        self.manager._apply_assignment(entries('localized description ' * 100), 'test')
+        dialog = self.status.dialog
+        dialog.fit_to_screen(QRect(0, 0, 320, 480))
+        dialog.show()
+        app.processEvents()
+        self.assertLessEqual(dialog.width(), 288)
+        self.assertLessEqual(dialog.height(), 432)
+        self.assertTrue(dialog.summary.wordWrap())
+        self.assertEqual(dialog.summary.textFormat(), Qt.PlainText)
+        self.assertEqual(dialog.summary.alignment(), Qt.AlignLeft | Qt.AlignTop)
+        self.assertGreater(dialog.summary.heightForWidth(200), dialog.summary.fontMetrics().height())
+        self.assertLessEqual(dialog.summary.geometry().right(), dialog.summary.parentWidget().width())
+        self.assertTrue(dialog.details_button.isVisible())
+        self.assertLessEqual(len(self.status.status_action.text()), 100)
+
+    def test_long_errors_and_identity_do_not_expand_tray(self):
+        error = 'verylongtechnicaltoken' * 100
+        self.manager.registration_failed.emit(error)
+        self.manager.identity_changed.emit('Identity not registered: ' + error)
+        self.assertNotIn(error, self.status.status_action.text())
+        self.assertNotIn(error, self.status.identity_action.text())
+        self.assertIn(error, self.status.dialog.details.toPlainText())
+        self.assertIn('Not registered', self.status.dialog.summary.text())
+        self.assertFalse(self.status.dialog.isVisible())
+        self.assertIs(self.menu.status_label.parentWidget(), self.menu)
+
+
+class DisplayShortcutTests(unittest.TestCase):
+    def test_readable_requested_and_portal_descriptions(self):
+        for raw, expected in [('ALT+SHIFT+s', 'Alt+Shift+S'),
+                ('Press <Shift><Alt>s', 'Alt+Shift+S'),
+                ('Press <Control><Alt>s', 'Ctrl+Alt+S'),
+                ('CTRL+SHIFT+s', 'Ctrl+Shift+S')]:
+            self.assertEqual(display_shortcut(raw), expected)
+
+    def test_unknown_or_localized_descriptions_preserved(self):
+        for raw in ['Drücken Sie Strg+Alt+S', 'Not assigned', '<unknown>thing', '']:
+            self.assertEqual(display_shortcut(raw), raw)

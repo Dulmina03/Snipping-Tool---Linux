@@ -173,3 +173,14 @@ Physical startup, Ctrl+Shift+S overlay, Escape and tray Quit now user-confirmed 
 Detailed evidence and minimum acceptance: [phase-01-acceptance.md](phase-01-acceptance.md), [phase-01-alt-shortcut-evidence.txt](phase-01-alt-shortcut-evidence.txt).
 
 Final native cleanup PASS: PID-verified DBusMenu Quit on updated PID 200574 logged aboutToQuit, capture-job/session cleanup and Shutdown complete; PID no longer exists. Own terminal test harness stopped. A real Activated signal + screenshot response 0 appeared late in the session, but without key/source attribution or user visual confirmation; physical Alt+Shift+S remains NOT RUN.
+
+
+## Compact status layout / current binding — 2026-11-14
+
+- PASS: 81 regression tests; readable XDG/portal key display; unknown/localized text preserved; compact tray actions; requested/actual/registration/identity separated; errors and instructions in collapsed details; explicit-only status opening; narrow 320×480 logical geometry, wrapping, plaintext and left alignment; existing capture/clipboard/OCR/window/Escape/Quit automation retained.
+- PASS: 31 shortcut/presentation cases at QT_SCALE_FACTOR=2; compile/import and both whitespace checks. Generated 288×340 narrow offscreen render visually inspected with Close/details visible.
+- PASS: native host registered identity and actual ListShortcuts/ShortcutsChanged **Ctrl+Alt+S**, while request is **Alt+Shift+S**; truthful compact tray labels. One main.py instance observed. Portal v1 configuration remains disabled; no settings mutation.
+- NOT RUN: native visual/scaling confirmation (AT-SPI could not expose dialog), physical Alt+Shift+S and post-layout rectangle/OCR/Window paste, Escape, tray interactions. Prior user-confirmed physical passes remain historical evidence. Programmatic tray status activation is not a physical click.
+- PENDING: explicit GNOME Settings → Apps → AI Snipping Tool → Permissions → Global Shortcuts → capture action → Set Shortcut confirmation. Cancel conflicts; no binding reset/replacement automated. Phase 1 open; no Phase 2.
+
+[Current detailed acceptance](phase-01-acceptance.md), [evidence](phase-01-status-ui-evidence.txt).

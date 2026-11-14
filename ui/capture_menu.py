@@ -215,7 +215,7 @@ class CaptureMenu(QWidget):
         self.ai_radio         = self._hidden_radio(self.action_group, "ai")
 
         # Minimal status_label for test assertions
-        self.status_label = QLabel("")
+        self.status_label = QLabel("", self)
         self.status_label.hide()
 
         # Minimal capture_button for --cancel test
