@@ -169,3 +169,5 @@ Known limitations: development checkout/venv absolute paths must remain availabl
 - Outside Git: updated the existing `~/.config/systemd/user/com.dulmina.aisnippingtool.service` and created its single graphical-session enabling link. No other persistent startup unit/autostart entry or normal launcher was modified.
 
 Main, capture/coordinate algorithms, toolbar, OCR, clipboard, shortcut/tray implementations and manual service template are unchanged. Stayed on the user's current branch; no staging, commit, merge, reset, push or branch switch. Stage 2 only. Freeform remains postponed; no AI or packaging.
+
+Final Git provenance check: an external commit **4136879** (`Implement Background Service Stage 2 with GNOME login profile support`) appeared during final verification and was preserved. The agent did not create that commit or stage files. Branch remained `feat/background-service`; final observed service state remained enabled/active, PID 107521, NRestarts=0, Linger=no.
