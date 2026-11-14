@@ -113,3 +113,8 @@ The later preference-syntax/assignment-reporting defects are fixed in code: XDG 
 ## Native GNOME verification follow-up — 2026-11-14
 
 Supersedes older environment/assignment/identity statements above: genuine host identity **PASS**, actual assigned Ctrl+Shift+S **PASS**, 43 regressions **PASS**. Real portal/fullscreen/rectangle saving, bounded repeat workflow, local English fixture OCR, synthetic Qt cancellation and shutdown **PASS**. App-workflow native cross-process image/text paste **FAIL** with synthetic producer input; focused public-text control **PASS**, root cause unresolved. AT-SPI Escape synthesis **FAIL** despite API True; real keyboard/tray clicks/window selection/paste **NOT RUN**. Backend ConfigureShortcuts UnknownMethod remains. No GNOME settings/source changes. **Phase 1 cannot close; Phase 2 must not begin.** All individual acceptance outcomes, physical steps and retained evidence: [phase-01-acceptance.md](phase-01-acceptance.md).
+
+
+## Clipboard reliability follow-up — 2026-11-14
+
+50 regressions PASS; focused native two-process exact PNG and Sinhala/English/ZWJ text transfer/paste PASS. Final traced unmapped/delayed/controller delivery and canonical synthetic-workflow image/text paste FAIL, with active event loops and GUI-thread writes. Zero/stale selection serials/focus loss and a prior text-only image receiver explain testing limitations; physical behavior remains NOT RUN, not cleared. ConfigureShortcuts v1 advertisement is now rejected by the v2 capability gate; shortcut binding unchanged. No clipboard/capture/OCR behavior rewritten. Phase 1 OPEN; Phase 2 blocked. [Latest acceptance, pipeline, provenance, reproduction and manual gate](phase-01-acceptance.md); [raw evidence](phase-01-clipboard-evidence.txt).

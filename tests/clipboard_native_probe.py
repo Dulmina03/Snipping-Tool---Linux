@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from main import prepare_qt_environment
 prepare_qt_environment()
-from PySide6.QtCore import QThread, QTimer, QRect
+from PySide6.QtCore import QThread, QTimer
 from PySide6.QtGui import QImage, QColor, QTextDocument
 from PySide6.QtWidgets import QApplication, QTextEdit
 from utils.async_jobs import AsyncJobs
@@ -29,7 +29,8 @@ def reference_image(token=""):
     digest = hashlib.sha256(token.encode()).digest()
     image = QImage(73, 41, QImage.Format_ARGB32)
     image.fill(QColor('#124578'))
-    image.setPixelColor(10, 9, QColor(*digest[:3], 255))
+    for index in range(8):
+        image.setPixelColor(index, 9, QColor(*digest[index * 3:index * 3 + 3], 255))
     return image
 
 
@@ -148,14 +149,14 @@ def writer():
             with tempfile.TemporaryDirectory(prefix='snipping-clipboard-') as scratch:
                 path = Path(scratch) / 'public.png'
                 reference_image().save(str(path), 'PNG')
-                for scenario in ('never_focused', 'focused', 'closed', 'delayed', 'controller_image', 'controller_ocr'):
+                for scenario in ('never_focused', 'focused', 'unmapped', 'delayed', 'controller_image', 'controller_ocr'):
                     for mode in ('image', 'text') if scenario not in ('controller_image', 'controller_ocr') else (('image',) if scenario == 'controller_image' else ('text',)):
                         token = uuid.uuid4().hex
                         reference_image(token).save(str(path), 'PNG')
                         if scenario != 'never_focused' and not await focus():
                             ledger.append({'scenario': scenario, 'mode': mode, 'status': 'NOT RUN', 'reason': 'No native focus grant'})
                             continue
-                        if scenario in ('closed', 'delayed', 'controller_image', 'controller_ocr'):
+                        if scenario in ('unmapped', 'delayed', 'controller_image', 'controller_ocr'):
                             window.hide()
                             await asyncio.sleep(.2 if scenario != 'delayed' else 2)
                         before = beats[0]
@@ -173,7 +174,9 @@ def writer():
                         active = window.isActiveWindow()
                         await asyncio.sleep(.2)
                         result = await transfer(mode, token)
-                        row = dict(scenario=scenario, mode=mode, status='PASS' if result['retrieved'] else 'FAIL',
+                        status = ('PASS' if result['retrieved'] else
+                                  'FAIL' if result['reader_active'] else 'NOT RUN')
+                        row = dict(scenario=scenario, mode=mode, status=status,
                             writer_gui_thread=QThread.currentThread() == app.thread(), local_owns_clipboard=owner,
                             writer_active_at_write=active,
                             event_loop_alive=beats[0] > before, **result)

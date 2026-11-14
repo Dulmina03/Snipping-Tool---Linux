@@ -1,0 +1,266 @@
+Phase 1 clipboard investigation — 2026-11-14
+Start clean: fix/phase-01-app-lifecycle, 2504a3b (includes ccdfb6b).
+External staging then commit 68e48a6 occurred during work; no agent Git mutations.
+
+Commands/interfaces:
+- pwd; git status --short; git branch --show-current; git log -8 --oneline --decorate
+- git diff --stat; git diff --cached --stat; git reflog -3 --date=iso
+- read specified docs and clipboard/controller/OCR/async/shortcut source
+- /usr/bin/python3 /tmp/snipping-portal-capabilities.py: read-only frontend/backend version/introspection
+- GNOME Terminal normal Factory0.CreateInstance + Terminal0.Exec via /tmp/snipping-terminal-launch.py
+- host runs: /tmp/snipping-run-clipboard-probe.py (imports checked-in native probe)
+- host runs: /tmp/snipping-native-focused-workflow.py and /tmp/snipping-workflow-protocol.py
+- QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+- .venv/bin/python -m compileall -q main.py ui capture shortcuts ocr utils tests
+- QT_QPA_PLATFORM=offscreen .venv/bin/python -c 'import main, utils.clipboard, utils.ocr_job, utils.ocr_process, utils.async_jobs, ui.capture_menu, shortcuts.global_shortcut'
+- git diff --check; git diff --cached --check
+- pgrep -af exact checkout interpreter prefix: exit 1/no test interpreter remained
+
+Portal read-only results:
+frontend org.freedesktop.portal.Desktop: GlobalShortcuts version 1
+backend org.freedesktop.impl.portal.desktop.gnome: GlobalShortcuts version 1
+both advertise CreateSession, BindShortcuts, ListShortcuts, ConfigureShortcuts.
+No ConfigureShortcuts call issued by this task.
+
+Corrections/limits:
+- Prior text-only QTextEdit receiver was unsuitable for standalone PNG paste.
+- Early tests reused fixtures; final probe uses fresh nonce-derived PNG/text per transfer.
+- An early 49-test run printed OK then exited 139 during teardown. Test tearDown
+  now clears its own Clipboard/Selection MIME; subsequent complete runs exit 0.
+- Earlier untraced remapped-owner run passed focused/unmapped/delayed/controller
+  cases; final traced run below is authoritative and retains the delivery failures.
+- Raw background image FAIL below had no reader focus: this is NOT RUN, not a
+  valid product failure. Current probe correctly labels missing-reader-focus NOT RUN.
+- Final probe edits after traced run only corrected that classification; no rerun
+  is claimed for it. Focused PNG/text comparisons in retained run are actual bytes/pixels.
+- No private screenshot/image bytes or OCR contents are included here. Screenshot
+  files remain locally in /tmp/snipping-native-output-focused only.
+
+
+=== Final native two-process run ===
+{"scenario": "never_focused", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": false, "retrieved": false, "gui_thread": true}
+{"scenario": "never_focused", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["image/png", "application/x-qt-image"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}
+{"scenario": "focused", "mode": "image", "status": "PASS", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": true, "event_loop_alive": true, "reader_active": true, "retrieved": true, "gui_thread": true, "formats": ["image/xpm", "image/xbm", "image/webp", "image/wbmp", "image/tiff", "image/tif", "image/ppm", "image/pgm", "image/pbm", "image/jpg", "image/jpeg", "image/jfif", "image/ico", "image/icns", "image/cur", "image/bmp", "image/x-png", "image/png", "application/x-qt-image"], "png_pixels_equal": true, "qt_size": [73, 41], "qt_pixels_equal": true, "paste_equal": true}
+{"scenario": "focused", "mode": "text", "status": "PASS", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": true, "event_loop_alive": true, "reader_active": true, "retrieved": true, "gui_thread": true, "formats": ["UTF8_STRING", "text/plain"], "utf8_bytes_equal": true, "qt_text_equal": true, "paste_equal": true}
+{"scenario": "unmapped", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}
+{"scenario": "unmapped", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}
+{"scenario": "delayed", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}
+{"scenario": "delayed", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}
+{"scenario": "controller_image", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": false, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}
+{"scenario": "controller_ocr", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": false, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}
+{"physical": "NOT RUN", "ledger": [{"scenario": "never_focused", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": false, "retrieved": false, "gui_thread": true}, {"scenario": "never_focused", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["image/png", "application/x-qt-image"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}, {"scenario": "focused", "mode": "image", "status": "PASS", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": true, "event_loop_alive": true, "reader_active": true, "retrieved": true, "gui_thread": true, "formats": ["image/xpm", "image/xbm", "image/webp", "image/wbmp", "image/tiff", "image/tif", "image/ppm", "image/pgm", "image/pbm", "image/jpg", "image/jpeg", "image/jfif", "image/ico", "image/icns", "image/cur", "image/bmp", "image/x-png", "image/png", "application/x-qt-image"], "png_pixels_equal": true, "qt_size": [73, 41], "qt_pixels_equal": true, "paste_equal": true}, {"scenario": "focused", "mode": "text", "status": "PASS", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": true, "event_loop_alive": true, "reader_active": true, "retrieved": true, "gui_thread": true, "formats": ["UTF8_STRING", "text/plain"], "utf8_bytes_equal": true, "qt_text_equal": true, "paste_equal": true}, {"scenario": "unmapped", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}, {"scenario": "unmapped", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}, {"scenario": "delayed", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}, {"scenario": "delayed", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": true, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}, {"scenario": "controller_image", "mode": "image", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": false, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "png_pixels_equal": false, "qt_size": [0, 0], "qt_pixels_equal": false, "paste_equal": false}, {"scenario": "controller_ocr", "mode": "text", "status": "FAIL", "writer_gui_thread": true, "local_owns_clipboard": false, "writer_active_at_write": false, "event_loop_alive": true, "reader_active": true, "retrieved": false, "gui_thread": true, "formats": ["text/plain"], "utf8_bytes_equal": false, "qt_text_equal": false, "paste_equal": false}]}
+EXIT: 1
+
+=== Canonical native workflow (corrected receiver) ===
+HOST_CGROUP: 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-753fa6c7-c458-448d-b1e8-911522a0d99c.scope
+{"test": "quiet_startup", "status": "PASS", "controller_visible": false, "initial_overlay": false}
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ShortcutsChanged
+{"test": "host_identity", "status": "PASS", "identity": "Host identity registered: com.dulmina.aisnippingtool", "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-spawn-753fa6c7-c458-448d-b1e8-911522a0d99c.scope"}
+{"test": "actual_assignment", "status": "PASS", "requested": "CTRL+SHIFT+s", "actual": "Press <Shift><Control>s"}
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+INFO shortcuts.global_shortcut: Shortcut requested=CTRL+SHIFT+s; actual=Press <Shift><Control>s; source=ListShortcuts
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "live_overlay", "status": "PASS", "visible": true, "controller_visible": false, "platform": "wayland"}
+{"test": "AT_SPI_synthetic_Escape", "status": "FAIL", "api_result": "True", "overlay_closed": false, "physical": false}
+{"test": "Qt_synthetic_Escape", "status": "PASS", "physical": false}
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "clipboard_write_context", "status": "PASS", "helper": "copy_image_to_clipboard", "gui_thread": true, "focused": false}
+{"test": "fullscreen_capture", "status": "PASS", "path": "/tmp/snipping-native-output-focused/Screenshot_2026-11-14_08-24-31.png", "source_bytes_preserved": true, "synthetic_toolbar_click": true}
+{"test": "native_cross_app_image_paste", "status": "FAIL", "mode": "image", "pass": false, "window_active": true, "cross_process": true, "input": "programmatic native GUI paste/read"}
+{"test": "real_screenshot_portal", "status": "PASS", "image_size": [1920, 1080]}
+{"test": "clipboard_write_context", "status": "PASS", "helper": "copy_image_to_clipboard", "gui_thread": true, "focused": false}
+{"test": "rectangular_capture", "status": "PASS", "size": [301, 201], "path": "/tmp/snipping-native-output-focused/Screenshot_2026-11-14_08-24-40.png", "synthetic_Qt_drag": true}
+{"test": "clipboard_write_context", "status": "PASS", "helper": "copy_text_to_clipboard", "gui_thread": true, "focused": true}
+{"test": "public_English_OCR", "status": "PASS", "exact_reference_match": true, "raw_document_text_logged": false}
+{"test": "native_cross_app_text_paste", "status": "FAIL", "mode": "text", "pass": false, "window_active": true, "cross_process": true, "input": "programmatic native GUI paste/read"}
+{"test": "repeated_live_captures", "status": "PASS", "portal_calls": 3, "remaining_overlay": false, "controller_visible": false}
+{"test": "physical_shortcut_and_mouse", "status": "NOT RUN", "reason": "No hardware input; programmatic checks labeled separately"}
+{"test": "clean_shutdown", "status": "PASS", "exit": 0, "thread_alive": false, "elapsed": 23.06}
+
+=== Final regression suite ===
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+test_clipboard_survives_overlay_cancel_and_controller_shutdown (test_clipboard.ClipboardTests.test_clipboard_survives_overlay_cancel_and_controller_shutdown) ... ok
+test_image_and_async_ocr_deliver_on_gui_thread (test_clipboard.ClipboardTests.test_image_and_async_ocr_deliver_on_gui_thread) ... ok
+test_png_bytes_decode_to_exact_pixels (test_clipboard.ClipboardTests.test_png_bytes_decode_to_exact_pixels) ... ok
+test_reader_supports_png_paste_and_fresh_reference (test_clipboard.ClipboardTests.test_reader_supports_png_paste_and_fresh_reference) ... ok
+test_shutdown_prevents_late_async_clipboard_write (test_clipboard.ClipboardTests.test_shutdown_prevents_late_async_clipboard_write) ... ok
+test_sinhala_zwj_and_english_exact_utf8_formats (test_clipboard.ClipboardTests.test_sinhala_zwj_and_english_exact_utf8_formats) ... ok
+test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart) ... ok
+test_generated_launcher_and_custom_entry_preservation (test_phase01.EntryTests.test_generated_launcher_and_custom_entry_preservation) ... ok
+test_gnome_theme_fallback_and_explicit_preference (test_phase01.EntryTests.test_gnome_theme_fallback_and_explicit_preference) ... ok
+test_instance_lock (test_phase01.EntryTests.test_instance_lock) ... ok
+test_migrate_legacy_launcher (test_phase01.EntryTests.test_migrate_legacy_launcher) ... ok
+test_old_standalone_entry_delegates (test_phase01.EntryTests.test_old_standalone_entry_delegates) ... ok
+test_shutdown_during_shortcut_registration (test_phase01.EntryTests.test_shutdown_during_shortcut_registration) ... ok
+test_tray_and_shortcut_share_route_and_start_quietly (test_phase01.EntryTests.test_tray_and_shortcut_share_route_and_start_quietly) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_denied_portal_keeps_controller_hidden_and_retry_works (test_phase01.LifecycleTests.test_denied_portal_keeps_controller_hidden_and_retry_works) ... This plugin does not support raise()
+ok
+test_fullscreen_completion_closes_overlay (test_phase01.LifecycleTests.test_fullscreen_completion_closes_overlay) ... This plugin does not support raise()
+ok
+test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread (test_phase01.LifecycleTests.test_ocr_keeps_gui_responsive_and_delivers_clipboard_on_main_thread) ... ok
+test_quiet_start_and_repeat_activation (test_phase01.LifecycleTests.test_quiet_start_and_repeat_activation) ... [CAPTURE MENU] Overlay launched via shortcut/tray
+[CAPTURE MENU] Overlay launched via shortcut/tray
+This plugin does not support raise()
+ok
+test_real_ocr_process_boundary_error_and_cancel (test_phase01.LifecycleTests.test_real_ocr_process_boundary_error_and_cancel) ... Background operation failed: Local OCR failed; check Tesseract and language data.
+ok
+test_rectangle_completion_closes_overlay_before_clipboard (test_phase01.LifecycleTests.test_rectangle_completion_closes_overlay_before_clipboard) ... This plugin does not support raise()
+ok
+test_shutdown_cancels_ocr_before_any_clipboard_delivery (test_phase01.LifecycleTests.test_shutdown_cancels_ocr_before_any_clipboard_delivery) ... ok
+test_slow_portal_heartbeat_and_shutdown (test_phase01.LifecycleTests.test_slow_portal_heartbeat_and_shutdown) ... ok
+test_window_cancel_does_not_report_success (test_phase01.LifecycleTests.test_window_cancel_does_not_report_success) ... ok
+test_window_portal_and_clipboard_remain_on_gui_thread (test_phase01.LifecycleTests.test_window_portal_and_clipboard_remain_on_gui_thread) ... ok
+test_cancel_during_bus_connect_disconnects (test_phase01.PortalCleanupTests.test_cancel_during_bus_connect_disconnects) ... ok
+test_early_response_and_cancel_cleanup (test_phase01.PortalCleanupTests.test_early_response_and_cancel_cleanup) ... ok
+test_close_session_closes_exact_handle_and_disconnects (test_shortcut_assignment.AssignmentTests.test_close_session_closes_exact_handle_and_disconnects) ... ok
+test_configuration_explicit_only_and_refreshes_list (test_shortcut_assignment.AssignmentTests.test_configuration_explicit_only_and_refreshes_list) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_unknown_method_disables_action (test_shortcut_assignment.AssignmentTests.test_configuration_unknown_method_disables_action) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_denied_binding_reports_registration_error (test_shortcut_assignment.AssignmentTests.test_denied_binding_reports_registration_error) ... ok
+test_failed_list_retains_last_reported_assignment (test_shortcut_assignment.AssignmentTests.test_failed_list_retains_last_reported_assignment) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Active shortcut verification failed: RuntimeError
+ok
+test_host_registry_failure_is_not_treated_as_confirmed_identity (test_shortcut_assignment.AssignmentTests.test_host_registry_failure_is_not_treated_as_confirmed_identity) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ['Desktop application ID not found']. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_identity_first_same_connection_and_exact_app_id (test_shortcut_assignment.AssignmentTests.test_identity_first_same_connection_and_exact_app_id) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_localized_description_preserved_without_guessing (test_shortcut_assignment.AssignmentTests.test_localized_description_preserved_without_guessing) ... ok
+test_missing_description_never_substitutes_requested_key (test_shortcut_assignment.AssignmentTests.test_missing_description_never_substitutes_requested_key) ... ok
+test_new_binding_request_and_actual_response (test_shortcut_assignment.AssignmentTests.test_new_binding_request_and_actual_response) ... ok
+test_registration_failure_signal_keeps_error (test_shortcut_assignment.AssignmentTests.test_registration_failure_signal_keeps_error) ... Shortcut registration failed: RuntimeError
+ok
+test_remembered_choice_not_replaced_by_preference (test_shortcut_assignment.AssignmentTests.test_remembered_choice_not_replaced_by_preference) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_shortcuts_changed_updates_and_filters_session (test_shortcut_assignment.AssignmentTests.test_shortcuts_changed_updates_and_filters_session) ... ok
+test_shutdown_cancels_pending_configuration (test_shortcut_assignment.AssignmentTests.test_shutdown_cancels_pending_configuration) ... ok
+test_snap_identity_error_kept_and_configuration_blocked (test_shortcut_assignment.AssignmentTests.test_snap_identity_error_kept_and_configuration_blocked) ... Identity not registered for com.dulmina.aisnippingtool: Portal Registry registration failed: org.freedesktop.portal.Error.Failed: ["Could not register app ID: Can't manually register a io.snapcraft application"]. Inherited Snap scope detected (possibly Snap VS Code). Launch from GNOME's application grid to verify host identity.
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_stale_list_does_not_overwrite_new_signal (test_shortcut_assignment.AssignmentTests.test_stale_list_does_not_overwrite_new_signal) ... ok
+test_unrelated_nonstandard_property_does_not_break_capabilities (test_shortcut_assignment.AssignmentTests.test_unrelated_nonstandard_property_does_not_break_capabilities) ... ok
+test_v1_advertised_stub_never_called_and_explained (test_shortcut_assignment.AssignmentTests.test_v1_advertised_stub_never_called_and_explained) ... Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_v1_advertised_stub_v2_and_signature (test_shortcut_assignment.AssignmentTests.test_v1_advertised_stub_v2_and_signature) ... ok
+test_xdg_base_keysym_and_stable_id (test_shortcut_assignment.AssignmentTests.test_xdg_base_keysym_and_stable_id) ... ok
+test_actual_assignment_in_action_tooltip_status_and_mismatch_warning (test_shortcut_assignment.PresentationTests.test_actual_assignment_in_action_tooltip_status_and_mismatch_warning) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_configuration_action_is_explicit_and_capability_gated (test_shortcut_assignment.PresentationTests.test_configuration_action_is_explicit_and_capability_gated) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+test_registration_error_removes_stale_assignment (test_shortcut_assignment.PresentationTests.test_registration_error_removes_stale_assignment) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+Desktop assigned a different capture shortcut: requested=CTRL+SHIFT+s; actual=Press <Control><Alt>s
+ok
+test_worker_assignment_is_delivered_to_gui_thread (test_shortcut_assignment.PresentationTests.test_worker_assignment_is_delivered_to_gui_thread) ... qt.core.qobject.connect: QObject::connect: No such signal QPlatformNativeInterface::systemTrayWindowChanged(QScreen*)
+ok
+
+----------------------------------------------------------------------
+Ran 50 tests in 2.998s
+
+OK
+
+=== Two-process filtered Wayland protocol ===
+[2938610.363] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#42, 0)
+[2938612.515] {Default Queue} wl_data_source#42.cancelled()
+[2938630.731] {Default Queue} wl_keyboard#28.enter(3766, wl_surface#36, array[0])
+[2939319.783] {Default Queue} wl_keyboard#28.leave(3767, wl_surface#36)
+[2943853.352] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#45, 0)
+[2943853.967] {Default Queue} wl_data_source#45.cancelled()
+[2949379.813] {Default Queue} wl_keyboard#28.enter(3790, wl_surface#42, array[0])
+[2949403.331] {Default Queue} wl_pointer#29.enter(3792, wl_surface#42, 1690.96875000, 650.35156250)
+[2949625.210] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#45, 3792)
+[2950323.491] {Default Queue} wl_keyboard#28.leave(3793, wl_surface#42)
+[2950442.251] {Default Queue} wl_keyboard#28.enter(3796, wl_surface#42, array[0])
+[2950585.405] {Default Queue} wl_pointer#29.leave(3797, wl_surface#42)
+[2950585.434] {Default Queue} wl_keyboard#28.leave(3799, wl_surface#42)
+[2950793.553] {Default Queue} wl_keyboard#28.enter(3802, wl_surface#42, array[0])
+[2950823.518] {Default Queue} wl_pointer#29.enter(3804, wl_surface#42, 1724.44140625, 633.99609375)
+[2951034.486] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#55, 3804)
+[2951729.436] {Default Queue} wl_keyboard#28.leave(3805, wl_surface#42)
+[2951828.824] {Default Queue} wl_keyboard#28.enter(3808, wl_surface#42, array[0])
+[2951965.836] {Default Queue} wl_pointer#29.leave(3809, wl_surface#42)
+[2951965.901] {Default Queue} wl_keyboard#28.leave(3811, wl_surface#42)
+[2952168.164] {Default Queue} wl_keyboard#28.enter(3814, wl_surface#42, array[0])
+[2952226.173] {Default Queue} wl_pointer#29.enter(3816, wl_surface#42, 1730.48046875, 631.05468750)
+[2952403.660] {Default Queue} wl_pointer#29.leave(3817, wl_surface#42)
+[2952403.724] {Default Queue} wl_keyboard#28.leave(3819, wl_surface#42)
+[2952615.519] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#49, 3816)
+[2952616.716] {Default Queue} wl_data_source#49.cancelled()
+[2958068.620] {Default Queue} wl_keyboard#28.enter(3826, wl_surface#42, array[0])
+[2958080.295] {Default Queue} wl_pointer#29.enter(3828, wl_surface#42, 1860.12890625, 568.38671875)
+[2958313.621] {Default Queue} wl_pointer#29.leave(3829, wl_surface#42)
+[2958313.657] {Default Queue} wl_keyboard#28.leave(3831, wl_surface#42)
+[2958524.718] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#56, 3828)
+[2958525.218] {Default Queue} wl_data_source#56.cancelled()
+[2963965.858] {Default Queue} wl_keyboard#28.enter(3838, wl_surface#42, array[0])
+[2963998.889] {Default Queue} wl_pointer#29.enter(3840, wl_surface#42, 1724.44140625, 633.99609375)
+[2964206.311] {Default Queue} wl_pointer#29.leave(3841, wl_surface#42)
+[2964206.366] {Default Queue} wl_keyboard#28.leave(3843, wl_surface#42)
+[2966217.954] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#54, 3840)
+[2966218.931] {Default Queue} wl_data_source#54.cancelled()
+[2971678.417] {Default Queue} wl_keyboard#28.enter(3850, wl_surface#42, array[0])
+[2971713.624] {Default Queue} wl_pointer#29.enter(3852, wl_surface#42, 1690.96875000, 650.35156250)
+[2971917.843] {Default Queue} wl_pointer#29.leave(3853, wl_surface#42)
+[2971917.904] {Default Queue} wl_keyboard#28.leave(3855, wl_surface#42)
+[2973927.104] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#49, 3852)
+[2973928.229] {Default Queue} wl_data_source#49.cancelled()
+[2979383.921] {Default Queue} wl_keyboard#28.enter(3862, wl_surface#42, array[0])
+[2979410.963] {Default Queue} wl_pointer#29.enter(3864, wl_surface#42, 1860.12890625, 568.38671875)
+[2979615.434] {Default Queue} wl_pointer#29.leave(3865, wl_surface#42)
+[2979615.504] {Default Queue} wl_keyboard#28.leave(3867, wl_surface#42)
+[2979827.302] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#56, 3864)
+[2979843.380] {Default Queue} wl_data_source#56.cancelled()
+[2979861.886] {Default Queue} wl_keyboard#28.enter(3870, wl_surface#54, array[0])
+[2980606.313] {Default Queue} wl_keyboard#28.leave(3871, wl_surface#54)
+[2985371.931] {Default Queue} wl_keyboard#28.enter(3876, wl_surface#42, array[0])
+[2985409.447] {Default Queue} wl_pointer#29.enter(3878, wl_surface#42, 1694.95312500, 648.40234375)
+[2985611.267] {Default Queue} wl_pointer#29.leave(3879, wl_surface#42)
+[2985611.315] {Default Queue} wl_keyboard#28.leave(3881, wl_surface#42)
+[2985826.537] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#57, 3878)
+[2985830.740] {Default Queue} wl_data_source#57.cancelled()
+[2985849.533] {Default Queue} wl_keyboard#28.enter(3884, wl_surface#60, array[0])
+[2986542.327] {Default Queue} wl_keyboard#28.leave(3885, wl_surface#60)
+
+=== Canonical workflow filtered Wayland protocol ===
+[2846385.965] {Default Queue} wl_keyboard#28.enter(3673, wl_surface#36, array[0])
+[2846420.928] {Default Queue} wl_pointer#29.enter(3675, wl_surface#36, 1762.28125000, 964.72656250)
+[2847890.290] {Default Queue} wl_pointer#29.leave(3676, nil)
+[2847890.328] {Default Queue} wl_keyboard#28.leave(3677, nil)
+[2850736.185] {Default Queue} wl_keyboard#28.enter(3683, wl_surface#53, array[0])
+[2850766.247] {Default Queue} wl_pointer#29.enter(3685, wl_surface#53, 1860.76953125, 951.36328125)
+[2851821.693] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#51, 3685)
+[2851821.938] {Default Queue} wl_pointer#29.leave(3686, nil)
+[2851821.961] {Default Queue} wl_keyboard#28.leave(3687, nil)
+[2851843.866] {Default Queue} wl_data_source#51.cancelled()
+[2851853.425] {Default Queue} wl_keyboard#28.enter(3691, wl_surface#52, array[0])
+[2851876.488] {Default Queue} wl_keyboard#28.leave(3692, wl_surface#52)
+[2851876.536] {Default Queue} wl_keyboard#28.enter(3693, wl_surface#36, array[0])
+[2852756.197] {Default Queue} wl_keyboard#28.leave(3694, wl_surface#36)
+[2856613.687] {Default Queue} wl_keyboard#28.enter(3697, wl_surface#52, array[0])
+[2859530.890] {Default Queue} wl_keyboard#28.leave(3700, wl_surface#52)
+[2859530.978] {Default Queue} wl_keyboard#28.enter(3701, wl_surface#37, array[0])
+[2859565.577] {Default Queue} wl_pointer#29.enter(3703, wl_surface#37, 1711.50781250, 971.68359375)
+[2861186.999] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#56, 3703)
+[2861195.763] {Default Queue} wl_pointer#29.leave(3704, nil)
+[2861195.778] {Default Queue} wl_keyboard#28.leave(3705, nil)
+[2861195.782] {Default Queue} wl_keyboard#28.enter(3706, wl_surface#52, array[0])
+[2861226.042] {Default Queue} wl_keyboard#28.leave(3707, wl_surface#52)
+[2861226.100] {Default Queue} wl_keyboard#28.enter(3708, wl_surface#53, array[0])
+[2862906.737] {Default Queue} wl_keyboard#28.leave(3710, nil)
+[2862906.748] {Default Queue} wl_keyboard#28.enter(3711, wl_surface#52, array[0])
+[2863579.989] {Default Queue}  -> wl_data_device#19.set_selection(wl_data_source#37, 3703)
+[2863605.293] {Default Queue} wl_keyboard#28.leave(3712, wl_surface#52)
+[2863605.382] {Default Queue} wl_keyboard#28.enter(3713, wl_surface#48, array[0])
+[2864145.607] {Default Queue} wl_keyboard#28.leave(3714, wl_surface#48)
+[2868030.005] {Default Queue} wl_keyboard#28.enter(3717, wl_surface#52, array[0])
