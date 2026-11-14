@@ -101,23 +101,24 @@ async def take_screenshot(copy_to_clipboard=True):
         print(source_path)
         return None
 
-    destination = copy_screenshot(source_path, OUTPUT_DIR)
-
-    print()
-    print("Screenshot saved:")
-    print(destination)
-
     try:
-        if copy_to_clipboard:
-            copy_image_to_clipboard(destination)
-            print("Copied to clipboard.")
-    except Exception as error:
-        print("WARNING: Screenshot saved, but clipboard copy failed:")
-        print(error)
+        destination = copy_screenshot(source_path, OUTPUT_DIR)
 
-    cleanup_capture_source(source_path, OUTPUT_DIR)
+        print()
+        print("Screenshot saved:")
+        print(destination)
 
-    return destination
+        try:
+            if copy_to_clipboard:
+                copy_image_to_clipboard(destination)
+                print("Copied to clipboard.")
+        except Exception as error:
+            print("WARNING: Screenshot saved, but clipboard copy failed:")
+            print(error)
+
+        return destination
+    finally:
+        cleanup_capture_source(source_path, OUTPUT_DIR)
 
 
 async def main():

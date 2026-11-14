@@ -63,7 +63,9 @@ def cleanup_capture_source(source: Path | None, screenshot_directory: Path) -> N
         return
     source = Path(source)
     try:
-        if source.resolve().is_relative_to(Path(screenshot_directory).resolve()):
+        directory = Path(screenshot_directory)
+        if (Path(os.path.abspath(source)).is_relative_to(Path(os.path.abspath(directory)))
+                or source.resolve().is_relative_to(directory.resolve())):
             return
         source.unlink(missing_ok=True)
     except OSError:
