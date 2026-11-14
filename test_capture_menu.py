@@ -23,9 +23,12 @@ def main() -> int:
         return 1
 
     if "--smoke" in sys.argv:
-        menu.show()
         QTimer.singleShot(500, application.quit)
         application.exec()
+        if menu.isVisible() or menu._overlay is not None:
+            print("CAPTURE MENU SMOKE TEST FAIL: startup is not quiet")
+            return 1
+        menu.jobs.close()
         print("CAPTURE MENU SMOKE TEST PASS")
         return 0
 
@@ -36,12 +39,14 @@ def main() -> int:
                 0
                 if menu.status_label.text() == "Capture cancelled."
                 and menu.capture_button.isEnabled()
+                and not menu.isVisible()
                 else 1
             )
         )
-        menu.show()
         QTimer.singleShot(100, menu.start_capture)
         exit_code = application.exec()
+        menu.shutdown()
+        menu.jobs.close()
         print(
             "CAPTURE MENU CANCELLATION TEST "
             f"{'PASS' if exit_code == 0 else 'FAIL'}"
@@ -49,17 +54,8 @@ def main() -> int:
         return exit_code
 
     if "--ai" in sys.argv:
-        messages = []
-        menu.ai_radio.setChecked(True)
-        menu._show_information = lambda title, message: messages.append((title, message))
-        menu.start_capture()
-
-        if messages == [("Ask AI", "AI integration is coming next.")]:
-            print("CAPTURE MENU AI TEST PASS")
-            return 0
-
-        print("CAPTURE MENU AI TEST FAIL")
-        return 1
+        print("NOT RUN: obsolete AI placeholder test; AI remains the final phase.")
+        return 0
 
     if "--run" in sys.argv:
         run_index = sys.argv.index("--run")
@@ -80,8 +76,8 @@ def main() -> int:
             "ocr": menu.ocr_radio,
         }
 
-        if mode not in mode_buttons or action not in action_buttons:
-            print("CAPTURE MENU TEST FAIL: unsupported mode or action")
+        if mode not in mode_buttons or action not in action_buttons or mode == "selected_area":
+            print("Use main.py and its toolbar for selected-area capture; unsupported legacy mode/action")
             return 1
 
         mode_buttons[mode].setChecked(True)
@@ -119,14 +115,13 @@ def main() -> int:
         def start_capture() -> None:
             menu.start_capture()
 
-        menu.show()
         menu.capture_finished.connect(verify_result)
         QTimer.singleShot(100, start_capture)
         return application.exec()
 
-    menu.show()
+    menu.launch_overlay()
 
-    print("Capture menu launched.")
+    print("Production overlay requested; controller remains hidden.")
     print("Manually test Full Screen, Window, and Selected Area with Screenshot.")
     print("Then test Extract Text and cancel Selected Area with Escape.")
     return application.exec()

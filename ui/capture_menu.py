@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import inspect
 import time
 from pathlib import Path
 from urllib.parse import unquote
@@ -278,39 +279,34 @@ class CaptureMenu(QWidget):
         self.last_capture_path = None
         self.last_extracted_text = None
         self.status_label.setText("Preparing…")
-        QTimer.singleShot(120, lambda: self._legacy_run(mode))
+        self._pending = self.jobs.submit(self._legacy_run(mode))
 
-    def _legacy_run(self, mode: str) -> None:
+    async def _legacy_run(self, mode: str) -> None:
         try:
             path = self._capture(mode)
-        except Exception as e:
+            if inspect.isawaitable(path):
+                path = await path
+        except asyncio.CancelledError:
+            raise
+        except Exception:
             self.capture_button.setEnabled(True)
-            self.status_label.setText(f"Capture failed: {e}")
+            self.status_label.setText("Capture failed.")
             self.capture_finished.emit()
             return
-
         self.capture_button.setEnabled(True)
         if path is None:
             self.status_label.setText("Capture cancelled.")
             self.capture_finished.emit()
             return
+        self._handle_capture_result(path, self._selected_value(self.action_group))
 
-        action = self._selected_value(self.action_group)
-        self._handle_capture_result(path, action)
-
-    def _capture(self, mode: str) -> "Path | None":
-        """Capture backend — can be replaced by test harness for mocking."""
-        return self._legacy_capture(mode)
-
-    def _legacy_capture(self, mode: str) -> Path | None:
+    def _capture(self, mode):
+        """Compatibility backend; all production selection goes through the overlay."""
         if mode == "full_screen":
-            return asyncio.run(self.capture_engine.capture_full_screen())
+            return self.capture_engine.capture_full_screen()
         if mode == "window":
-            return asyncio.run(capture_window())
-        if mode == "selected_area":
-            from capture.selected_area import main as _cap_area
-            return asyncio.run(_cap_area())
-        raise ValueError(f"Unknown mode: {mode}")
+            return capture_window()
+        raise ValueError("Use the production overlay for rectangular selection.")
 
     @staticmethod
     def _selected_value(group: QButtonGroup) -> str:

@@ -1,75 +1,50 @@
-"""Integration test for the XDG GlobalShortcuts portal registration."""
+"""MANUAL: real portal/key test. No synthetic shortcut signal is emitted.
 
+Run in GNOME/Wayland, authorize the shortcut, focus another app and press the
+assigned Ctrl+Shift+S within 90 seconds. This requests a real screenshot.
+"""
 import sys
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
-from shortcuts.global_shortcut import GlobalShortcutManager, PREFERRED_TRIGGER
-from ui.capture_menu import CaptureMenu
+from main import acquire_instance_lock, configure_application
 
 
-def main() -> int:
-    application = QApplication(sys.argv)
-    menu = CaptureMenu()
-    shortcut_manager = GlobalShortcutManager()
-    activation_count = 0
-    result = {"exit_code": 1}
-
-    def on_activated() -> None:
-        nonlocal activation_count
-
-        activation_count += 1
-        menu.show_from_global_shortcut()
-
-    def finish(exit_code: int) -> None:
-        shortcut_manager.stop()
-        result["exit_code"] = exit_code
-        application.quit()
-
-    def on_registered(trigger: str) -> None:
-        print(f"Registered shortcut: {trigger}")
-
-        if trigger != PREFERRED_TRIGGER or not shortcut_manager.is_registered:
-            print("GLOBAL SHORTCUT TEST FAIL: registration is not active")
-            finish(1)
-            return
-
-        # Exercise the same Qt signal path used by a portal Activated signal.
-        shortcut_manager.shortcut_activated.emit()
-
-        QTimer.singleShot(100, verify_activation)
-
-    def verify_activation() -> None:
-        if activation_count != 1 or not menu.isVisible():
-            print("GLOBAL SHORTCUT TEST FAIL: activation did not reach the menu")
-            finish(1)
-            return
-
-        if not shortcut_manager.is_registered:
-            print("GLOBAL SHORTCUT TEST FAIL: registration did not remain active")
-            finish(1)
-            return
-
-        print("GLOBAL SHORTCUT TEST PASS")
-        finish(0)
-
-    def on_failed(error: str) -> None:
-        print("GLOBAL SHORTCUT TEST FAIL")
-        print(error)
-        finish(1)
-
-    shortcut_manager.shortcut_activated.connect(on_activated)
-    shortcut_manager.registration_succeeded.connect(on_registered)
-    shortcut_manager.registration_failed.connect(on_failed)
-
-    if not shortcut_manager.start():
-        print("GLOBAL SHORTCUT TEST FAIL: duplicate registration attempt")
+def main():
+    app = QApplication(sys.argv)
+    lock = acquire_instance_lock()
+    if lock is None:
+        print('NOT RUN: quit the existing app before this manual test.')
         return 1
+    menu, shortcuts, tray, tray_menu = configure_application(app)
+    observed = {'key': False, 'passed': False}
+    shortcuts.shortcut_activated.connect(lambda: observed.update(key=True))
+    shortcuts.registration_succeeded.connect(
+        lambda trigger: print(f'Registered {trigger}; physically press it with another app focused.'))
 
-    application.exec()
-    return result["exit_code"]
+    def check():
+        if observed['key'] and menu._overlay is not None:
+            observed['passed'] = not menu.isVisible() and menu._overlay.isVisible()
+            app.quit()
+
+    timer = QTimer()
+    timer.timeout.connect(check)
+    timer.start(50)
+    QTimer.singleShot(90000, app.quit)
+    try:
+        shortcuts.start()
+        app.exec()
+    finally:
+        menu.shutdown()
+        menu.jobs.close()
+        shortcuts.stop()
+        tray.hide()
+        lock.unlock()
+    print('PASS: portal Activated reached the overlay; inspect desktop visually.' if observed['passed']
+          else 'FAIL: no successful real shortcut/overlay within timeout.')
+    return 0 if observed['passed'] else 1
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())
