@@ -231,8 +231,20 @@ class CaptureMenu(QWidget):
         # Kept invisible — for test_capture_menu.py compatibility
         self._compat_hidden_init()
 
+        # Transparent, frameless, 1x1 background anchor window so Wayland retains clipboard offers
+        self.setWindowFlags(
+            Qt.SubWindow
+            | Qt.FramelessWindowHint
+            | Qt.WindowDoesNotAcceptFocus
+            | Qt.WindowTransparentForInput
+        )
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.setStyleSheet("background: transparent;")
+        self.resize(1, 1)
+        self.move(-10000, -10000)
         self.setWindowTitle("AI Snipping Tool")
-        self.hide()  # never shown in normal flow; entry is the overlay
+        self.show()
 
     # ── Test-harness compatibility stubs ─────────────────────────────────────
 
@@ -317,18 +329,9 @@ class CaptureMenu(QWidget):
 
     @Slot()
     def show_from_global_shortcut(self) -> None:
-        """Called by Ctrl+Shift+S or tray icon — launches the overlay directly.
-
-        Calls ``self.show()`` first so test assertions on ``menu.isVisible()``
-        pass, then immediately hands off to ``launch_overlay()``.  The fullscreen
-        overlay appears on top; this window is never visually prominent.
-        """
+        """Called by Ctrl+Shift+S or tray icon — launches the overlay directly."""
         print("[CAPTURE MENU] Overlay launched via shortcut/tray", flush=True)
-        # Make self visible so test harness isVisible() check succeeds
-        self.show()
-        self.raise_()
-        # Launch the actual fullscreen snipping overlay
-        QTimer.singleShot(0, self.launch_overlay)
+        self.launch_overlay()
 
     def launch_overlay(self) -> None:
         """Take the backdrop screenshot, then show the fullscreen snipping overlay."""
@@ -455,6 +458,7 @@ class CaptureMenu(QWidget):
                 self.status_label.setText(f"Clipboard copy failed: {e}")
                 self._show_toast(f"✓ Saved: {path.name}")
 
+        QApplication.processEvents()
         self.capture_finished.emit()
 
     def _show_toast(self, message: str) -> None:

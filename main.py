@@ -66,7 +66,7 @@ def main() -> int:
     tray_icon.show()
 
     # Wire global shortcut signals
-    shortcut_manager.shortcut_activated.connect(menu.show_from_global_shortcut)
+    shortcut_manager.shortcut_activated.connect(menu.launch_overlay)
     shortcut_manager.registration_succeeded.connect(
         menu.set_global_shortcut_registered
     )

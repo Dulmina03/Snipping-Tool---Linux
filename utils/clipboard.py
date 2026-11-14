@@ -6,17 +6,18 @@ import sys
 from typing import Union
 
 from PIL import Image
-from PySide6.QtCore import QMimeData
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QMimeData, Qt
 from PySide6.QtGui import QClipboard, QGuiApplication, QImage, QPixmap
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 
 
 _owned_application: QGuiApplication | None = None
+_wayland_anchor: QWidget | None = None
 
 ImageInputType = Union[str, Path, Image.Image, QPixmap, QImage]
 
 
-def _application():
+def _application() -> QGuiApplication:
     """Return the current Qt application, creating one when necessary."""
     global _owned_application
 
@@ -27,6 +28,37 @@ def _application():
         application = _owned_application
 
     return application
+
+
+def _ensure_clipboard_surface() -> None:
+    """
+    Ensure an invisible background surface exists on Wayland.
+    Wayland compositors require an active client surface to maintain
+    clipboard ownership (wl_data_source); without one, the compositor
+    revokes the clipboard data as soon as all windows close.
+    """
+    global _wayland_anchor
+    application = _application()
+
+    if _wayland_anchor is None:
+        try:
+            anchor = QWidget()
+            anchor.setWindowFlags(
+                Qt.SubWindow
+                | Qt.FramelessWindowHint
+                | Qt.WindowDoesNotAcceptFocus
+                | Qt.WindowTransparentForInput
+            )
+            anchor.setAttribute(Qt.WA_TranslucentBackground)
+            anchor.setAttribute(Qt.WA_ShowWithoutActivating)
+            anchor.setStyleSheet("background: transparent;")
+            anchor.resize(1, 1)
+            anchor.move(-10000, -10000)
+            anchor.show()
+            _wayland_anchor = anchor
+            application.processEvents()
+        except Exception:
+            pass
 
 
 def _to_qimage(image_input: ImageInputType) -> QImage:
@@ -58,16 +90,35 @@ def _to_qimage(image_input: ImageInputType) -> QImage:
 
 
 def copy_image_to_clipboard(image_input: ImageInputType) -> None:
-    """Copy an image (file path, PIL Image, QPixmap, or QImage) to the system clipboard."""
+    """
+    Copy an image (file path, PIL Image, QPixmap, or QImage) to the system clipboard.
+    Encodes standard image/png MIME data so external apps can paste without issue.
+    """
     image = _to_qimage(image_input)
 
     application = _application()
-    clipboard = application.clipboard()
+    _ensure_clipboard_surface()
 
-    clipboard.setImage(image, QClipboard.Mode.Clipboard)
+    # Encode raw PNG bytes for external clipboard consumers (browsers, editors, chat)
+    ba = QByteArray()
+    buf = QBuffer(ba)
+    buf.open(QIODevice.WriteOnly)
+    image.save(buf, "PNG")
+
+    mime = QMimeData()
+    mime.setImageData(image)
+    mime.setData("image/png", ba)
+    mime.setData("image/x-png", ba)
+
+    clipboard = application.clipboard()
+    clipboard.setMimeData(mime, QClipboard.Mode.Clipboard)
 
     if clipboard.supportsSelection():
-        clipboard.setImage(image, QClipboard.Mode.Selection)
+        mime_sel = QMimeData()
+        mime_sel.setImageData(image)
+        mime_sel.setData("image/png", ba)
+        mime_sel.setData("image/x-png", ba)
+        clipboard.setMimeData(mime_sel, QClipboard.Mode.Selection)
 
     application.processEvents()
 
@@ -78,6 +129,8 @@ def copy_text_to_clipboard(text: str) -> None:
         raise TypeError("Clipboard text must be a string.")
 
     application = _application()
+    _ensure_clipboard_surface()
+
     clipboard = application.clipboard()
 
     raw_bytes = text.encode("utf-8")
@@ -85,6 +138,7 @@ def copy_text_to_clipboard(text: str) -> None:
     mime = QMimeData()
     mime.setText(text)
     mime.setData("text/plain;charset=utf-8", raw_bytes)
+    mime.setData("text/plain", raw_bytes)
     mime.setData("UTF8_STRING", raw_bytes)
     clipboard.setMimeData(mime, QClipboard.Mode.Clipboard)
 
@@ -92,6 +146,7 @@ def copy_text_to_clipboard(text: str) -> None:
         mime_sel = QMimeData()
         mime_sel.setText(text)
         mime_sel.setData("text/plain;charset=utf-8", raw_bytes)
+        mime_sel.setData("text/plain", raw_bytes)
         mime_sel.setData("UTF8_STRING", raw_bytes)
         clipboard.setMimeData(mime_sel, QClipboard.Mode.Selection)
 
