@@ -1,4 +1,4 @@
-"""Manual-only systemd user-service prototype for this checkout and its venv.
+"""Generate manual or GNOME-login user-service profiles for this checkout.
 
 Does not enable/start units, import editor environment, edit desktop entries or
 create autostart entries. Session validation uses only the standard library.
@@ -26,7 +26,7 @@ def unit_quote(value, *, command=False):
     return '"' + value + '"'
 
 
-def service_unit(project_root=ROOT):
+def service_unit(project_root=ROOT, *, login_startup=False):
     root = Path(project_root).absolute()
     # Do not resolve this symlink: the venv path selects its Python environment.
     python = root / '.venv/bin/python'
@@ -37,21 +37,35 @@ def service_unit(project_root=ROOT):
     # WorkingDirectory consumes the whole value literally, unlike ExecStart.
     # '/.' keeps a trailing space/backslash in a directory name away from EOL.
     directory = str(root).replace('%', '%%') + '/.'
-    return template.replace('@ROOT@', directory).replace(
+    content = template.replace('@ROOT@', directory).replace(
         '@PYTHON@', unit_quote(python)).replace('@MAIN@', unit_quote(root / 'main.py', command=True))
+    if login_startup:
+        # GNOME's installed target is Before=graphical-session.target. Wait for
+        # that ready session, not for the target that now pulls this service in.
+        content = content.replace('Stage 1 prototype;', 'Stage 2 login prototype;').replace(
+            '# Manual-only: deliberately no [Install] / WantedBy / autostart entry.',
+            '# Enable explicitly only after validating the manual service lifecycle.').replace(
+            'Requisite=graphical-session.target', 'Requisite=gnome-session.target').replace(
+            'After=graphical-session.target', 'After=gnome-session.target')
+        content += '\n[Install]\nWantedBy=graphical-session.target\n'
+    return content
 
 
-def install_service(project_root=ROOT, unit_directory=None):
+def install_service(project_root=ROOT, unit_directory=None, *, login_startup=False, replace_known=False):
     directory = Path(unit_directory) if unit_directory is not None else (
         Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'systemd/user')
-    content = service_unit(project_root)
+    content = service_unit(project_root, login_startup=login_startup)
     target = directory / UNIT_NAME
+    previous = None
     if target.is_symlink():
         raise RuntimeError(f'Existing service symlink preserved: {target}')
     if target.exists():
-        if target.read_text(encoding='utf-8') == content:
+        previous = target.read_text(encoding='utf-8')
+        if previous == content:
             return target
-        raise RuntimeError(f'Existing service preserved; review manually: {target}')
+        other_profile = service_unit(project_root, login_startup=not login_startup)
+        if not replace_known or previous != other_profile:
+            raise RuntimeError(f'Existing service preserved; review manually: {target}')
     directory.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
@@ -60,6 +74,13 @@ def install_service(project_root=ROOT, unit_directory=None):
             temporary = Path(stream.name)
             stream.write(content)
         temporary.chmod(0o644)
+        if previous is not None:
+            # An explicit, exact-profile migration only. Never treat a managed
+            # marker as permission to overwrite arbitrary user edits.
+            if target.is_symlink() or target.read_text(encoding='utf-8') != previous:
+                raise RuntimeError(f'Service changed while preparing installation; preserved: {target}')
+            temporary.replace(target)
+            return target
         # Publish without overwriting another installer or a custom unit.
         try:
             os.link(temporary, target)
@@ -111,7 +132,13 @@ def main(argv=None):
     action.add_argument('--print', action='store_true', help='Print a generated unit without installing')
     action.add_argument('--install', action='store_true', help='Install only; never enable/start or import environment')
     action.add_argument('--check-session', action='store_true', help='ExecCondition check, no Qt startup')
+    parser.add_argument('--login-startup', action='store_true', help='Generate the GNOME login profile; does not enable it')
+    parser.add_argument('--replace-known', action='store_true', help='Explicitly replace only the exact other generated profile')
     args = parser.parse_args(argv)
+    if args.check_session and (args.login_startup or args.replace_known):
+        parser.error('Profile options cannot be used with --check-session')
+    if args.replace_known and not args.install:
+        parser.error('--replace-known requires --install')
     try:
         if args.check_session:
             problem = session_problem()
@@ -120,9 +147,9 @@ def main(argv=None):
                 return 1  # ExecCondition 1 skips cleanly, without a restart loop.
             return 0
         if args.print:
-            print(service_unit(), end='')
+            print(service_unit(login_startup=args.login_startup), end='')
         else:
-            print(install_service())
+            print(install_service(login_startup=args.login_startup, replace_known=args.replace_known))
         return 0
     except (OSError, RuntimeError, ValueError) as error:
         print(str(error), file=sys.stderr)

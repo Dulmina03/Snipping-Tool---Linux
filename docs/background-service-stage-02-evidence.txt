@@ -1,0 +1,192 @@
+Background Service Stage 2 evidence — 2026-11-14
+User confirms Stage 1 all six physical tests PASS. Stage 2 physical login/logout/reboot NOT RUN.
+
+Git start: clean feat/background-service, a46732d, empty index. No branch change or commit/staging/reset/merge/push.
+
+Initial native targets: graphical-session.target and gnome-session.target active. GNOME target BindsTo graphical-session.target, Before graphical-session.target, After gnome-session-initialized.target. graphical target StopWhenUnneeded=yes. Linger=no. Existing app PID 79946; static Stage 1 unit.
+
+UNIT TESTS (authorized host, temporary sockets/real parser, no manager mutation):
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -p test_user_service.py -v
+test_exec_condition_returns_skip_not_restart_failure (test_user_service.SessionConditionTests.test_exec_condition_returns_skip_not_restart_failure) ... ok
+test_non_graphical_missing_or_stale_environment_fails_closed (test_user_service.SessionConditionTests.test_non_graphical_missing_or_stale_environment_fails_closed) ... ok
+test_owned_live_wayland_and_session_bus_sockets_pass (test_user_service.SessionConditionTests.test_owned_live_wayland_and_session_bus_sockets_pass) ... ok
+test_root_other_owner_and_regular_files_are_rejected (test_user_service.SessionConditionTests.test_root_other_owner_and_regular_files_are_rejected) ... ok
+test_cli_login_print_does_not_enable_and_invalid_option_combinations_fail (test_user_service.UserServiceTests.test_cli_login_print_does_not_enable_and_invalid_option_combinations_fail) ... ok
+test_cli_print_uses_checkout_virtualenv_without_installing (test_user_service.UserServiceTests.test_cli_print_uses_checkout_virtualenv_without_installing) ... ok
+test_existing_custom_unit_and_symlink_are_preserved (test_user_service.UserServiceTests.test_existing_custom_unit_and_symlink_are_preserved) ... ok
+test_failed_publication_cleans_only_its_staging_file (test_user_service.UserServiceTests.test_failed_publication_cleans_only_its_staging_file) ... ok
+test_install_is_idempotent_and_does_not_enable_or_run_commands (test_user_service.UserServiceTests.test_install_is_idempotent_and_does_not_enable_or_run_commands) ... ok
+test_login_profile_waits_for_gnome_and_is_wanted_by_graphical_session (test_user_service.UserServiceTests.test_login_profile_waits_for_gnome_and_is_wanted_by_graphical_session) ... ok
+test_manual_only_graphical_session_lifetime_and_failure_restart_contract (test_user_service.UserServiceTests.test_manual_only_graphical_session_lifetime_and_failure_restart_contract) ... ok
+test_missing_checkout_or_venv_is_rejected (test_user_service.UserServiceTests.test_missing_checkout_or_venv_is_rejected) ... ok
+test_profile_change_during_preparation_is_preserved (test_user_service.UserServiceTests.test_profile_change_during_preparation_is_preserved) ... ok
+test_profile_migration_and_rollback_require_explicit_exact_match (test_user_service.UserServiceTests.test_profile_migration_and_rollback_require_explicit_exact_match) ... ok
+test_prospective_enabled_graph_passes_real_systemd_verification (test_user_service.UserServiceTests.test_prospective_enabled_graph_passes_real_systemd_verification) ... ok
+test_publish_race_never_overwrites_or_leaves_staging (test_user_service.UserServiceTests.test_publish_race_never_overwrites_or_leaves_staging) ... ok
+test_real_systemd_parser_accepts_generated_unit_and_paths (test_user_service.UserServiceTests.test_real_systemd_parser_accepts_generated_unit_and_paths) ... ok
+test_replace_known_preserves_customized_unit_even_with_managed_marker (test_user_service.UserServiceTests.test_replace_known_preserves_customized_unit_even_with_managed_marker) ... ok
+test_systemd_quoting_is_not_shell_or_desktop_escaping (test_user_service.UserServiceTests.test_systemd_quoting_is_not_shell_or_desktop_escaping) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.651s
+
+OK
+
+FULL SUITE (authorized host):
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Ran 164 tests in 18.286s
+OK
+
+Lifecycle observations: profile upgrade while disabled; PID 103043 retained after two starts and GIO normal desktop launch (exit 0/already running). Screenshot connection :1.2131 registered APP_ID and response 0. Stop inactive after 3.5s. Controlled SIGKILL 103916 ->103994 in 3.301s, NRestarts=1. Enabled one app link; tray protocol Quit =>inactive/MainPID=0/UnitFileState=enabled after 3.5s. Disable =>disabled/link removed. Default profile reinstall =>static. Login profile restore =>disabled before final enable.
+
+Commands used for profile changes:
+.venv/bin/python -m utils.user_service --install --login-startup --replace-known
+systemctl --user daemon-reload
+systemd-analyze --user verify /home/dulmina/.config/systemd/user/com.dulmina.aisnippingtool.service
+systemctl --user enable com.dulmina.aisnippingtool.service
+systemctl --user disable com.dulmina.aisnippingtool.service
+.venv/bin/python -m utils.user_service --install --replace-known
+
+Bounded installed-service journal (from manual Stage 2 tests):
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO capture.screenshot_portal_request: Screenshot identity registered: app=com.dulmina.aisnippingtool connection=:1.2131
+INFO capture.screenshot_portal_request: Screenshot portal version=2
+INFO capture.screenshot_portal_request: Screenshot request: connection=:1.2131 parent='' interactive=False modal=True token=snip_f496f2c5a6b74727b8b49359dce3994d
+INFO capture.screenshot_portal_request: Screenshot request handle=/org/freedesktop/portal/desktop/request/1_2131/snip_f496f2c5a6b74727b8b49359dce3994d
+INFO capture.screenshot_portal_request: Screenshot response code=0 payload={'uri': '<local screenshot URI>'}
+Stopping com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+Stopped com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+com.dulmina.aisnippingtool.service: Consumed 2.165s CPU time over 43.747s wall clock time, 67.4M memory peak.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+com.dulmina.aisnippingtool.service: Sent signal SIGKILL to main process 103916 (python) on client request.
+com.dulmina.aisnippingtool.service: Main process exited, code=killed, status=9/KILL
+com.dulmina.aisnippingtool.service: Failed with result 'signal'.
+com.dulmina.aisnippingtool.service: Scheduled restart job, restart counter is at 1.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO __main__: Tray Quit action received; scheduling QApplication.quit
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+com.dulmina.aisnippingtool.service: Consumed 1.367s CPU time over 31.428s wall clock time, 35.1M memory peak.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+Stopping com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+Stopped com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+com.dulmina.aisnippingtool.service: Consumed 1.850s CPU time over 38.058s wall clock time, 35.7M memory peak.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+
+Native fixture test: existing collected transient snipping-stage01-workflow-probe.service, After/Requisite=gnome-session.target, PartOf=graphical-session.target, clean manager Wayland environment. No second persistent startup unit.
+Running as unit: snipping-stage01-workflow-probe.service; invocation ID: 52df3703810546338300d69785cc2b73
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 27.452s
+             CPU time consumed: 13.803s
+                   Memory peak: 175.3M (swap: 0B)
+
+Native fixture application journal (invocation 52df3703810546338300d69785cc2b73):
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO main: Tray Quit action received; scheduling QApplication.quit
+INFO main: QApplication aboutToQuit emitted
+INFO main: Shutdown: stopping capture jobs
+INFO main: Shutdown: closing shortcut portal session
+INFO main: Shutdown complete
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+
+Post-probe final enable/start PID 106899; explicit restart =>107521. Immediate SNI read raced old :1.2228 owner (NameHasNoOwner), retry confirmed new identity Registered / actual Ctrl+Alt+S.
+
+Final state:
+Requisite=gnome-session.target
+PartOf=graphical-session.target
+WantedBy=graphical-session.target
+After=gnome-session.target app.slice -.mount basic.target
+ActiveState=active
+SubState=running
+UnitFileState=enabled
+MainPID=107521
+Result=success
+NRestarts=0
+
+Final environment (selected keys only): WAYLAND_DISPLAY=wayland-0; XDG_RUNTIME_DIR=/run/user/1000; DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; XDG_SESSION_TYPE=wayland; XDG_CURRENT_DESKTOP=ubuntu:GNOME; QT_QPA_PLATFORM=wayland; SNAP absent. Linger=no.
+
+Exact installed unit:
+# AI Snipping Tool Stage 2 login prototype; generated by utils.user_service.
+# Enable explicitly only after validating the manual service lifecycle.
+[Unit]
+Description=AI Snipping Tool (graphical user session prototype)
+Requisite=gnome-session.target
+After=gnome-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory=/home/dulmina/Projects/ai-snipping-tool/.
+Environment=XDG_RUNTIME_DIR=%t
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
+Environment=QT_QPA_PLATFORM=wayland
+ExecCondition="/home/dulmina/Projects/ai-snipping-tool/.venv/bin/python" -u -m utils.user_service --check-session
+ExecStart="/home/dulmina/Projects/ai-snipping-tool/.venv/bin/python" -u "/home/dulmina/Projects/ai-snipping-tool/main.py"
+Slice=app.slice
+Restart=on-failure
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=30
+LimitCORE=0
+
+[Install]
+WantedBy=graphical-session.target
+
+Physical login/logout/reboot, post-login Window selection, physical key/Escape/tray and real capture/paste remain NOT RUN for Stage 2. No screenshot pixels or extracted private text recorded.

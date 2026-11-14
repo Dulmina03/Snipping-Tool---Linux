@@ -238,3 +238,18 @@ User confirms Phase 1 accepted; Task 1 all six physical tests PASS; Task 2 all s
 - Installed unit is static, not enabled. No XDG autostart/root service/lingering change. One service manually started for pending physical checks (last PID 79946); intentional Quit should leave it stopped. No further stage, Freeform or AI.
 
 [Full report, modified files, commands, raw observations and rollback](background-service-stage-01.md).
+
+
+## Background Service Stage 2 — automatic GNOME login configuration (2026-11-14)
+
+Stage 1 is now user-accepted: all six physical tests PASS. Stage 2 actual login acceptance remains pending.
+
+- PASS: 164 regressions, 18.286s, exit 0; prior 158 retained, six new profile/migration/rollback/custom-preservation/prospective-graph/CLI cases. Focused service suite 19 PASS, 0.651s; syntax/whitespace PASS.
+- PASS: actual GNOME target and initialized ordering inspected; private prospective-enabled tree and installed enabled unit pass real systemd verification. Stage 2 uses Requisite/After=gnome-session.target, PartOf/WantedBy=graphical-session.target. No default.target-only startup, autostart conflict, new persistent service, environment import or lingering.
+- PASS native: manual checks completed while disabled before enabling. Repeated starts retain PID 103043; normal desktop launcher rejects duplicate; real Screenshot v2 connection registers correct app ID and returns response 0; stop remains inactive beyond restart delay. Controlled SIGKILL recovery 103916→103994 in 3.301s/NRestarts=1.
+- PASS native: enabled startup link, intentional tray protocol Quit stays inactive while enabled; disable removes only app link; Stage 1 rollback reports static; Stage 2 restored and re-enabled. Explicit restart replaces 106899 with 107521, one process, registered identity, active/enabled/NRestarts=0, Linger=no. One immediate tray query hit an old SNI name; settled retry PASS, no production change.
+- PASS native fixture: reused collected transient probe, exit 0 in 27.452s. Actual production Rectangle/Full Screen/repeat image pixels and paste into two readers across focus changes; real English OCR and supplied Sinhala/ZWJ UTF-8/paste; heartbeat/clean shutdown. QTest input/backdrop fixtures are not physical capture or Window picker acceptance.
+- Requested Alt+Shift+S and actual Ctrl+Alt+S remain correctly distinguished; no automatic shortcut or permission change.
+- NOT RUN: actual enabled login, next login after Quit, disabled future login, real logout/reboot, quiet login visual confirmation, new physical key/Escape/tray, Stage 2 real Window/Rectangle/OCR external paste. No simulated login claimed. Stage 1 physical passes are historical/user-confirmed, not new Stage 2 observations.
+
+[Full configuration, all modified files, exact commands, tested disable/rollback and next-login physical steps](background-service-stage-02.md). No subsequent stage, Freeform, AI or packaging.

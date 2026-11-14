@@ -1,5 +1,7 @@
 # Background service integration — Stage 1
 
+**Acceptance update from the Stage 2 request (2026-11-14): the user confirms all six physical Stage 1 tests PASS, including shortcut, Escape, Rectangle/paste, English OCR/paste, Window/paste and tray/Quit. Stage 1 is accepted. Manual-only/NOT RUN statements below describe the historical Stage 1 implementation run. Current login configuration is documented in [Stage 2](background-service-stage-02.md).**
+
 2026-11-14, Ubuntu 26.04 / GNOME 50.1 / Wayland, systemd 259.9. **Prototype implemented; physical service acceptance pending. Login startup is NOT enabled.** Freeform is postponed; no AI work.
 
 ## Starting state and scope

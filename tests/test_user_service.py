@@ -1,4 +1,4 @@
-"""Manual-only service generation and fail-closed session checks; no host changes."""
+"""Manual/login service profiles and fail-closed session checks; no host changes."""
 import os
 from pathlib import Path
 import socket
@@ -108,6 +108,75 @@ class UserServiceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('ExecStart=', result.stdout)
         self.assertNotIn('[Install]\n', result.stdout)
+
+    def test_login_profile_waits_for_gnome_and_is_wanted_by_graphical_session(self):
+        unit = service_unit(self.checkout, login_startup=True)
+        for line in ('Requisite=gnome-session.target', 'After=gnome-session.target',
+                     'PartOf=graphical-session.target', 'WantedBy=graphical-session.target',
+                     'Restart=on-failure', 'ExecCondition='):
+            self.assertIn(line, unit)
+        self.assertNotIn('After=graphical-session.target', unit)
+        self.assertNotIn('Requisite=graphical-session.target', unit)
+        self.assertNotIn('default.target', unit)
+        self.assertEqual(unit.count('ExecStart='), 1)
+
+    def test_profile_migration_and_rollback_require_explicit_exact_match(self):
+        target = install_service(self.checkout, self.units)
+        manual = target.read_text()
+        with self.assertRaisesRegex(RuntimeError, 'preserved'):
+            install_service(self.checkout, self.units, login_startup=True)
+        self.assertEqual(target.read_text(), manual)
+        with patch('subprocess.run') as run:
+            install_service(self.checkout, self.units, login_startup=True, replace_known=True)
+            self.assertEqual(target.read_text(), service_unit(self.checkout, login_startup=True))
+            install_service(self.checkout, self.units, replace_known=True)
+            run.assert_not_called()
+        self.assertEqual(target.read_text(), manual)
+        self.assertEqual(list(self.units.iterdir()), [target])
+
+    def test_replace_known_preserves_customized_unit_even_with_managed_marker(self):
+        target = install_service(self.checkout, self.units)
+        content = target.read_text() + '\n# User customization must survive\n'
+        target.write_text(content)
+        with self.assertRaisesRegex(RuntimeError, 'preserved'):
+            install_service(self.checkout, self.units, login_startup=True, replace_known=True)
+        self.assertEqual(target.read_text(), content)
+
+    def test_profile_change_during_preparation_is_preserved(self):
+        target = install_service(self.checkout, self.units)
+        original = Path.chmod
+        def concurrent_edit(path, mode):
+            target.write_text('concurrent custom unit')
+            original(path, mode)
+        with patch.object(Path, 'chmod', concurrent_edit):
+            with self.assertRaisesRegex(RuntimeError, 'changed while preparing'):
+                install_service(self.checkout, self.units, login_startup=True, replace_known=True)
+        self.assertEqual(target.read_text(), 'concurrent custom unit')
+        self.assertEqual(list(self.units.iterdir()), [target])
+
+    def test_prospective_enabled_graph_passes_real_systemd_verification(self):
+        target = self.root / UNIT_NAME
+        target.write_text(service_unit(self.checkout, login_startup=True))
+        wants = self.root / 'graphical-session.target.wants'
+        wants.mkdir()
+        (wants / UNIT_NAME).symlink_to(target)
+        # Private unit search tree models enablement; no live manager calls,
+        # no GNOME target restart and no symlink in the real user's directory.
+        env = dict(os.environ, SYSTEMD_UNIT_PATH=str(self.root)+':')
+        result = subprocess.run(['systemd-analyze', '--user', 'verify', str(target)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('ordering cycle', result.stderr.lower())
+
+    def test_cli_login_print_does_not_enable_and_invalid_option_combinations_fail(self):
+        result = subprocess.run([sys.executable, '-m', 'utils.user_service', '--print', '--login-startup'],
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('WantedBy=graphical-session.target', result.stdout)
+        for args in (['--check-session', '--login-startup'], ['--print', '--replace-known']):
+            result = subprocess.run([sys.executable, '-m', 'utils.user_service', *args],
+                                    capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 2)
 
 
 class SessionConditionTests(unittest.TestCase):
