@@ -341,7 +341,8 @@ class GlobalShortcutManager(QObject):
         self.configuration_available_changed.emit(self.can_configure)
 
     async def _inspect_capabilities(self):
-        # Detect the actual method/signature, including version-1 backports.
+        # Introspection may advertise unimplemented generated methods. Version 2
+        # is the contract that adds ConfigureShortcuts; require both checks.
         version, supported = None, False
         try:
             reply = await self._bus.call(Message(
@@ -371,7 +372,12 @@ class GlobalShortcutManager(QObject):
         except Exception as error:
             logger.warning('Shortcut capability inspection unavailable: %s', type(error).__name__)
         with self._lock:
-            self._portal_version, self._configure_supported = version, supported
+            self._portal_version = version
+            self._configure_supported = bool(isinstance(version, int) and version >= 2 and supported)
+        if not self._configure_supported:
+            self.configuration_message.emit(
+                'Shortcut configuration unavailable: this desktop backend does not support '
+                'the required GlobalShortcuts version 2 method. The assigned shortcut remains active.')
 
     async def _list_shortcuts(self):
         results = await self._portal_request(member='ListShortcuts', signature='oa{sv}', body=[
@@ -432,6 +438,9 @@ class GlobalShortcutManager(QObject):
                     with self._lock:
                         self._configure_supported = False
                     self.configuration_available_changed.emit(False)
+                    raise RuntimeError(
+                        'Desktop backend does not support shortcut configuration; action disabled. '
+                        f'The assigned shortcut remains active. ({reply.error_name})')
                 raise RuntimeError(f'{reply.error_name}: {reply.body}')
             self.configuration_message.emit('Desktop shortcut configuration requested. Changes appear after confirmation.')
             await self._refresh_assignment()

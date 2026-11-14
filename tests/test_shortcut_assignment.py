@@ -28,7 +28,7 @@ def xml(config=True):
 
 class FakeBus:
     unique_name = ':1.999'
-    def __init__(self, version=1, configure=True, identity_error=None, remembered=None):
+    def __init__(self, version=2, configure=True, identity_error=None, remembered=None):
         self.version, self.configure, self.identity_error = version, configure, identity_error
         self.remembered = remembered or []
         self.calls = []
@@ -201,8 +201,8 @@ class AssignmentTests(unittest.TestCase):
         self.assertEqual(bus.calls[-1].path, '/session/capture')
         self.assertTrue(bus.disconnected)
 
-    def test_v1_without_method_v1_backport_v2_and_signature(self):
-        for version, method, expected in ((1, False, False), (1, True, True), (2, True, True), (2, False, False)):
+    def test_v1_advertised_stub_v2_and_signature(self):
+        for version, method, expected in ((1, False, False), (1, True, False), (2, True, True), (2, False, False)):
             with self.subTest(version=version, method=method):
                 manager = GlobalShortcutManager()
                 manager._bus = FakeBus(version=version, configure=method)
@@ -223,7 +223,7 @@ class AssignmentTests(unittest.TestCase):
             '</interface></node>')
         asyncio.run(self.manager._inspect_capabilities())
         self.assertTrue(self.manager._configure_supported)
-        self.assertEqual(self.manager.portal_version, 1)
+        self.assertEqual(self.manager.portal_version, 2)
 
     def test_configuration_explicit_only_and_refreshes_list(self):
         bus = FakeBus()
@@ -249,6 +249,19 @@ class AssignmentTests(unittest.TestCase):
         asyncio.run(self.manager._configure_shortcuts())
         self.assertFalse(self.manager.can_configure)
         self.assertIn('UnknownMethod', messages[-1])
+        self.assertFalse(self.manager.request_configuration())
+        asyncio.run(self.manager._configure_shortcuts())
+        self.assertEqual(sum(m.member == 'ConfigureShortcuts' for m in bus.calls), 1)
+
+    def test_v1_advertised_stub_never_called_and_explained(self):
+        bus = FakeBus(version=1)
+        messages = []
+        self.manager.configuration_message.connect(messages.append)
+        self.register(bus)
+        self.assertFalse(self.manager.can_configure)
+        self.assertFalse(self.manager.request_configuration())
+        self.assertFalse(any(m.member == 'ConfigureShortcuts' for m in bus.calls))
+        self.assertTrue(any('backend does not support' in message for message in messages))
 
     def test_denied_binding_reports_registration_error(self):
         async def rejected(**kwargs):

@@ -58,7 +58,7 @@ class ShortcutStatus(QObject):
         self.configure_action.setEnabled(available)
         self.configure_action.setText('Configure Shortcut…' if available else 'Configure Shortcut (unavailable)')
         self.configure_action.setToolTip('Open desktop shortcut configuration; changes require your confirmation.'
-            if available else 'Unavailable for this portal or launch identity. Check the identity status and launch from GNOME Applications.')
+            if available else 'Unavailable: desktop backend support (GlobalShortcuts v2) and a registered host identity are required. See status for details.')
 
     @Slot()
     def configure(self):
