@@ -13,7 +13,8 @@ import uuid
 import hashlib
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 from main import prepare_qt_environment
 prepare_qt_environment()
 from PySide6.QtCore import QThread, QTimer

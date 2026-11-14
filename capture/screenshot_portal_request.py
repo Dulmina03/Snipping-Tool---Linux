@@ -8,6 +8,7 @@ import uuid
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from utils.desktop_entry import APP_ID
+from utils.capture_diagnostics import trace
 
 BUS_NAME = 'org.freedesktop.portal.Desktop'
 OBJECT_PATH = '/org/freedesktop/portal/desktop'
@@ -112,7 +113,10 @@ async def request_screenshot(interactive=False, parent_window=''):
         parsed = urlparse(uri)
         if parsed.scheme != 'file' or parsed.netloc not in ('', 'localhost') or not parsed.path:
             raise ScreenshotPortalError('unexpected', 'Screenshot returned an unsupported file URI.')
-        return Path(unquote(parsed.path))
+        source = Path(unquote(parsed.path))
+        trace('portal_return', response=code, path=str(source), exists=source.is_file(),
+              bytes=source.stat().st_size if source.is_file() else None, interactive=interactive)
+        return source
     except asyncio.TimeoutError as error:
         raise ScreenshotPortalError('timeout', 'Timed out waiting for the Screenshot portal.') from error
     except (ScreenshotPortalError, asyncio.CancelledError):

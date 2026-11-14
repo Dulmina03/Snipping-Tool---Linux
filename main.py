@@ -16,6 +16,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from shortcuts.global_shortcut import GlobalShortcutManager
 from ui.capture_menu import CaptureMenu
 from ui.shortcut_status import ShortcutStatus
+from utils.capture_diagnostics import trace
 
 
 def create_tray_icon() -> QIcon:
@@ -78,6 +79,14 @@ def configure_application(application):
     application.setDesktopFileName(APP_ID)
     menu = CaptureMenu()
     shortcut_manager = GlobalShortcutManager()
+    if os.environ.get('SNIPPING_DIAGNOSTICS') == '1':
+        heartbeat = QTimer(menu)
+        heartbeat.setInterval(1000)
+        heartbeat.timeout.connect(lambda: trace('event_loop_heartbeat',
+            clipboard_owned=application.clipboard().ownsClipboard(),
+            application_alive=QApplication.instance() is application,
+            capture_jobs=len(menu.jobs.tasks)))
+        heartbeat.start()
 
     # System Tray setup
     tray_icon = QSystemTrayIcon(create_tray_icon(), application)

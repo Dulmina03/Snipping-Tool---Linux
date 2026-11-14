@@ -542,6 +542,8 @@ class Overlay(QWidget):
     window_capture_requested     = Signal()
     cancelled                    = Signal()
 
+    delivery_requested = Signal()
+
     def __init__(
         self,
         bg_pixmap: QPixmap | None = None,
@@ -554,6 +556,7 @@ class Overlay(QWidget):
         self.selecting   = False
         self.selected_rect: QRect | None = None
         self._mode       = SnipMode.RECTANGULAR
+        self._processing = False
 
         self.setWindowFlags(
             Qt.Window
@@ -628,7 +631,6 @@ class Overlay(QWidget):
         self._update_cursor()
 
         if mode == SnipMode.FULLSCREEN:
-            self.hide()
             self.fullscreen_capture_requested.emit()
         elif mode == SnipMode.WINDOW:
             self.hide()
@@ -643,6 +645,8 @@ class Overlay(QWidget):
     # ── Mouse events (rectangular selection) ─────────────────────────────────
 
     def mousePressEvent(self, event) -> None:
+        if self._processing:
+            return
         if self._mode != SnipMode.RECTANGULAR:
             return
         if event.button() == Qt.LeftButton:
@@ -659,13 +663,30 @@ class Overlay(QWidget):
             self.end_point = event.position().toPoint()
             self.update()
 
+    def set_processing(self, processing=True):
+        self._processing = processing
+        for mode, button in self._toolbar._buttons.items():
+            button.setEnabled(not processing and mode != SnipMode.FREEFORM)
+        self._toolbar.action_combo.setEnabled(not processing)
+        self.setCursor(Qt.BusyCursor if processing else Qt.CrossCursor)
+
     def mouseReleaseEvent(self, event) -> None:
+        if self._processing:
+            if event.button() == Qt.LeftButton:
+                self.delivery_requested.emit()
+            return
         if event.button() == Qt.LeftButton and self.selecting:
             self.end_point = event.position().toPoint()
             self.selecting = False
             self.confirm_selection()
 
     def keyPressEvent(self, event) -> None:
+        if self._processing:
+            if event.key() == Qt.Key_Escape:
+                self.cancel_selection()
+            elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                self.delivery_requested.emit()
+            return
         if event.key() == Qt.Key_Escape:
             self.cancel_selection()
         elif event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
@@ -685,7 +706,8 @@ class Overlay(QWidget):
         if rect.width() > 2 and rect.height() > 2:
             self.selected_rect = rect
             self.area_selected.emit(rect)
-            self.close()
+            if not self._processing:
+                self.close()
         else:
             self.selected_rect = None
             self.close()

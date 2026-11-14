@@ -101,7 +101,7 @@ def unique_destination():
     return destination
 
 
-async def take_screenshot():
+async def take_screenshot(copy_to_clipboard=True):
     try:
         source_path = await request_screenshot(interactive=True)
     except ScreenshotPortalError as error:
@@ -126,8 +126,9 @@ async def take_screenshot():
     print(destination)
 
     try:
-        copy_image_to_clipboard(destination)
-        print("Copied to clipboard.")
+        if copy_to_clipboard:
+            copy_image_to_clipboard(destination)
+            print("Copied to clipboard.")
     except Exception as error:
         print("WARNING: Screenshot saved, but clipboard copy failed:")
         print(error)

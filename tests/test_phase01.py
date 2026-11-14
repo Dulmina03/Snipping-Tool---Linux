@@ -124,7 +124,7 @@ class LifecycleTests(unittest.TestCase):
 
     def test_window_portal_and_clipboard_remain_on_gui_thread(self):
         threads = []
-        async def window():
+        async def window(**kwargs):
             threads.append(QThread.currentThread())
             await asyncio.sleep(.03)
             return self.source

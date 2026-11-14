@@ -51,6 +51,7 @@ from utils.async_jobs import AsyncJobs
 from utils.ocr_process import extract_text_async
 from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
+from utils.capture_diagnostics import trace, image_trace
 
 
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
@@ -185,6 +186,7 @@ class CaptureMenu(QWidget):
         self._pending = None
         self._shutting_down = False
         self._permission_prompt = None
+        self._clipboard_pending = None
         self.capture_engine    = ScreenshotCapture()
         self.last_capture_path: Path | None = None
         self.last_extracted_text: str | None = None
@@ -308,6 +310,7 @@ class CaptureMenu(QWidget):
                 self._cleanup_source(source_path)
                 await asyncio.sleep(.2)
                 source_path = await _portal_screenshot(interactive=False)
+            image_trace('portal_source', source_path)
             self._src_path = source_path
             bg_pixmap = QPixmap(str(source_path))
             if bg_pixmap.isNull():
@@ -321,6 +324,7 @@ class CaptureMenu(QWidget):
             overlay.window_capture_requested.connect(
                 lambda: self._on_window_requested(overlay.capture_action))
             overlay.cancelled.connect(self._on_cancelled)
+            overlay.delivery_requested.connect(self._deliver_pending_clipboard)
             overlay.showFullScreenOverlay()
         except asyncio.CancelledError:
             raise
@@ -398,6 +402,7 @@ class CaptureMenu(QWidget):
 
     def shutdown(self):
         self._shutting_down = True
+        self._clipboard_pending = None
         if self.busy:
             self._pending.cancel()
         self._close_overlay()
@@ -415,15 +420,19 @@ class CaptureMenu(QWidget):
     # ── Capture result handlers ───────────────────────────────────────────────
 
     def _on_area_selected(self, rect: QRect, source_path: Path | None, action: str) -> None:
-        self._close_overlay()
+        trace('capture_selected', action=action, mode='rectangle')
+        if self._overlay is not None:
+            self._overlay.set_processing()
         self._src_path = None
         if source_path is None or not source_path.exists():
+            self._close_overlay()
             self.status_label.setText("Capture failed: no backdrop screenshot.")
             self.capture_finished.emit()
             return
         try:
             out = _crop_and_save(source_path, rect.x(), rect.y(), rect.width(), rect.height())
         except Exception as e:
+            self._close_overlay()
             self.status_label.setText(f"Crop failed: {e}")
             self.capture_finished.emit()
             return
@@ -433,15 +442,19 @@ class CaptureMenu(QWidget):
         self._handle_capture_result(out, action)
 
     def _on_fullscreen(self, source_path: Path | None, action: str) -> None:
-        self._close_overlay()
+        trace('capture_selected', action=action, mode='fullscreen')
+        if self._overlay is not None:
+            self._overlay.set_processing()
         self._src_path = None
         if source_path is None or not source_path.exists():
+            self._close_overlay()
             self.status_label.setText("Capture failed: no backdrop screenshot.")
             self.capture_finished.emit()
             return
         try:
             out = _save_full(source_path)
         except Exception as e:
+            self._close_overlay()
             self.status_label.setText(f"Save failed: {e}")
             self.capture_finished.emit()
             return
@@ -451,7 +464,10 @@ class CaptureMenu(QWidget):
         self._handle_capture_result(out, action)
 
     def _on_window_requested(self, action: str) -> None:
-        self._close_overlay()
+        trace('capture_selected', action=action, mode='window')
+        if self._overlay is not None:
+            self._overlay.set_processing()
+            self._overlay.hide()
         self._cleanup_source(self._src_path)
         self._src_path = None
         self._pending = self.jobs.submit(self._capture_window(action))
@@ -459,21 +475,29 @@ class CaptureMenu(QWidget):
     async def _capture_window(self, action):
         try:
             # Existing async backend calls clipboard on this Qt main thread.
-            out = await asyncio.wait_for(capture_window(), timeout=190)
+            out = await asyncio.wait_for(capture_window(copy_to_clipboard=False), timeout=190)
             if out is None:
+                self._close_overlay()
                 self.status_label.setText("Window capture cancelled.")
                 self.capture_finished.emit()
                 return
+            if self._overlay is not None:
+                self._overlay.showFullScreenOverlay()
+                await asyncio.sleep(.25)
             self._handle_capture_result(out, action)
         except asyncio.CancelledError:
             raise
         except Exception as error:
+            self._close_overlay()
             logger.exception("Window capture failed")
             self.status_label.setText(str(error) if isinstance(error, ScreenshotPortalError) else "Window capture failed or timed out.")
             self._show_toast(self.status_label.text())
             self.capture_finished.emit()
 
     def _on_cancelled(self) -> None:
+        self._clipboard_pending = None
+        if self.busy:
+            self._pending.cancel()
         self._close_overlay()
         self._cleanup_source(self._src_path)
         self._src_path = None
@@ -481,43 +505,68 @@ class CaptureMenu(QWidget):
         self.capture_finished.emit()
 
     def _handle_capture_result(self, path: Path, action: str) -> None:
-        """Handle post-capture automatic behavior: Screenshot vs Extract Text."""
+        """Publish while the real capture window still owns Wayland focus."""
+        image_trace('post_capture', path, action=action)
         self.last_capture_path = path
-        is_ocr = (action == "extract_text" or action == "ocr")
-
-        if is_ocr:
+        if action in ('extract_text', 'ocr'):
+            self.last_extracted_text = None
             self._pending = self.jobs.submit(self._recognize(path))
-            return
         else:
-            # Default "Screenshot" mode: BOTH save to disk AND copy to clipboard
-            try:
-                copy_image_to_clipboard(path)
-                self.status_label.setText(f"Saved & copied: {path.name}")
-                self._show_toast("✓ Saved & copied to clipboard!")
-            except Exception as e:
-                print(f"[CLIPBOARD ERROR] {e}", flush=True)
-                self.status_label.setText(f"Clipboard copy failed: {e}")
-                self._show_toast(f"✓ Saved: {path.name}")
+            self._clipboard_pending = ('image', path)
+            self._deliver_pending_clipboard()
 
-        QApplication.processEvents()
+    def _deliver_pending_clipboard(self):
+        if self._shutting_down or self._clipboard_pending is None:
+            return
+        if (QGuiApplication.platformName() == 'wayland' and self._overlay is not None
+                and not self._overlay.isActiveWindow()):
+            self.status_label.setText('Result ready. Return to the capture overlay and click or press Enter to copy.')
+            self._overlay.setCursor(Qt.ArrowCursor)
+            self._show_toast(self.status_label.text())
+            trace('clipboard_deferred', reason='capture_window_not_focused')
+            return
+        kind, value = self._clipboard_pending
+        try:
+            trace('clipboard_delivery', kind=kind, overlay_visible=self._overlay is not None and self._overlay.isVisible())
+            if kind == 'image':
+                copy_image_to_clipboard(value)
+                message = f'Saved & copied: {value.name}'
+            else:
+                copy_text_to_clipboard(value)
+                message = f'Text copied ({len(value)} chars)'
+            self._clipboard_pending = None
+            # setMimeData precedes surface teardown; QApplication remains alive
+            # to serve requests from other clients after this window closes.
+            self._close_overlay()
+            self.status_label.setText(message)
+            self._show_toast(message)
+        except Exception as error:
+            logger.exception('Clipboard delivery failed')
+            self.status_label.setText(f'Clipboard copy failed: {error}')
+            self._show_toast(self.status_label.text())
         self.capture_finished.emit()
 
     async def _recognize(self, path):
         try:
+            trace('ocr_started')
             text = await extract_text_async(path)
             self.last_extracted_text = text
+            trace('ocr_returned', characters=len(text))
             if text:
-                copy_text_to_clipboard(text)
-                self.status_label.setText(f"Text copied ({len(text)} chars)")
+                self._clipboard_pending = ('text', text)
+                self._deliver_pending_clipboard()
             else:
-                self.status_label.setText("No text detected.")
-            self._show_toast(self.status_label.text())
+                self._close_overlay()
+                self.status_label.setText('No text detected.')
+                self._show_toast(self.status_label.text())
+                self.capture_finished.emit()
         except asyncio.CancelledError:
             raise
-        except Exception:
-            self.status_label.setText("Local OCR failed or timed out.")
+        except Exception as error:
+            self._close_overlay()
+            logger.exception('Local OCR failed')
+            self.status_label.setText(f'Local OCR failed: {error}')
             self._show_toast(self.status_label.text())
-        finally:
             if not self._shutting_down:
                 self.capture_finished.emit()
 
