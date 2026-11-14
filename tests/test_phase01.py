@@ -355,7 +355,7 @@ class PortalCleanupTests(unittest.TestCase):
         bus.disconnect = lambda: setattr(bus, 'closed', True)
         jobs = AsyncJobs()
         try:
-            with patch('capture.portal_screenshot.MessageBus', return_value=bus):
+            with patch('capture.screenshot_portal_request.MessageBus', return_value=bus):
                 task = jobs.submit(_portal_screenshot())
                 spin_until(lambda: bus.started)
                 task.cancel()
@@ -409,7 +409,7 @@ class PortalCleanupTests(unittest.TestCase):
             bus = Bus(delay=cancelled)
             jobs = AsyncJobs()
             try:
-                with patch('capture.portal_screenshot.MessageBus', return_value=bus):
+                with patch('capture.screenshot_portal_request.MessageBus', return_value=bus):
                     task = jobs.submit(_portal_screenshot())
                     spin_until(lambda: bus.started)
                     if cancelled:

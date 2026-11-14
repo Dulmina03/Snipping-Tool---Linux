@@ -60,7 +60,7 @@ SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
 #  Portal screenshot helper
 # ─────────────────────────────────────────────────────────────────────────────
 
-from capture.portal_screenshot import request_screenshot as _portal_screenshot, ScreenshotPortalError
+from capture.screenshot_portal_request import request_screenshot as _portal_screenshot, ScreenshotPortalError
 
 logger = logging.getLogger(__name__)
 

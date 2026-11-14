@@ -10,7 +10,7 @@ from dbus_next import Message, MessageType, Variant
 from dbus_next.constants import BusType
 
 from utils.clipboard import copy_image_to_clipboard
-from capture.portal_screenshot import request_screenshot, ScreenshotPortalError
+from capture.screenshot_portal_request import request_screenshot, ScreenshotPortalError
 
 
 PORTAL_BUS_NAME = "org.freedesktop.portal.Desktop"
