@@ -1,4 +1,4 @@
-"""Full-screen snipping overlay with Raycast/Linear-style vector toolbar."""
+"""Full-screen snipping overlay with a compact, opaque vector toolbar."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import enum
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, Signal, Slot
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -172,34 +172,34 @@ class _ModeButton(QToolButton):
             padding: 3px;
         }
         QToolButton:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #2D3440;
+            border: 1px solid #454D5B;
         }
         QToolButton:pressed {
-            background: rgba(255, 255, 255, 0.10);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #364155;
+            border: 1px solid #596477;
         }
     """
 
-    # Checked: desaturated indigo glass with luminous border (Linear style)
+    # Checked: opaque muted indigo with a visible border
     _STYLE_CHECKED = """
         QToolButton {
-            background: rgba(79, 70, 229, 0.28);
-            border: 1px solid rgba(129, 140, 248, 0.65);
+            background: #303653;
+            border: 1px solid #8994EC;
             border-radius: 8px;
             padding: 3px;
         }
         QToolButton:hover {
-            background: rgba(79, 70, 229, 0.38);
-            border: 1px solid rgba(165, 180, 252, 0.85);
+            background: #3C4567;
+            border: 1px solid #B0B9FF;
         }
     """
 
-    # Disabled: subtle muted ghost
+    # Disabled: muted but legible, with a distinct solid surface
     _STYLE_DISABLED = """
         QToolButton {
-            background: transparent;
-            border: 1px solid transparent;
+            background: #1D2128;
+            border: 1px solid #343B47;
             border-radius: 8px;
             padding: 3px;
         }
@@ -208,7 +208,7 @@ class _ModeButton(QToolButton):
     # Colors applied to vector icon and label text
     _COLOR_NORMAL   = "#FFFFFF"
     _COLOR_CHECKED  = "#FFFFFF"
-    _COLOR_DISABLED = "rgba(255, 255, 255, 0.35)"
+    _COLOR_DISABLED = "#929AA8"
 
     def __init__(self, mode: SnipMode, label: str, enabled: bool = True):
         super().__init__()
@@ -242,6 +242,11 @@ class _ModeButton(QToolButton):
 
         self._refresh_style()
 
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.EnabledChange and hasattr(self, '_name_lbl'):
+            self._refresh_style()
+
     def _refresh_style(self) -> None:
         if not self.isEnabled():
             self.setStyleSheet(self._STYLE_DISABLED)
@@ -274,6 +279,20 @@ class _ModeButton(QToolButton):
 #  Pill Toolbar — Docked at top-center
 # ─────────────────────────────────────────────────────────────────────────────
 
+class _ActionComboBox(QComboBox):
+    """High-contrast chevron, independent of the GNOME/Qt platform theme."""
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        color = QColor('#FFFFFF' if self.isEnabled() else '#929AA8')
+        painter.setPen(QPen(color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        x, y = self.width() - 14, self.height() / 2
+        painter.drawLine(QPointF(x - 3, y - 1.5), QPointF(x, y + 1.5))
+        painter.drawLine(QPointF(x, y + 1.5), QPointF(x + 3, y - 1.5))
+        painter.end()
+
+
 class SnipToolbar(QFrame):
     """
     Precision pill-shaped toolbar docked at the top of the overlay.
@@ -296,20 +315,23 @@ class SnipToolbar(QFrame):
 
     def _build(self) -> None:
         self.setObjectName("snip_toolbar")
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        # Paint an opaque styled interior into the translucent overlay. Do not
+        # mark this rounded child as opaque (its corners still reveal the parent).
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""
             QFrame#snip_toolbar {
-                background: rgba(17, 19, 26, 0.94);
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: #181B20;
+                border: 1px solid #454D5B;
                 border-radius: 14px;
             }
         """)
 
-        # Soft atmospheric drop shadow
+        # Subtle separation without a translucent/glass surface
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(36)
-        shadow.setOffset(0, 8)
-        shadow.setColor(QColor(0, 0, 0, 190))
+        shadow.setBlurRadius(18)
+        shadow.setOffset(0, 3)
+        shadow.setColor(QColor(0, 0, 0, 120))
         self.setGraphicsEffect(shadow)
 
         outer = QHBoxLayout(self)
@@ -344,7 +366,7 @@ class SnipToolbar(QFrame):
         outer.addWidget(self._create_divider())
 
         # ── 2. Action Dropdown (Screenshot vs Extract Text) ───────────────────
-        self.action_combo = QComboBox()
+        self.action_combo = _ActionComboBox()
         self.action_combo.setObjectName("action_combo")
         self.action_combo.addItem("Screenshot", CaptureAction.SCREENSHOT.value)
         self.action_combo.addItem("Extract Text", CaptureAction.EXTRACT_TEXT.value)
@@ -353,9 +375,9 @@ class SnipToolbar(QFrame):
         self.action_combo.setFixedSize(QSize(118, 34))
         self.action_combo.setStyleSheet("""
             QComboBox#action_combo {
-                background: rgba(255, 255, 255, 0.05);
+                background: #242A33;
                 color: #FFFFFF;
-                border: 1px solid rgba(255, 255, 255, 0.12);
+                border: 1px solid #596477;
                 border-radius: 7px;
                 padding: 3px 24px 3px 10px;
                 font-size: 12px;
@@ -363,12 +385,17 @@ class SnipToolbar(QFrame):
                 font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
             }
             QComboBox#action_combo:hover {
-                background: rgba(255, 255, 255, 0.09);
-                border-color: rgba(255, 255, 255, 0.25);
+                background: #303846;
+                border-color: #7A879C;
                 color: #FFFFFF;
             }
+            QComboBox#action_combo:disabled {
+                background: #1D2128;
+                color: #929AA8;
+                border-color: #343B47;
+            }
             QComboBox#action_combo:on {
-                border-color: rgba(129, 140, 248, 0.65);
+                border-color: #8994EC;
             }
             QComboBox#action_combo::drop-down {
                 subcontrol-origin: padding;
@@ -379,17 +406,13 @@ class SnipToolbar(QFrame):
             }
             QComboBox#action_combo::down-arrow {
                 image: none;
-                border-left: 3.5px solid transparent;
-                border-right: 3.5px solid transparent;
-                border-top: 4.5px solid #FFFFFF;
-                margin-right: 8px;
             }
             QComboBox#action_combo QAbstractItemView {
-                background-color: #151722;
+                background-color: #181B20;
                 color: #FFFFFF;
-                selection-background-color: rgba(79, 70, 229, 0.35);
+                selection-background-color: #303653;
                 selection-color: #FFFFFF;
-                border: 1px solid rgba(255, 255, 255, 0.12);
+                border: 1px solid #596477;
                 border-radius: 8px;
                 padding: 4px;
                 outline: none;
@@ -404,7 +427,7 @@ class SnipToolbar(QFrame):
                 color: #FFFFFF;
             }
             QComboBox#action_combo QAbstractItemView::item:selected {
-                background-color: rgba(79, 70, 229, 0.35);
+                background-color: #303653;
                 color: #FFFFFF;
             }
         """)
@@ -456,11 +479,11 @@ class SnipToolbar(QFrame):
                 border-radius: 7px;
             }
             QPushButton:hover {
-                background: rgba(239, 68, 68, 0.16);
-                border: 1px solid rgba(248, 113, 113, 0.30);
+                background: #48282E;
+                border: 1px solid #BF707B;
             }
             QPushButton:pressed {
-                background: rgba(239, 68, 68, 0.26);
+                background: #65313B;
             }
         """)
 
@@ -480,7 +503,7 @@ class SnipToolbar(QFrame):
         div = QFrame()
         div.setFixedSize(1, 24)
         div.setStyleSheet("""
-            background: rgba(255, 255, 255, 0.08);
+            background: #454D5B;
             border: none;
         """)
         return div
