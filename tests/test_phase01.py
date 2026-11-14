@@ -209,8 +209,8 @@ class LifecycleTests(unittest.TestCase):
             task = self.menu.jobs.submit(extract_text_async(self.source))
             spin_until(pid_file.exists)
             pid = int(pid_file.read_text())
-            task.cancel()
-            spin_until(task.done)
+            self.menu.shutdown()
+            self.menu.jobs.close()
             self.assertTrue(task.cancelled())
             with self.assertRaises(ProcessLookupError):
                 os.kill(pid, 0)

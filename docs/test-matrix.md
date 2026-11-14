@@ -78,3 +78,48 @@ These are **future tests**, not results. Task: canonical production launcher plu
 7. **Regression check:** rerun compileall, isolated menu cancellation and updated lifecycle tests; report every command/exit code. Do not carry forward the old `menu.isVisible()` shortcut success criterion or add an AI placeholder implementation.
 
 The full Phase 1 gate also requires responsive denied/delayed portal requests, safe worker/main-thread boundaries, cancellation/shutdown and duplicate-instance prevention. Those remain separate work after this smallest slice. Passing these launcher tests alone does not complete Phase 1.
+
+## Phase 1 results — 2026-11-14
+
+This section supersedes the Phase 0 expectations where code changed; preceding results remain historical. Full output: [phase-01-command-log.txt](phase-01-command-log.txt). Run only `unittest discover -s tests` for the automated suite; root `test_overlay.py` still launches an interactive GUI on import.
+
+| ID | Check | Result | Evidence / limit |
+|---|---|---|---|
+| P01 | Lifecycle suite | PASS | `.venv/bin/python -m unittest discover -s tests -v`: 20 tests |
+| P02 | Compile/import checks | PASS | compileall across production/tests; isolated Phase 0 probe imports 12 modules |
+| P03 | Existing menu smoke | PASS | offscreen `test_capture_menu.py --smoke`, now asserts quiet hidden-controller startup |
+| P04 | Existing mocked cancellation | PASS | offscreen `test_capture_menu.py --cancel`; hidden controller remains hidden |
+| P05 | Obsolete AI placeholder | NOT RUN | `--ai` explicitly prints NOT RUN and exits without capture/AI; no placeholder implementation added |
+| P06 | Launcher generation/migration | PASS | quoted paths with spaces; legacy migration, custom preservation, desktop-file validation |
+| P07 | Installed desktop launcher | PASS | actual `main.py --install-desktop` and validation, Exec now targets main.py with current .venv Python |
+| P08 | Canonical startup/legacy delegation | PASS | alternate controller entry delegates; no overlay or shown controller at construction |
+| P09 | Single instance/process restart | PASS | actual headless main.py subprocess rejects second launch; SIGTERM exits, releases lock; repeat startup passes |
+| P10 | Shortcut/tray activation routing | PASS | synthetic signal and QAction route to same async workflow; not a physical shortcut check |
+| P11 | Overlay lifecycle | PASS | repeat activation coalesced; cancel, rectangle and fullscreen dispose overlay; controller hidden |
+| P12 | Delayed/denied portal responsiveness | PASS | simulated delay with continuing Qt heartbeat; denial/retry; no fallback overlay |
+| P13 | Portal cleanup | PASS | early-response handling; cancellation during connection/method disconnects, removes handler, closes Request |
+| P14 | Thread boundaries | PASS | window backend and image/text clipboard deliveries observed on app.thread(); OCR behind process boundary |
+| P15 | OCR shutdown | PASS | real worker error protocol; long-lived real process killed/reaped by jobs.close; no late text clipboard delivery |
+| P16 | Shortcut startup/shutdown | PASS | duplicate manager.start rejected; quitting during simulated registration cancels worker and joins thread |
+| P17 | Existing clipboard/OCR smoke | PASS | unchanged isolated PNG MIME/UTF-8/ZWJ checks; synthetic English CER/WER remain zero; no new accuracy claim |
+| P18 | GNOME default theme startup | FAIL → PASS | initially aborts on missing XSettings key; conditional generic fallback passes automated test and live startup |
+| P19 | Real Wayland startup/heartbeat/Quit action | PASS | native Qt state: controller hidden, no startup overlay, tray reported available; 84 heartbeats/8.42s; shortcut thread stops |
+| P20 | Real portal registration | PASS | final live run completes BindShortcuts for requested Ctrl+Shift+S; not physical key verification |
+| P21 | Whitespace | PASS | git diff --check and git diff --cached --check, exit 0 |
+| P22 | Physical Ctrl+Shift+S opens only overlay | NOT RUN | no native keyboard/visual-control tool in this session; unit signal emission is not proof |
+| P23 | Visual blank-window/task-switcher check | NOT RUN | Qt hidden state confirmed, but desktop appearance not visually inspected |
+| P24 | Cross-app clipboard after overlay closes | NOT RUN | existing clipboard helper/anchor preserved; real Wayland paste needed |
+| P25 | Physical tray Capture/Quit clicks | NOT RUN | native tray availability and QAction shutdown tested, not a human click |
+| P26 | Interactive portal Cancel/denial/delay | NOT RUN | automated simulations only; no live screenshot request made |
+
+Known remaining problems: host Registry emits `org.freedesktop.portal.Error.Failed` in live test even though shortcut registration succeeds; exact desktop attribution/physical trigger need acceptance. Existing dependency conflicts, output filename collisions, OCR punctuation/accuracy/model-download risks remain recorded in Phase 0. No crop/clipboard engine changes or AI/PDF/Freeform implementation were made. The old `--run selected_area` compatibility harness is now rejected explicitly; test rectangles through the production toolbar. This removes the obsolete nested-loop test route without removing the production feature.
+
+### Physical acceptance steps still required
+
+1. Quit any existing instance. Run `.venv/bin/python main.py` or the installed GNOME launcher. Expect background startup, no blank controller or immediate overlay. Use `.venv/bin/python main.py --install-desktop` after moving this checkout/interpreter; do not copy the template directly.
+2. Authorize the portal shortcut, focus another app and physically press its assigned Ctrl+Shift+S. Only the intended selection overlay should appear. Repeat ten times, alternating rectangle completion, Esc and toolbar X. Check Alt+Tab/task-switcher for a blank controller.
+3. Paste screenshots into another GUI application immediately and five seconds after overlay/toast closure. Verify exact pixels/dimensions. Repeat Extract Text with a public fixture and compare Sinhala/English/ZWJ output against reference. No private document output should be logged/shared.
+4. Exercise portal cancellation/denial/delay and use tray Quit while waiting. Check no stuck UI, orphan process or late clipboard delivery. Restart from the launcher and repeat capture.
+5. Verify tray Capture and Quit by actual clicks. Confirm the launched PID exits within five seconds and another launch registers normally.
+
+The user asked the agent to perform checks independently; a bounded real Wayland smoke was run. Physical-key/visual/paste checks remain explicitly NOT RUN because this session has no native desktop controls. **Phase 1 implementation is ready for review; the full phase exit gate is pending those manual checks. Do not proceed to Phase 2.**

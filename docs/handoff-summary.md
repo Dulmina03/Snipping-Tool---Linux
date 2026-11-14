@@ -1,3 +1,23 @@
+# Current handoff — Phase 1, 2026-11-14
+
+Phase 1 implementation is ready for review on `fix/phase-01-app-lifecycle`; physical acceptance is still pending. Phase 2 has not started. The Phase 0 handoff below is preserved verbatim, including its pre-existing uncommitted note.
+
+- Canonical `main.py`, portable generated desktop entry and actual user launcher migration; quiet hidden controller; shared shortcut/tray route; duplicate process guard; overlay cleanup; interruptible portal registration/waits; cancellable subprocess boundary around the unchanged OCR engine.
+- Qt widgets/pixmaps/clipboard stay on the main thread. Existing capture modules, crop/save algorithms, OCR engine and clipboard helpers remain unchanged. No AI/dependency/PDF/Freeform additions.
+- Fixed observed GNOME startup abort using a conditional Qt generic-theme fallback for the missing XSettings `antialiasing` key; explicit theme preferences remain respected.
+- PASS: 20 new lifecycle tests, syntax/import checks, existing smoke/cancel, offscreen clipboard/OCR probe, desktop validation and whitespace. Native Wayland check: hidden controller/no overlay at startup, tray reported available, real portal registration completes, heartbeat and Quit clean up thread.
+- NOT RUN: physical Ctrl+Shift+S, visual ghost-window/task-switcher inspection, external paste, physical tray clicks, interactive screenshot portal denial/delay. No screenshot request was issued by the live probe. Full Phase 1 exit gate is not signed off.
+- Remaining: host Registry warning despite successful shortcut registration; clipboard anchor requires real paste acceptance; existing pip/model-download/accuracy/punctuation/filename/geometry issues are not fixed here. Legacy selected-area test route now directs users to the production overlay.
+- Initial HEAD `24d741c`; existing handoff and Phase 0 log modifications preserved. External commits appeared during the task. This agent performed no stage/commit/merge/push/reset/unstage action. Recheck HEAD/status before further work.
+- Exact commands/results: [phase-01-command-log.txt](phase-01-command-log.txt). Acceptance steps: [test-matrix.md](test-matrix.md). Implementation findings: [baseline-audit.md](baseline-audit.md).
+
+Phase 1 authored files:
+`main.py`, `com.dulmina.aisnippingtool.desktop`, `shortcuts/global_shortcut.py`, `ui/capture_menu.py`, `utils/async_jobs.py`, `utils/desktop_entry.py`, `utils/ocr_job.py`, `utils/ocr_process.py`, `test_capture_menu.py`, `test_global_shortcut.py`, `tests/test_phase01.py`, `docs/baseline-audit.md`, `docs/test-matrix.md`, `docs/handoff-summary.md`, `docs/phase-01-command-log.txt`.
+
+Outside checkout: migrated `~/.local/share/applications/com.dulmina.aisnippingtool.desktop` using the authorized installer. Pre-existing `docs/phase-00-command-log.txt` edits were preserved, not authored in Phase 1.
+
+---
+
 # Phase 0 handoff — 2026-11-14
 
 Phase 0 audit recorded; Phase 1 not implemented. Read [baseline-audit.md](baseline-audit.md), [test-matrix.md](test-matrix.md), and [phase-00-command-log.txt](phase-00-command-log.txt).
