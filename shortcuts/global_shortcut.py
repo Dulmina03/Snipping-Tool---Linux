@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+from pathlib import Path
+import queue
 import threading
 from typing import Optional
 import uuid
@@ -13,6 +15,7 @@ from PySide6.QtCore import QObject, Signal
 
 
 from utils.desktop_entry import APP_ID, ensure_desktop_entry
+from shortcuts.assignment import comparison
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +28,7 @@ REQUEST_INTERFACE = "org.freedesktop.portal.Request"
 SESSION_INTERFACE = "org.freedesktop.portal.Session"
 
 SHORTCUT_ID = "open_capture_menu"
-PREFERRED_TRIGGER = "<Ctrl><Shift>S"
+PREFERRED_TRIGGER = "CTRL+SHIFT+s"
 REQUEST_TIMEOUT_SECONDS = 60
 
 
@@ -35,6 +38,10 @@ class GlobalShortcutManager(QObject):
     registration_succeeded = Signal(str)
     registration_failed = Signal(str)
     shortcut_activated = Signal()
+    assignment_changed = Signal(str, str, str)  # requested, portal description, comparison
+    identity_changed = Signal(str)
+    configuration_available_changed = Signal(bool)
+    configuration_message = Signal(str)
 
     def __init__(
         self,
@@ -53,6 +60,15 @@ class GlobalShortcutManager(QObject):
         self._bus: Optional[MessageBus] = None
         self._session_handle: Optional[str] = None
         self._request_futures: dict[str, asyncio.Future] = {}
+        self._assigned_trigger = ""
+        self._assignment_revision = 0
+        self._portal_version = None
+        self._configure_supported = False
+        self._identity_blocked = False
+        self._identity_status = "Identity not checked"
+        self._commands = queue.Queue()
+        self._action_tasks = set()
+        self._configuring = False
         self._registered = False
         self._error: Optional[str] = None
         self._ready = threading.Event()
@@ -74,6 +90,39 @@ class GlobalShortcutManager(QObject):
         with self._lock:
             return self._session_handle
 
+    @property
+    def assigned_trigger(self):
+        with self._lock:
+            return self._assigned_trigger
+
+    @property
+    def identity_status(self):
+        with self._lock:
+            return self._identity_status
+
+    @property
+    def portal_version(self):
+        with self._lock:
+            return self._portal_version
+
+    @property
+    def can_configure(self):
+        with self._lock:
+            return bool(self._configure_supported and self._session_handle
+                        and not self._identity_blocked and not self._shutdown_requested.is_set())
+
+    def request_configuration(self):
+        """Queue an explicit tray action; never open configuration on startup."""
+        if not self.can_configure:
+            self.configuration_message.emit("Shortcut configuration unavailable; check portal support and application identity.")
+            return False
+        with self._lock:
+            if self._configuring:
+                return False
+            self._configuring = True
+        self._commands.put('configure')
+        return True
+
     def start(self) -> bool:
         """Start registration in a background D-Bus event loop.
 
@@ -85,6 +134,13 @@ class GlobalShortcutManager(QObject):
                 return False
 
             self._registered = False
+            self._assigned_trigger = ""
+            self._assignment_revision = 0
+            self._configure_supported = False
+            self._portal_version = None
+            self._identity_blocked = False
+            self._configuring = False
+            self._commands = queue.Queue()
             self._error = None
             self._session_handle = None
             self._ready.clear()
@@ -140,6 +196,13 @@ class GlobalShortcutManager(QObject):
         # Bounded polling also works when a confined runtime cannot wake the
         # asyncio self-pipe from another thread. No GUI API is touched here.
         while not self._shutdown_requested.is_set():
+            try:
+                command = self._commands.get_nowait()
+            except queue.Empty:
+                pass
+            else:
+                self._start_action(self._configure_shortcuts() if command == 'configure'
+                                   else self._refresh_assignment())
             await asyncio.sleep(0.05)
 
     async def _run_session(self):
@@ -166,6 +229,11 @@ class GlobalShortcutManager(QObject):
                 if not task.done():
                     task.cancel()
             await asyncio.gather(registration, stopping, return_exceptions=True)
+            for task in tuple(self._action_tasks):
+                task.cancel()
+            if self._action_tasks:
+                await asyncio.gather(*tuple(self._action_tasks), return_exceptions=True)
+            self.configuration_available_changed.emit(False)
 
     async def _register(self) -> None:
         ensure_desktop_entry()
@@ -181,7 +249,28 @@ class GlobalShortcutManager(QObject):
         try:
             await self._register_identity()
         except Exception as ident_error:
-            logger.warning("Application identity registration warning: %s", ident_error)
+            detail = str(ident_error)
+            blocked = "can't manually register a" in detail.lower()
+            context = ""
+            try:
+                if 'snap.' in Path('/proc/self/cgroup').read_text():
+                    context = " Inherited Snap scope detected (possibly Snap VS Code)."
+            except OSError:
+                pass
+            status = (f"Identity not registered for {APP_ID}: {detail}.{context} "
+                      "Launch from GNOME's application grid to verify host identity.")
+            with self._lock:
+                self._identity_status = status
+                self._identity_blocked = blocked
+            logger.warning("%s", status)
+            self.identity_changed.emit(status)
+        else:
+            status = f"Host identity registered: {APP_ID}"
+            with self._lock:
+                self._identity_status = status
+            self.identity_changed.emit(status)
+
+        await self._inspect_capabilities()
 
         session_token = f"ai_snipping_{uuid.uuid4().hex}"
         create_results = await self._portal_request(
@@ -203,13 +292,18 @@ class GlobalShortcutManager(QObject):
         with self._lock:
             self._session_handle = session_handle
 
+        # Read remembered choices; a preferred trigger is only a suggestion for
+        # a new binding, never a request to replace a configured user shortcut.
+        previous = await self._list_shortcuts()
+        remembered = any(entry[0] == self.shortcut_id for entry in previous)
+        shortcut_options = {"description": Variant("s", self.shortcut_description)}
+        if not remembered:
+            shortcut_options["preferred_trigger"] = Variant("s", self.preferred_trigger)
+        logger.info("Shortcut requested=%s; remembered binding=%s", self.preferred_trigger, remembered)
         shortcuts = [
             [
                 self.shortcut_id,
-                {
-                    "description": Variant("s", self.shortcut_description),
-                    "preferred_trigger": Variant("s", self.preferred_trigger),
-                },
+                shortcut_options,
             ]
         ]
 
@@ -225,18 +319,102 @@ class GlobalShortcutManager(QObject):
         )
 
         bound_shortcuts = self._variant_value(bind_results.get("shortcuts", []))
-        bound_ids = {shortcut[0] for shortcut in bound_shortcuts}
+        if not any(entry[0] == self.shortcut_id for entry in bound_shortcuts):
+            raise RuntimeError("Desktop did not bind the capture shortcut; it may have been cancelled or denied.")
+        self._apply_assignment(bound_shortcuts, 'BindShortcuts')
+        await self._refresh_assignment()
+        if self.is_registered:
+            self.registration_succeeded.emit(self.assigned_trigger or 'Assigned key not supplied by desktop')
+        self.configuration_available_changed.emit(self.can_configure)
 
-        if self.shortcut_id not in bound_ids:
-            raise RuntimeError(
-                f"{self.preferred_trigger} was not registered. It may have been cancelled "
-                "or rejected by the desktop portal."
-            )
-
+    async def _inspect_capabilities(self):
+        # Some installed portals advertise ConfigureShortcuts with version 1.
+        # Require the actual supported method/signature instead of assuming v2.
+        try:
+            version_reply = await self._bus.call(Message(
+                destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
+                interface='org.freedesktop.DBus.Properties', member='Get',
+                signature='ss', body=[GLOBAL_SHORTCUTS_INTERFACE, 'version']))
+            version = self._variant_value(version_reply.body[0]) if version_reply.message_type != MessageType.ERROR else None
+            node = await self._bus.introspect(PORTAL_BUS_NAME, PORTAL_OBJECT_PATH)
+            supported = any(interface.name == GLOBAL_SHORTCUTS_INTERFACE and any(
+                method.name == 'ConfigureShortcuts' and method.in_signature == 'osa{sv}'
+                for method in interface.methods) for interface in node.interfaces)
+        except Exception as error:
+            logger.warning('Shortcut capability inspection unavailable: %s', type(error).__name__)
+            version, supported = None, False
         with self._lock:
-            self._registered = True
+            self._portal_version, self._configure_supported = version, supported
 
-        self.registration_succeeded.emit(self.preferred_trigger)
+    async def _list_shortcuts(self):
+        results = await self._portal_request(member='ListShortcuts', signature='oa{sv}', body=[
+            self.session_handle, {'handle_token': Variant('s', 'list_' + uuid.uuid4().hex)}])
+        return self._variant_value(results.get('shortcuts', []))
+
+    async def _refresh_assignment(self):
+        revision = self._assignment_revision
+        try:
+            entries = await self._list_shortcuts()
+        except Exception as error:
+            logger.warning('Active shortcut verification failed: %s', type(error).__name__)
+            self.configuration_message.emit('Could not verify active assignment; showing the last portal-reported value.')
+            return
+        if revision == self._assignment_revision:
+            self._apply_assignment(entries, 'ListShortcuts')
+
+    def _apply_assignment(self, entries, source):
+        description, found = '', False
+        for shortcut_id, info in self._variant_value(entries):
+            if shortcut_id == self.shortcut_id:
+                found = True
+                candidate = self._variant_value(info.get('trigger_description', ''))
+                description = candidate if isinstance(candidate, str) else ''
+                break
+        with self._lock:
+            self._assigned_trigger = description
+            self._registered = found
+            self._assignment_revision += 1
+        state = comparison(self.preferred_trigger, description) if found else 'unbound'
+        actual = description or ('Assigned key not supplied by desktop' if found else 'Not assigned')
+        logger.info('Shortcut requested=%s; actual=%s; source=%s', self.preferred_trigger, actual, source)
+        if state == 'different':
+            logger.warning('Desktop assigned a different capture shortcut: requested=%s; actual=%s',
+                           self.preferred_trigger, actual)
+        self.assignment_changed.emit(self.preferred_trigger, actual, state)
+
+    def _start_action(self, coroutine):
+        task = asyncio.create_task(coroutine)
+        self._action_tasks.add(task)
+        def finished(task):
+            self._action_tasks.discard(task)
+            if not task.cancelled() and task.exception() is not None:
+                logger.warning('Shortcut action failed: %s', type(task.exception()).__name__)
+        task.add_done_callback(finished)
+
+    async def _configure_shortcuts(self):
+        try:
+            if not self.can_configure:
+                raise RuntimeError('Configuration unavailable for this application identity or portal.')
+            reply = await asyncio.wait_for(self._bus.call(Message(
+                destination=PORTAL_BUS_NAME, path=PORTAL_OBJECT_PATH,
+                interface=GLOBAL_SHORTCUTS_INTERFACE, member='ConfigureShortcuts',
+                signature='osa{sv}', body=[self.session_handle, '', {}])), REQUEST_TIMEOUT_SECONDS)
+            if reply.message_type == MessageType.ERROR:
+                if reply.error_name in ('org.freedesktop.DBus.Error.UnknownMethod',
+                                        'org.freedesktop.portal.Error.NotImplemented'):
+                    with self._lock:
+                        self._configure_supported = False
+                    self.configuration_available_changed.emit(False)
+                raise RuntimeError(f'{reply.error_name}: {reply.body}')
+            self.configuration_message.emit('Desktop shortcut configuration requested. Changes appear after confirmation.')
+            await self._refresh_assignment()
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            self.configuration_message.emit(f'Cannot open shortcut configuration: {error}')
+        finally:
+            with self._lock:
+                self._configuring = False
 
     async def _register_identity(self) -> None:
         """Register application identity via org.freedesktop.host.portal.Registry."""
@@ -253,7 +431,7 @@ class GlobalShortcutManager(QObject):
 
         if reply.message_type == MessageType.ERROR:
             raise RuntimeError(
-                f"Portal Registry registration failed: {reply.error_name}"
+                f"Portal Registry registration failed: {reply.error_name}: {reply.body}"
             )
 
     async def _portal_request(self, member: str, signature: str, body: list) -> dict:
@@ -312,6 +490,15 @@ class GlobalShortcutManager(QObject):
 
             return
 
+        if (message.interface == GLOBAL_SHORTCUTS_INTERFACE
+                and message.member == 'ShortcutsChanged' and len(message.body) >= 2
+                and message.body[0] == self.session_handle):
+            entries = self._variant_value(message.body[1])
+            if not entries or any(entry[0] == self.shortcut_id for entry in entries):
+                self._apply_assignment(entries, 'ShortcutsChanged')
+            self._commands.put('refresh')
+            return
+
         if (
             message.interface == GLOBAL_SHORTCUTS_INTERFACE
             and message.member == "Activated"
@@ -320,7 +507,7 @@ class GlobalShortcutManager(QObject):
             session_handle, shortcut_id = message.body[:2]
 
             if session_handle == self.session_handle and shortcut_id == self.shortcut_id:
-                print(f"[SHORTCUT ACTIVATED] Real keypress detected: {shortcut_id}", flush=True)
+                logger.info("Portal Activated signal for %s", shortcut_id)
                 self.shortcut_activated.emit()
 
     @staticmethod

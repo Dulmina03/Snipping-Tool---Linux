@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from shortcuts.global_shortcut import GlobalShortcutManager
 from ui.capture_menu import CaptureMenu
+from ui.shortcut_status import ShortcutStatus
 
 
 def create_tray_icon() -> QIcon:
@@ -79,14 +80,20 @@ def configure_application(application):
 
     # System Tray setup
     tray_icon = QSystemTrayIcon(create_tray_icon(), application)
-    tray_icon.setToolTip("AI Snipping Tool\nPress Ctrl+Shift+S to capture")
+    tray_icon.setToolTip("AI Snipping Tool\nShortcut assignment pending")
 
     tray_menu = QMenu()
-    capture_action = tray_menu.addAction("Capture (Ctrl+Shift+S)")
+    capture_action = tray_menu.addAction("Capture")
     capture_action.triggered.connect(menu.launch_overlay)
 
     tray_menu.addSeparator()
 
+    shortcut_status_action = tray_menu.addAction("Shortcut assignment pending")
+    shortcut_status_action.setEnabled(False)
+    identity_action = tray_menu.addAction("Application identity: checking")
+    identity_action.setEnabled(False)
+    configure_action = tray_menu.addAction("Configure Shortcut (unavailable)")
+    tray_menu.addSeparator()
     quit_action = tray_menu.addAction("Quit")
     quit_action.triggered.connect(application.quit)
 
@@ -100,10 +107,8 @@ def configure_application(application):
 
     # Wire global shortcut signals
     shortcut_manager.shortcut_activated.connect(menu.launch_overlay)
-    shortcut_manager.registration_succeeded.connect(
-        menu.set_global_shortcut_registered
-    )
-    shortcut_manager.registration_failed.connect(menu.set_global_shortcut_error)
+    menu.shortcut_status = ShortcutStatus(menu, shortcut_manager, tray_icon, capture_action,
+        shortcut_status_action, identity_action, configure_action)
     application.aboutToQuit.connect(menu.shutdown)
 
     return menu, shortcut_manager, tray_icon, tray_menu

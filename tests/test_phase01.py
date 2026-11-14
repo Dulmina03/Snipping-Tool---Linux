@@ -45,6 +45,12 @@ class FakeShortcuts(QObject):
     shortcut_activated = Signal()
     registration_succeeded = Signal(str)
     registration_failed = Signal(str)
+    assignment_changed = Signal(str, str, str)
+    identity_changed = Signal(str)
+    configuration_available_changed = Signal(bool)
+    configuration_message = Signal(str)
+    def request_configuration(self):
+        return False
 
 
 class LifecycleTests(unittest.TestCase):

@@ -1,7 +1,8 @@
 """MANUAL: real portal/key test. No synthetic shortcut signal is emitted.
 
 Run in GNOME/Wayland, authorize the shortcut, focus another app and press the
-assigned Ctrl+Shift+S within 90 seconds. This requests a real screenshot.
+desktop-assigned shortcut within 90 seconds. Record separately whether
+Ctrl+Shift+S is actually assigned. This requests a real screenshot.
 """
 import sys
 
@@ -22,7 +23,7 @@ def main():
     observed = {'key': False, 'passed': False}
     shortcuts.shortcut_activated.connect(lambda: observed.update(key=True))
     shortcuts.registration_succeeded.connect(
-        lambda trigger: print(f'Registered {trigger}; physically press it with another app focused.'))
+        lambda trigger: print(f'Desktop assignment: {trigger}; requested: {shortcuts.preferred_trigger}. Physically test from another app.'))
 
     def check():
         if observed['key'] and menu._overlay is not None:
