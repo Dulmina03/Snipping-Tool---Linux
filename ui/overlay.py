@@ -65,7 +65,7 @@ class VectorIconWidget(QWidget):
         icon_name: str,
         parent: QWidget | None = None,
         size: int = 20,
-        color: QColor | str = QColor(226, 232, 240, 190),
+        color: QColor | str = "#FFFFFF",
     ):
         super().__init__(parent)
         self.icon_name = icon_name
@@ -206,9 +206,9 @@ class _ModeButton(QToolButton):
     """
 
     # Colors applied to vector icon and label text
-    _COLOR_NORMAL   = "rgba(226, 232, 240, 0.75)"
+    _COLOR_NORMAL   = "#FFFFFF"
     _COLOR_CHECKED  = "#FFFFFF"
-    _COLOR_DISABLED = "rgba(255, 255, 255, 0.25)"
+    _COLOR_DISABLED = "rgba(255, 255, 255, 0.35)"
 
     def __init__(self, mode: SnipMode, label: str, enabled: bool = True):
         super().__init__()
@@ -220,8 +220,8 @@ class _ModeButton(QToolButton):
         layout.setSpacing(3)
         layout.setAlignment(Qt.AlignCenter)
 
-        # 1. Vector Icon (QPainter line art)
-        self._icon = VectorIconWidget(mode.value, self, size=20, color=self._COLOR_NORMAL)
+        # 1. Vector Icon (QPainter line art) — Pure white
+        self._icon = VectorIconWidget(mode.value, self, size=20, color="#FFFFFF")
         self._glyph_lbl = self._icon  # backward-compatible attribute
         layout.addWidget(self._icon, 0, Qt.AlignCenter)
 
@@ -325,12 +325,12 @@ class SnipToolbar(QFrame):
         bl.setSpacing(6)
         bl.setAlignment(Qt.AlignCenter)
 
-        brand_icon = VectorIconWidget("brand", brand_box, size=16, color="rgba(255, 255, 255, 0.75)")
+        brand_icon = VectorIconWidget("brand", brand_box, size=16, color="#FFFFFF")
         bl.addWidget(brand_icon)
 
         brand_text = QLabel("Snip")
         brand_text.setStyleSheet("""
-            color: rgba(255, 255, 255, 0.85);
+            color: #FFFFFF;
             font-size: 12px;
             font-weight: 600;
             letter-spacing: 0.4px;
@@ -354,8 +354,8 @@ class SnipToolbar(QFrame):
         self.action_combo.setStyleSheet("""
             QComboBox#action_combo {
                 background: rgba(255, 255, 255, 0.05);
-                color: rgba(241, 245, 249, 0.90);
-                border: 1px solid rgba(255, 255, 255, 0.10);
+                color: #FFFFFF;
+                border: 1px solid rgba(255, 255, 255, 0.12);
                 border-radius: 7px;
                 padding: 3px 24px 3px 10px;
                 font-size: 12px;
@@ -364,7 +364,7 @@ class SnipToolbar(QFrame):
             }
             QComboBox#action_combo:hover {
                 background: rgba(255, 255, 255, 0.09);
-                border-color: rgba(255, 255, 255, 0.20);
+                border-color: rgba(255, 255, 255, 0.25);
                 color: #FFFFFF;
             }
             QComboBox#action_combo:on {
@@ -381,12 +381,12 @@ class SnipToolbar(QFrame):
                 image: none;
                 border-left: 3.5px solid transparent;
                 border-right: 3.5px solid transparent;
-                border-top: 4.5px solid rgba(255, 255, 255, 0.65);
+                border-top: 4.5px solid #FFFFFF;
                 margin-right: 8px;
             }
             QComboBox#action_combo QAbstractItemView {
                 background-color: #151722;
-                color: rgba(241, 245, 249, 0.90);
+                color: #FFFFFF;
                 selection-background-color: rgba(79, 70, 229, 0.35);
                 selection-color: #FFFFFF;
                 border: 1px solid rgba(255, 255, 255, 0.12);
@@ -401,7 +401,7 @@ class SnipToolbar(QFrame):
                 min-height: 28px;
                 padding: 4px 10px;
                 border-radius: 5px;
-                color: rgba(241, 245, 249, 0.90);
+                color: #FFFFFF;
             }
             QComboBox#action_combo QAbstractItemView::item:selected {
                 background-color: rgba(79, 70, 229, 0.35);
@@ -467,7 +467,7 @@ class SnipToolbar(QFrame):
         # Clean vector close icon inside close button
         cl = QHBoxLayout(close_btn)
         cl.setContentsMargins(0, 0, 0, 0)
-        self._close_icon = VectorIconWidget("close", close_btn, size=14, color="rgba(255, 255, 255, 0.65)")
+        self._close_icon = VectorIconWidget("close", close_btn, size=14, color="#FFFFFF")
         cl.addWidget(self._close_icon, 0, Qt.AlignCenter)
 
         close_btn.clicked.connect(self.cancel_requested)
@@ -684,8 +684,8 @@ class Overlay(QWidget):
         rect = self.get_selection_rect()
         if rect.width() > 2 and rect.height() > 2:
             self.selected_rect = rect
-            self.close()
             self.area_selected.emit(rect)
+            self.close()
         else:
             self.selected_rect = None
             self.close()
