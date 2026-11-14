@@ -107,16 +107,9 @@ class GlobalShortcutManager(QObject):
     def stop(self) -> None:
         """Close the portal session and stop the D-Bus event loop."""
         with self._lock:
-            loop = self._loop
-            stop_event = self._stop_event
             thread = self._thread
 
         self._shutdown_requested.set()
-        if loop is not None and stop_event is not None:
-            try:
-                loop.call_soon_threadsafe(stop_event.set)
-            except RuntimeError:
-                pass  # Loop already closed during concurrent shutdown.
 
         if thread is not None and thread is not threading.current_thread():
             thread.join(timeout=5)
@@ -146,11 +139,17 @@ class GlobalShortcutManager(QObject):
                     self._loop = None
                     self._stop_event = None
 
+    async def _wait_for_stop(self):
+        # Bounded polling also works when a confined runtime cannot wake the
+        # asyncio self-pipe from another thread. No GUI API is touched here.
+        while not self._shutdown_requested.is_set():
+            await asyncio.sleep(0.05)
+
     async def _run_session(self):
         if self._shutdown_requested.is_set():
             return
         registration = asyncio.create_task(asyncio.wait_for(self._register(), REQUEST_TIMEOUT_SECONDS))
-        stopping = asyncio.create_task(self._stop_event.wait())
+        stopping = asyncio.create_task(self._wait_for_stop())
         try:
             done, _ = await asyncio.wait((registration, stopping), return_when=asyncio.FIRST_COMPLETED)
             if stopping in done:

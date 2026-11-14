@@ -36,10 +36,8 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QRadioButton,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -47,12 +45,11 @@ from capture.screenshot import ScreenshotCapture
 from capture.window_capture import take_screenshot as capture_window
 from utils.async_jobs import AsyncJobs
 from utils.ocr_process import extract_text_async
-from ui.overlay import Overlay, SnipMode
+from ui.overlay import Overlay
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 
 
 SCREENSHOTS_DIR = Path.home() / "Pictures" / "Screenshots"
-SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +275,8 @@ class CaptureMenu(QWidget):
         self.capture_button.setEnabled(False)
         self.last_capture_path = None
         self.last_extracted_text = None
+        if self._shutting_down or self.busy:
+            return
         self.status_label.setText("Preparing…")
         self._pending = self.jobs.submit(self._legacy_run(mode))
 
@@ -372,7 +371,11 @@ class CaptureMenu(QWidget):
         self._cleanup_source(self._src_path)
         self._src_path = None
         if self._toast is not None:
-            self._toast.close()
+            try:
+                self._toast.close()
+            except RuntimeError:
+                pass  # WA_DeleteOnClose toast may already have expired.
+            self._toast = None
         self.hide()
 
     # ── Capture result handlers ───────────────────────────────────────────────
@@ -505,7 +508,9 @@ class CaptureMenu(QWidget):
 
     @Slot(str)
     def set_global_shortcut_error(self, error: str) -> None:
-        self.status_label.setText(f"Global shortcut unavailable: {error}")
+        self.status_label.setText("Global shortcut unavailable; use the tray Capture action.")
+        if not self._shutting_down:
+            self._show_toast(self.status_label.text())
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -3,11 +3,14 @@ import asyncio
 import os
 from pathlib import Path
 import subprocess
+import sys
+import signal
 import tempfile
 import threading
 import time
 import unittest
 from unittest.mock import AsyncMock, patch
+from types import SimpleNamespace
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 _scratch = tempfile.TemporaryDirectory(prefix='snipping-phase01-')
@@ -150,6 +153,51 @@ class LifecycleTests(unittest.TestCase):
         self.assertIsNone(self.menu._overlay)
         self.assertFalse(self.menu.isVisible())
 
+    def test_window_cancel_does_not_report_success(self):
+        with patch('ui.capture_menu.capture_window', new=AsyncMock(return_value=None)), \
+             patch('ui.capture_menu.copy_image_to_clipboard') as clipboard:
+            self.menu._on_window_requested('screenshot')
+            spin_until(lambda: not self.menu.busy)
+            clipboard.assert_not_called()
+            self.assertEqual(self.menu.status_label.text(), 'Window capture cancelled.')
+
+    def test_rectangle_completion_closes_overlay_before_clipboard(self):
+        self.menu.launch_overlay()
+        spin_until(lambda: self.menu._overlay is not None)
+        from PySide6.QtCore import QPoint
+        overlay = self.menu._overlay
+        overlay.start_point, overlay.end_point = QPoint(10, 10), QPoint(40, 40)
+        with patch('ui.capture_menu.copy_image_to_clipboard',
+                   side_effect=lambda _: self.assertIsNone(self.menu._overlay)):
+            overlay.confirm_selection()
+        self.assertFalse(self.menu.isVisible())
+        self.assertTrue(self.menu.last_capture_path.is_file())
+
+    def test_real_ocr_process_boundary_error_and_cancel(self):
+        from utils.ocr_process import extract_text_async
+        from utils.async_jobs import AsyncJobs
+        # Real worker protocol error is generic and does not expose document text.
+        task = self.menu.jobs.submit(extract_text_async('/nonexistent/phase01.png'))
+        spin_until(task.done)
+        with self.assertRaises(RuntimeError):
+            task.result()
+        # Replace the worker command with a real long-running process group.
+        real_spawn = asyncio.create_subprocess_exec
+        pid_file = Path(_scratch.name) / 'worker.pid'
+        code = f"import os,time; from pathlib import Path; Path({str(pid_file)!r}).write_text(str(os.getpid())); time.sleep(60)"
+        async def spawn(*args, **kwargs):
+            return await real_spawn(sys.executable, '-c', code, **kwargs)
+        with patch('utils.ocr_process.asyncio.create_subprocess_exec', side_effect=spawn):
+            task = self.menu.jobs.submit(extract_text_async(self.source))
+            spin_until(pid_file.exists)
+            pid = int(pid_file.read_text())
+            task.cancel()
+            spin_until(task.done)
+            self.assertTrue(task.cancelled())
+            with self.assertRaises(ProcessLookupError):
+                os.kill(pid, 0)
+
+
 
 class EntryTests(unittest.TestCase):
     def test_generated_launcher_and_custom_entry_preservation(self):
@@ -232,6 +280,91 @@ class EntryTests(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 3)
         self.assertTrue(cancelled.is_set())
         self.assertFalse(manager._thread.is_alive())
+
+    def test_actual_main_duplicate_start_signal_shutdown_and_restart(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as folder:
+            env = dict(os.environ, HOME=folder, XDG_DATA_HOME=folder + '/data',
+                       XDG_RUNTIME_DIR=folder, DBUS_SESSION_BUS_ADDRESS='unix:path=/nonexistent/phase01-bus')
+            for attempt in range(2):
+                process = subprocess.Popen([sys.executable, str(root / 'main.py')], env=env,
+                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                try:
+                    lock = Path(folder) / f'{APP_ID}.lock'
+                    spin_until(lambda: lock.exists() or process.poll() is not None)
+                    self.assertIsNone(process.poll())
+                    second = subprocess.run([sys.executable, str(root / 'main.py')], env=env,
+                                            capture_output=True, timeout=5)
+                    self.assertEqual(second.returncode, 0)
+                    self.assertIn(b'already running', second.stderr)
+                    process.send_signal(signal.SIGTERM)
+                    _, errors = process.communicate(timeout=5)
+                    self.assertEqual(process.returncode, 0, errors)
+                    self.assertFalse(lock.exists())
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.communicate()
+
+
+
+class PortalCleanupTests(unittest.TestCase):
+    def test_early_response_and_cancel_cleanup(self):
+        from dbus_next import MessageType, Variant
+        from ui.capture_menu import _portal_screenshot
+        from utils.async_jobs import AsyncJobs
+
+        class Bus:
+            unique_name = ':1.900'
+            def __init__(self, delay=False):
+                self.handler = None
+                self.delay = delay
+                self.closed = False
+                self.request_closed = False
+                self.started = False
+            async def connect(self):
+                return self
+            def add_message_handler(self, handler):
+                self.handler = handler
+            def remove_message_handler(self, handler):
+                self.handler = None
+            def disconnect(self):
+                self.closed = True
+            async def call(self, message):
+                if message.member == 'Close':
+                    self.request_closed = True
+                    return SimpleNamespace(message_type=MessageType.METHOD_RETURN)
+                self.started = True
+                if self.delay:
+                    await asyncio.sleep(60)
+                token = message.body[1]['handle_token'].value
+                path = '/org/freedesktop/portal/desktop/request/1_900/' + token
+                # Signal can arrive before Screenshot method reply.
+                self.handler(SimpleNamespace(message_type=MessageType.SIGNAL,
+                    interface='org.freedesktop.portal.Request', member='Response',
+                    path=path, body=[0, {'uri': Variant('s', 'file:///tmp/synthetic.png')}]))
+                return SimpleNamespace(message_type=MessageType.METHOD_RETURN, body=[path])
+
+        for cancelled in (False, True):
+            bus = Bus(delay=cancelled)
+            jobs = AsyncJobs()
+            try:
+                with patch('ui.capture_menu.MessageBus', return_value=bus):
+                    task = jobs.submit(_portal_screenshot())
+                    spin_until(lambda: bus.started)
+                    if cancelled:
+                        task.cancel()
+                    spin_until(task.done)
+                    if cancelled:
+                        self.assertTrue(task.cancelled())
+                        self.assertTrue(bus.request_closed)
+                    else:
+                        self.assertEqual(task.result(), Path('/tmp/synthetic.png'))
+                self.assertTrue(bus.closed)
+                self.assertIsNone(bus.handler)
+            finally:
+                jobs.close()
+
 
 
 if __name__ == '__main__':
