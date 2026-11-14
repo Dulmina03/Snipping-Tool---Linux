@@ -42,11 +42,18 @@ class AsyncJobs(QObject):
         if self.closed:
             return
         self.timer.stop()
-        pending = asyncio.all_tasks(self.loop)
+        # Cancel owned roots first: their finally blocks reap subprocesses.
+        # Cancelling shielded spawn tasks directly can orphan a child.
+        pending = set(self.tasks)
         for task in pending:
             task.cancel()
         if pending:
             self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        remaining = asyncio.all_tasks(self.loop)
+        for task in remaining:
+            task.cancel()
+        if remaining:
+            self.loop.run_until_complete(asyncio.gather(*remaining, return_exceptions=True))
         self.loop.run_until_complete(self.loop.shutdown_asyncgens())
         self.closed = True
         self.loop.close()

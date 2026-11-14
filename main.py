@@ -1,6 +1,8 @@
 """Main entry point for AI Snipping Tool background daemon."""
 
 import sys
+import os
+import subprocess
 import signal
 from pathlib import Path
 
@@ -39,6 +41,24 @@ def create_tray_icon() -> QIcon:
     painter.end()
 
     return QIcon(pixmap)
+
+
+def prepare_qt_environment():
+    """Avoid the observed Qt GTK theme abort on GNOME without XSettings keys.
+
+    Respect an explicitly selected theme. This only selects a Qt fallback;
+    it does not modify GNOME settings or installed schemas.
+    """
+    if os.environ.get("QT_QPA_PLATFORMTHEME") or "gnome" not in os.environ.get("XDG_CURRENT_DESKTOP", "").lower():
+        return
+    try:
+        result = subprocess.run(
+            ["gsettings", "list-keys", "org.gnome.settings-daemon.plugins.xsettings"],
+            capture_output=True, text=True, timeout=2)
+    except (OSError, subprocess.TimeoutExpired):
+        return
+    if result.returncode == 0 and "antialiasing" not in result.stdout.splitlines():
+        os.environ["QT_QPA_PLATFORMTHEME"] = "generic"
 
 
 def acquire_instance_lock():
@@ -97,6 +117,7 @@ def main() -> int:
         except (OSError, RuntimeError, ValueError) as error:
             print(str(error), file=sys.stderr)
             return 1
+    prepare_qt_environment()
     application = QApplication(sys.argv)
     lock = acquire_instance_lock()
     if lock is None:

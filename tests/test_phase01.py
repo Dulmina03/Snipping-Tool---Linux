@@ -142,6 +142,25 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(threads, [app.thread()])
         self.assertEqual(self.menu.last_extracted_text, 'ශ්‍රී English')
 
+    def test_shutdown_cancels_ocr_before_any_clipboard_delivery(self):
+        cancelled = []
+        async def ocr(path):
+            try:
+                await asyncio.sleep(60)
+            finally:
+                cancelled.append(True)
+        with patch('ui.capture_menu.extract_text_async', ocr), \
+             patch('ui.capture_menu.copy_text_to_clipboard') as clipboard:
+            self.menu._handle_capture_result(self.source, 'extract_text')
+            spin_until(lambda: len(asyncio.all_tasks(self.menu.jobs.loop)) > 0)
+            # Ensure the OCR coroutine has entered before cancelling it.
+            self.menu.jobs.tick()
+            self.menu.shutdown()
+            self.menu.jobs.close()
+            self.assertEqual(cancelled, [True])
+            clipboard.assert_not_called()
+
+
     def test_fullscreen_completion_closes_overlay(self):
         self.menu.launch_overlay()
         spin_until(lambda: self.menu._overlay is not None)
@@ -199,6 +218,17 @@ class LifecycleTests(unittest.TestCase):
 
 
 class EntryTests(unittest.TestCase):
+    def test_gnome_theme_fallback_and_explicit_preference(self):
+        with patch.dict(os.environ, {'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME'}, clear=True):
+            with patch('main.subprocess.run', return_value=SimpleNamespace(returncode=0, stdout='overrides\n')):
+                main.prepare_qt_environment()
+            self.assertEqual(os.environ['QT_QPA_PLATFORMTHEME'], 'generic')
+            os.environ['QT_QPA_PLATFORMTHEME'] = 'user-theme'
+            with patch('main.subprocess.run') as probe:
+                main.prepare_qt_environment()
+                probe.assert_not_called()
+            self.assertEqual(os.environ['QT_QPA_PLATFORMTHEME'], 'user-theme')
+
     def test_generated_launcher_and_custom_entry_preservation(self):
         with tempfile.TemporaryDirectory() as folder:
             apps = Path(folder)
