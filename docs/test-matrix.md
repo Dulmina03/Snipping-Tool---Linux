@@ -225,3 +225,16 @@ User confirms Phase 1 accepted; Task 1 all six physical tests PASS; Task 2 all s
 - NOT RUN: new physical Alt+Shift+S/Escape, native portal/permission timing, fresh cross-process external screenshot/OCR paste, actual Window picker, extended user capture series and physical Quit/restart on changed implementation. Previously accepted physical behavior is not silently re-signed off.
 
 [Task report, full file list, exact commands, baseline/final measurements and minimum physical steps](phase-02-task-03.md). Task 3 awaits physical acceptance; no subsequent task, Freeform or AI begun.
+
+
+## Background Service Stage 1 — manual user-session prototype (2026-11-14)
+
+- PASS: 158 regressions, 18.400s, exit 0 (previous 145 +13 service tests); real systemd parser/special-character paths, session/environment/socket ownership checks, no-overwrite installation, manual-only/no-enable configuration, syntax/whitespace.
+- PASS native: genuine user-manager start, existing manual-instance lock conflict with no duplicate/restart loop, repeated start same PID, stop during capture with complete cleanup, inactive beyond restart delay; injected SIGKILL recovery to a new PID in 3.296s/NRestarts=1; PID-verified tray protocol Quit remained inactive.
+- PASS native: service under its own genuine app.slice cgroup, correct Wayland/runtime/session D-Bus environment, SNAP absent. Screenshot connection independently registered APP_ID and portal v2 returned response 0 using existing permission; no consent or settings automated.
+- PASS native public-fixture probe in a separate transient user service: production Rectangle/Full Screen/repeat pixels and actual editor paste in two reader processes across focus changes; real English OCR and supplied Sinhala/ZWJ UTF-8 transfer; clean worker/session exit. Qt input is programmatic and backdrop is a fixture. First Unicode probe failed due to fixture patch lifetime, corrected and full rerun exit 0.
+- Requested Alt+Shift+S preserved; actual GNOME Ctrl+Alt+S confirmed before/after via tray/ListShortcuts/ShortcutsChanged. Existing mismatch, no binding reset/change. Desired-key physical activation remains unverified.
+- NOT RUN: physical key/Escape/tray, installed-service Rectangle/Window/OCR external paste, actual Window picker completion, logout/login, first-use consent and rate-limit exhaustion. Dependency/rate configuration tested; no physical or logout PASS inferred.
+- Installed unit is static, not enabled. No XDG autostart/root service/lingering change. One service manually started for pending physical checks (last PID 79946); intentional Quit should leave it stopped. No further stage, Freeform or AI.
+
+[Full report, modified files, commands, raw observations and rollback](background-service-stage-01.md).

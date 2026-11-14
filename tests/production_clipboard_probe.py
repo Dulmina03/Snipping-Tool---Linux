@@ -116,6 +116,7 @@ def writer():
                     before=beats[0]
                     if case=='fullscreen':
                         overlay._toolbar._buttons[SnipMode.FULLSCREEN].click()
+                        await wait_for(lambda:not menu.busy,25)
                     else:
                         if 'ocr' in case or case=='unicode_transfer':
                             overlay._toolbar.action_combo.setCurrentIndex(1)

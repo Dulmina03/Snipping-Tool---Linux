@@ -1,0 +1,110 @@
+Background Service Stage 1 — local evidence, 2026-11-14
+No screenshot pixels or OCR contents recorded.
+
+START: clean feat/background-service at 8ca88fd; original app-grid PID 30510.
+SYSTEM: GNOME 50.1, Wayland, systemd 259.9; active graphical-session.target. Manager environment already correct, no import performed.
+
+UNIT TEST COMMAND: QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -p test_user_service.py -v (authorized host execution).
+test_exec_condition_returns_skip_not_restart_failure (test_user_service.SessionConditionTests.test_exec_condition_returns_skip_not_restart_failure) ... ok
+test_non_graphical_missing_or_stale_environment_fails_closed (test_user_service.SessionConditionTests.test_non_graphical_missing_or_stale_environment_fails_closed) ... ok
+test_owned_live_wayland_and_session_bus_sockets_pass (test_user_service.SessionConditionTests.test_owned_live_wayland_and_session_bus_sockets_pass) ... ok
+test_root_other_owner_and_regular_files_are_rejected (test_user_service.SessionConditionTests.test_root_other_owner_and_regular_files_are_rejected) ... ok
+test_cli_print_uses_checkout_virtualenv_without_installing (test_user_service.UserServiceTests.test_cli_print_uses_checkout_virtualenv_without_installing) ... ok
+test_existing_custom_unit_and_symlink_are_preserved (test_user_service.UserServiceTests.test_existing_custom_unit_and_symlink_are_preserved) ... ok
+test_failed_publication_cleans_only_its_staging_file (test_user_service.UserServiceTests.test_failed_publication_cleans_only_its_staging_file) ... ok
+test_install_is_idempotent_and_does_not_enable_or_run_commands (test_user_service.UserServiceTests.test_install_is_idempotent_and_does_not_enable_or_run_commands) ... ok
+test_manual_only_graphical_session_lifetime_and_failure_restart_contract (test_user_service.UserServiceTests.test_manual_only_graphical_session_lifetime_and_failure_restart_contract) ... ok
+test_missing_checkout_or_venv_is_rejected (test_user_service.UserServiceTests.test_missing_checkout_or_venv_is_rejected) ... ok
+test_publish_race_never_overwrites_or_leaves_staging (test_user_service.UserServiceTests.test_publish_race_never_overwrites_or_leaves_staging) ... ok
+test_real_systemd_parser_accepts_generated_unit_and_paths (test_user_service.UserServiceTests.test_real_systemd_parser_accepts_generated_unit_and_paths) ... ok
+test_systemd_quoting_is_not_shell_or_desktop_escaping (test_user_service.UserServiceTests.test_systemd_quoting_is_not_shell_or_desktop_escaping) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.262s
+
+OK
+
+FULL SUITE: QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v (authorized host execution).
+Ran 158 tests in 18.400s
+OK
+
+LIFECYCLE OBSERVATIONS: duplicate service child 73501 exited 0 on original PID 30510 lock. Original quit via verified tray protocol. Main service PID 74328 retained after two repeated starts. Real Screenshot request response 0; then manual stop, inactive after 3.5s. Controlled SIGKILL PID 75868 -> PID 75969, NRestarts=1, 3.296s. PID 75969 tray Quit -> inactive after 3.5s, success.
+
+Installed-service journal before final restart:
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+AI Snipping Tool is already running, or its runtime lock is unavailable.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO capture.screenshot_portal_request: Screenshot identity registered: app=com.dulmina.aisnippingtool connection=:1.1481
+INFO capture.screenshot_portal_request: Screenshot portal version=2
+INFO capture.screenshot_portal_request: Screenshot request: connection=:1.1481 parent='' interactive=False modal=True token=snip_738d7b4f51b14038a94620690d1e3610
+INFO capture.screenshot_portal_request: Screenshot request handle=/org/freedesktop/portal/desktop/request/1_1481/snip_738d7b4f51b14038a94620690d1e3610
+INFO capture.screenshot_portal_request: Screenshot response code=0 payload={'uri': '<local screenshot URI>'}
+Stopping com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+Stopped com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+com.dulmina.aisnippingtool.service: Consumed 2.662s CPU time over 1min 6.240s wall clock time, 61.3M memory peak.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+com.dulmina.aisnippingtool.service: Sent signal SIGKILL to main process 75868 (python) on client request.
+com.dulmina.aisnippingtool.service: Main process exited, code=killed, status=9/KILL
+com.dulmina.aisnippingtool.service: Failed with result 'signal'.
+com.dulmina.aisnippingtool.service: Scheduled restart job, restart counter is at 1.
+Starting com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype)...
+Started com.dulmina.aisnippingtool.service - AI Snipping Tool (graphical user session prototype).
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO __main__: Tray Quit action received; scheduling QApplication.quit
+INFO __main__: QApplication aboutToQuit emitted
+INFO __main__: Shutdown: stopping capture jobs
+INFO __main__: Shutdown: closing shortcut portal session
+INFO __main__: Shutdown complete
+com.dulmina.aisnippingtool.service: Consumed 1.790s CPU time over 46.153s wall clock time, 35.1M memory peak.
+
+INITIAL NATIVE PROBE: invocation cf39fb82a8c3425392e53e312da4b6bb, exit 1; first four capture/OCR cases PASS, Unicode FAIL due to helper fixture patch ending before async OCR. Corrected fixture scope; no production OCR/clipboard change.
+
+FINAL NATIVE PROBE: transient user unit snipping-stage01-workflow-probe.service; invocation f339d2a7efd340128aae658b536fc443. Command status:
+Running as unit: snipping-stage01-workflow-probe.service; invocation ID: f339d2a7efd340128aae658b536fc443
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 28.046s
+             CPU time consumed: 14.618s
+                   Memory peak: 175.7M (swap: 0B)
+
+Final native public-fixture application journal:
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO main: Tray Quit action received; scheduling QApplication.quit
+INFO main: QApplication aboutToQuit emitted
+INFO main: Shutdown: stopping capture jobs
+INFO main: Shutdown: closing shortcut portal session
+INFO main: Shutdown complete
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+
+FINAL OBSERVED INSTALLED UNIT: active/running, MainPID=79946, Result=success, NRestarts=0, UnitFileState=static; exactly one main.py. Not enabled. Physical user response pending; intentional Quit may change runtime state.
