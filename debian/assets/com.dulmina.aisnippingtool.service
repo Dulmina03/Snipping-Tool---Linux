@@ -1,0 +1,26 @@
+# Installed GNOME user service; activation is an explicit per-user action.
+[Unit]
+Description=AI Snipping Tool (GNOME graphical user session)
+Requisite=gnome-session.target
+After=gnome-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory=/usr/lib/ai-snipping-tool
+Environment=XDG_RUNTIME_DIR=%t
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
+Environment=QT_QPA_PLATFORM=wayland
+ExecCondition=/usr/bin/ai-snipping-tool --check-session
+ExecStart=/usr/bin/ai-snipping-tool
+Slice=app.slice
+Restart=on-failure
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=30
+LimitCORE=0
+
+[Install]
+WantedBy=graphical-session.target

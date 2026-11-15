@@ -264,3 +264,14 @@ Stage 1 is now user-accepted: all six physical tests PASS. Stage 2 actual login 
 - Initial restricted full suite FAIL: four sandbox socket-bind errors and two systemd-parser failures; authorized host rerun PASS. Focused diagnostic test initially failed on missing Bind method-start tracing; corrected before final 173 pass.
 - Actual requested/assigned: Alt+Shift+S / **Ctrl+Alt+S**; no desktop binding/permission changes.
 - Post-fix physical automatic login/identity/assigned key/overlay/Escape/Rectangle external paste/Window external paste/English OCR external paste/tray Quit/logout/reboot: **NOT RUN**. Stage 3 NOT authorized. See [follow-up report and minimal instructions](background-service-stage-02.md), [selected evidence](background-service-stage-02-login-fix-evidence.txt).
+
+
+## Background Service Stage3.1 packaging — 2026-11-15
+
+- User acceptance baseline: all9 Stage2 physical checks PASS, including login registration and reboot. This supersedes previous pending records for the development build only.
+- PASS: baseline173/19.447s; final182/18.510s venv, final182/18.746s Ubuntu system Python3.14.4/PySide6 6.10.2/Pillow12.1.1;9 new packaging regressions. Final staging-root mode assertion/focused9 PASS.
+- PASS: rootless amd64 package build, byte-identical independent rebuild, root ownership/modes/MD5 manifests, exclusions/no developer home dependencies, desktop/SVG/launcher version/syntax, real staged service dependency graph. Initial root0775 archive failure fixed to0755; generic /home/user URI docstrings explicitly exempted by AST scan.
+- PASS: no-install APT resolver. Expected offline cache/prerequisite refusal: python3-dbus-next/tesseract-ocr-sin not installed/cached; no real install attempted.
+- PASS: source checkout hidden, app files/models read-only, network-isolated offscreen production PNG/pixel save, actual OCR subprocess and GUI image/text clipboard. Not physical Wayland or cross-process native paste; not clean-machine installation.
+- NOT RUN: fresh Ubuntu dpkg/apt install, real installed-service startup/portal identity/global key/Escape/Rectangle/Window external paste/English OCR paste/tray Quit/logout/reboot, upgrade/remove/rollback; lintian unavailable. Existing accepted development service untouched, enabled/active PID9096, candidate absent from dpkg database.
+- Candidate: `dist/stage-03.1-final/ai-snipping-tool_0.3.1~stage3.1-1_amd64.deb`; [full report and physical gate](background-service-stage-03-packaging.md), [evidence](background-service-stage-03-packaging-evidence.txt). Local unpublished prototype; no project redistribution license selected; no subsequent stage/AI/Freeform.

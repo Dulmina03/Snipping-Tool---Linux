@@ -1,0 +1,279 @@
+2026-11-15 Asia/Colombo. Stage 3.1 selected local evidence. No package installation or accepted-service state change.
+User explicitly accepted all nine Stage 2 physical checks and retained unspecified project-license/local prototype status.
+Initial branch main at6811b8e clean; existing feat/background-service identical. Switched only after user replied ok to explicit authorization question.
+
+$ git branch --show-current
+feat/background-service
+
+exit=0
+
+$ git log -1 --oneline
+6811b8e fix: resolve login registration failure in Stage 2
+
+exit=0
+
+$ git status --short
+ M .gitignore
+ M ocr/ocr_engine.py
+ M utils/desktop_entry.py
+ M utils/user_service.py
+?? debian/
+?? docs/background-service-stage-03-packaging-evidence.txt
+?? tests/test_debian_packaging.py
+?? utils/session_environment.py
+
+exit=0
+
+$ git diff --cached --stat
+
+exit=0
+
+$ dpkg-deb -I dist/stage-03.1-final/ai-snipping-tool_0.3.1~stage3.1-1_amd64.deb
+ new Debian package, version 2.0.
+ size 52832 bytes: control archive=1988 bytes.
+    1028 bytes,    15 lines      control
+    3035 bytes,    37 lines      md5sums
+ Package: ai-snipping-tool
+ Version: 0.3.1~stage3.1-1
+ Section: non-free/graphics
+ Priority: optional
+ Architecture: amd64
+ Maintainer: Dulmina03 <dulminajayasiri@gmail.com>
+ Depends: python3 (>= 3.14), python3 (<< 3.15), python3-pyside6.qtcore (>= 6.10), python3-pyside6.qtgui (>= 6.10), python3-pyside6.qtwidgets (>= 6.10), python3-pil (>= 12), python3-dbus-next (>= 0.2.3), python3-packaging, tesseract-ocr, tesseract-ocr-eng, tesseract-ocr-sin, xdg-desktop-portal (>= 1.18), xdg-desktop-portal-gnome, qt6-wayland, libglib2.0-bin, systemd
+ Recommends: gnome-shell-extension-appindicator
+ Homepage: https://github.com/Dulmina03/Snipping-Tool---Linux
+ Description: Local GNOME Wayland screenshots and offline text extraction
+  Ubuntu 26.04 amd64 private prototype. Screenshot selection, image/text
+  clipboard integration and Tesseract OCR using the desktop portal.
+  Explicit per-user service activation; no root GUI or automatic enablement.
+  Upstream license is unspecified. This package is for local evaluation only.
+ Installed-Size: 221
+
+exit=0
+
+$ dpkg-deb -c dist/stage-03.1-final/ai-snipping-tool_0.3.1~stage3.1-1_amd64.deb
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/bin/
+-rwxr-xr-x root/root       878 2026-11-15 05:30 ./usr/bin/ai-snipping-tool
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/
+-rw-r--r-- root/root        29 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/.packaged-install
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/
+-rw-r--r-- root/root      9193 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/display_mapping.py
+-rw-r--r-- root/root      7520 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/portal_screenshot.py
+-rw-r--r-- root/root      5388 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/screenshot.py
+-rw-r--r-- root/root      6850 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/screenshot_portal_request.py
+-rw-r--r-- root/root      6983 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/selected_area.py
+-rw-r--r-- root/root      3797 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/capture/window_capture.py
+-rw-r--r-- root/root      6224 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/main.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ocr/
+-rw-r--r-- root/root       146 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ocr/__init__.py
+-rw-r--r-- root/root     11160 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ocr/ocr_engine.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/pytesseract/
+-rw-r--r-- root/root       679 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/pytesseract/__init__.py
+-rw-r--r-- root/root     16392 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/pytesseract/pytesseract.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/shortcuts/
+-rw-r--r-- root/root       151 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/shortcuts/__init__.py
+-rw-r--r-- root/root      1980 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/shortcuts/assignment.py
+-rw-r--r-- root/root     28967 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/shortcuts/global_shortcut.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/
+-rw-r--r-- root/root     30853 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/capture_menu.py
+-rw-r--r-- root/root     10578 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/display_overlay.py
+-rw-r--r-- root/root     32509 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/overlay.py
+-rw-r--r-- root/root       147 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/selection_overlay.py
+-rw-r--r-- root/root      7845 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/ui/shortcut_status.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/
+-rw-r--r-- root/root        45 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/__init__.py
+-rw-r--r-- root/root      3456 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/async_jobs.py
+-rw-r--r-- root/root      1676 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/capture_diagnostics.py
+-rw-r--r-- root/root      5634 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/clipboard.py
+-rw-r--r-- root/root      2815 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/desktop_entry.py
+-rw-r--r-- root/root       647 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/ocr_job.py
+-rw-r--r-- root/root      1194 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/ocr_process.py
+-rw-r--r-- root/root      2803 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/screenshot_files.py
+-rw-r--r-- root/root      1904 2026-11-15 05:30 ./usr/lib/ai-snipping-tool/utils/session_environment.py
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/systemd/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/lib/systemd/user/
+-rw-r--r-- root/root       690 2026-11-15 05:30 ./usr/lib/systemd/user/com.dulmina.aisnippingtool.service
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/applications/
+-rw-r--r-- root/root       283 2026-11-15 05:30 ./usr/share/applications/com.dulmina.aisnippingtool.desktop
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/doc/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/doc/ai-snipping-tool/
+-rw-r--r-- root/root      3408 2026-11-15 05:30 ./usr/share/doc/ai-snipping-tool/README.install
+-rw-r--r-- root/root       263 2026-11-15 05:30 ./usr/share/doc/ai-snipping-tool/changelog.Debian.gz
+-rw-r--r-- root/root      1181 2026-11-15 05:30 ./usr/share/doc/ai-snipping-tool/copyright
+-rw-r--r-- root/root     11357 2026-11-15 05:30 ./usr/share/doc/ai-snipping-tool/pytesseract-LICENSE
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/icons/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/icons/hicolor/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/icons/hicolor/scalable/
+drwxr-xr-x root/root         0 2026-11-15 05:30 ./usr/share/icons/hicolor/scalable/apps/
+-rw-r--r-- root/root       394 2026-11-15 05:30 ./usr/share/icons/hicolor/scalable/apps/com.dulmina.aisnippingtool.svg
+
+exit=0
+
+$ apt-cache policy python3-pyside6.qtwidgets python3-pil python3-dbus-next tesseract-ocr-eng tesseract-ocr-sin
+python3-pyside6.qtwidgets:
+  Installed: 6.10.2-6ubuntu1
+  Candidate: 6.10.2-6ubuntu1
+  Version table:
+ *** 6.10.2-6ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+python3-pil:
+  Installed: 12.1.1-2ubuntu1.4
+  Candidate: 12.1.1-2ubuntu1.5
+  Version table:
+     12.1.1-2ubuntu1.5 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute-updates/main amd64 Packages
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+ *** 12.1.1-2ubuntu1.4 100
+        100 /var/lib/dpkg/status
+     12.1.1-2ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+python3-dbus-next:
+  Installed: (none)
+  Candidate: 0.2.3-6
+  Version table:
+     0.2.3-6 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+tesseract-ocr-eng:
+  Installed: 1:4.1.0-2build1
+  Candidate: 1:4.1.0-2build1
+  Version table:
+ *** 1:4.1.0-2build1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+        100 /var/lib/dpkg/status
+tesseract-ocr-sin:
+  Installed: (none)
+  Candidate: 1:4.1.0-2build1
+  Version table:
+     1:4.1.0-2build1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+
+exit=0
+
+$ /usr/bin/python3 -c import sys,PySide6,PIL; print(sys.version); print("PySide6",PySide6.__version__,"Pillow",PIL.__version__)
+3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]
+PySide6 6.10.2 Pillow 12.1.1
+
+exit=0
+
+Regression commands: QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v; system variant prepends privately extracted dbus-next and packaged pytesseract to PYTHONPATH, runs /usr/bin/python3. Host access for test Unix sockets/systemd parser only.
+
+/tmp/snipping-stage31-baseline.log summary:
+Ran 173 tests in 19.447s
+OK
+
+/tmp/snipping-stage31-final182-venv.log summary:
+Ran 182 tests in 18.665s
+OK
+
+/tmp/snipping-stage31-final182-system.log summary:
+Ran 182 tests in 18.746s
+OK
+
+/tmp/snipping-stage31-final-focused.log:
+test_hash_failure_rejects_before_staging_payload (test_debian_packaging.PackagingTests.test_hash_failure_rejects_before_staging_payload) ... ok
+test_installed_missing_models_fail_without_download_or_source_write (test_debian_packaging.PackagingTests.test_installed_missing_models_fail_without_download_or_source_write) ... ok
+test_installed_ocr_language_branch_uses_active_system_models (test_debian_packaging.PackagingTests.test_installed_ocr_language_branch_uses_active_system_models) ... ok
+test_installed_ocr_uses_read_only_dependency_models_without_network (test_debian_packaging.PackagingTests.test_installed_ocr_uses_read_only_dependency_models_without_network) ... ok
+test_missing_installed_desktop_fails_without_creating_launcher (test_debian_packaging.PackagingTests.test_missing_installed_desktop_fails_without_creating_launcher) ... ok
+test_offline_stage_whitelist_licenses_modes_no_scripts_or_unsafe_paths (test_debian_packaging.PackagingTests.test_offline_stage_whitelist_licenses_modes_no_scripts_or_unsafe_paths) ... ok
+test_packaged_desktop_preserves_user_launcher_and_needs_no_venv (test_debian_packaging.PackagingTests.test_packaged_desktop_preserves_user_launcher_and_needs_no_venv) ... ok
+test_packaged_service_preserves_accepted_lifecycle_and_explicit_activation (test_debian_packaging.PackagingTests.test_packaged_service_preserves_accepted_lifecycle_and_explicit_activation) ... ok
+test_session_guard_is_shared_with_accepted_development_service (test_debian_packaging.PackagingTests.test_session_guard_is_shared_with_accepted_development_service) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.081s
+
+OK
+
+/tmp/snipping-stage31-package-verification.log:
+PASS: control, root ownership, permissions, checksums, payload exclusions, no home paths, Python syntax, desktop, SVG, extracted launcher
+AI Snipping Tool 0.3.1~stage3.1-1
+SHA256 39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb
+
+/tmp/snipping-stage31-unit-verification.log:
+Staging prefix mapped to extracted tree for executable existence; same dependency/lifecycle graph.
+/usr/lib/systemd/user/spice-vdagent.service:23: Unknown key 'StandardError' in section [Install], ignoring.
+
+exit=0
+
+/tmp/snipping-stage31-resolver.log:
+NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+The following packages were automatically installed and are no longer required:
+  gcc-11-base libasan6 nethogs nvidia-firmware-580-580.178.04
+  nvidia-firmware-595-595.91.07
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  python3-dbus-next tesseract-ocr-sin
+The following NEW packages will be installed:
+  ai-snipping-tool python3-dbus-next tesseract-ocr-sin
+0 upgraded, 3 newly installed, 0 to remove and 92 not upgraded.
+Inst python3-dbus-next (0.2.3-6 Ubuntu:26.04/resolute [all])
+Inst tesseract-ocr-sin (1:4.1.0-2build1 Ubuntu:26.04/resolute [all])
+Inst ai-snipping-tool (0.3.1~stage3.1-1 local-deb [amd64])
+Conf python3-dbus-next (0.2.3-6 Ubuntu:26.04/resolute [all])
+Conf tesseract-ocr-sin (1:4.1.0-2build1 Ubuntu:26.04/resolute [all])
+Conf ai-snipping-tool (0.3.1~stage3.1-1 local-deb [amd64])
+
+/tmp/snipping-stage31-dependency-simulation.log:
+NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+The following packages were automatically installed and are no longer required:
+  gcc-11-base libasan6 nethogs nvidia-firmware-580-580.178.04
+  nvidia-firmware-595-595.91.07
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  python3-dbus-next tesseract-ocr-sin
+E: Unable to fetch some archives, maybe run apt update or try with --fix-missing?
+
+/tmp/snipping-stage31-smoke.log:
+This plugin does not support raise()
+This plugin does not support raise()
+{"status": "PASS", "source_hidden": true, "app_read_only": true, "system_python": "/usr/bin/python3", "png_pixels_equal": true, "ocr_child_returned_text": true, "gui_clipboard_image_and_text": true, "note": "offscreen fixture, not physical Wayland or clean-machine installation"}
+
+Build invocation: /usr/bin/python3 debian/build_deb.py --wheel /tmp/snipping-stage31-inputs/pytesseract-0.3.13-py3-none-any.whl --output dist/stage-03.1-final
+Repro invocation uses --output /tmp/snipping-stage31-repro-final; both SHA256=39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb
+No pip install. Build-only download of wheel verified against PyPI JSON; apt-get download python3-dbus-next tesseract-ocr-sin extracted with dpkg-deb -x into /tmp. No dpkg -i/apt install executed.
+Isolated smoke: bwrap --ro-bind / / --tmpfs /home --ro-bind /tmp/snipping-stage31-namespace-models /usr/share/tesseract-ocr/5/tessdata --bind /tmp/snipping-stage31-probe-work /tmp/snipping-stage31-probe-work --unshare-net --unshare-pid --unshare-ipc --proc /proc --dev /dev --chdir /tmp/snipping-stage31-probe-work --setenv HOME /tmp/snipping-stage31-probe-work --setenv TMPDIR /tmp/snipping-stage31-probe-work --setenv XDG_RUNTIME_DIR /tmp/snipping-stage31-probe-work --setenv PYTHONPATH /tmp/snipping-stage31-runtime/usr/lib/python3/dist-packages --setenv PYTHONDONTWRITEBYTECODE 1 --setenv QT_QPA_PLATFORM offscreen --setenv DBUS_SESSION_BUS_ADDRESS unix:path=/nonexistent/stage31-bus /usr/bin/python3 /tmp/snipping-stage31-smoke.py
+Smoke loads extracted final runtime payload, validates hidden checkout, installed desktop, complete read-only system-model path; actual Full Screen production save/clipboard handlers then actual OCR subprocess/text-delivery pipeline. Public English fixture, offscreen Qt, not native portal or clean-machine install. No private content logged.
+Development iteration: archive validator initially caught group-writable staging root from umask002; builder now fixes root and all directories to0755, files0644/launcher0755; regression assertion and final verification PASS. Initial generic home-path scan flagged only pre-existing /home/user URI decoding docstrings; validator exempts AST docstrings only while rejecting runtime home literals/developer paths. Desktop main-category hint removed. Intermediate same-version local artifacts are not final candidates or releases.
+
+$ systemctl --user show com.dulmina.aisnippingtool.service -p MainPID -p ActiveState -p UnitFileState -p FragmentPath -p NRestarts
+ActiveState=active
+FragmentPath=/home/dulmina/.config/systemd/user/com.dulmina.aisnippingtool.service
+UnitFileState=enabled
+MainPID=9096
+NRestarts=0
+
+exit=0
+
+$ dpkg-query -W ai-snipping-tool
+dpkg-query: no packages found matching ai-snipping-tool
+
+exit=1
+
+Delivery full regression rerun after archive-root permission fix: QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Ran 182 tests in 18.510s
+OK
+PASS: byte hashes of every extracted delivery usr/lib/ai-snipping-tool file match the source-hidden/read-only smoke payload. Final .deb size52832 bytes.
+Final observed branchfeat/background-service HEAD6811b8e, indexempty; no further external commits observed. git diff --check PASS.

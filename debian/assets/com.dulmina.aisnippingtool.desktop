@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AI Snipping Tool
+Comment=Local screenshots and offline text extraction
+Exec=/usr/bin/ai-snipping-tool
+TryExec=/usr/bin/ai-snipping-tool
+Icon=com.dulmina.aisnippingtool
+Terminal=false
+Categories=Utility;
+StartupWMClass=com.dulmina.aisnippingtool

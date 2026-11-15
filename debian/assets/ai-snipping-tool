@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+"""Installed entry point; private modules and Ubuntu's managed Python only."""
+import os
+from pathlib import Path
+import sys
+
+sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+prefix = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(prefix / 'lib/ai-snipping-tool'))
+if sys.argv[1:] == ['--version']:
+    print('AI Snipping Tool 0.3.1~stage3.1-1')
+    raise SystemExit(0)
+if sys.argv[1:] == ['--check-session']:
+    from utils.session_environment import session_problem
+    problem = session_problem()
+    if problem:
+        print('AI Snipping Tool service skipped: ' + problem, file=sys.stderr)
+    raise SystemExit(1 if problem else 0)
+if os.getuid() == 0:
+    print('Run AI Snipping Tool as the logged-in desktop user, not root.', file=sys.stderr)
+    raise SystemExit(1)
+from main import main
+raise SystemExit(main())

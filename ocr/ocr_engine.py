@@ -6,6 +6,8 @@ import re
 import shutil
 import urllib.request
 
+from utils.desktop_entry import is_packaged_install
+
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, UnidentifiedImageError
 
@@ -28,6 +30,14 @@ SYSTEM_TESSDATA_CANDIDATES = [
 
 def _setup_tessdata_dir() -> Path:
     """Ensure a local tessdata directory exists containing sin.traineddata and system data."""
+    if is_packaged_install():
+        # Installed code is read-only. Models are offline Debian dependencies;
+        # keep the existing recognition/preprocessing path and never download.
+        for directory in SYSTEM_TESSDATA_CANDIDATES:
+            if all((directory / f'{language}.traineddata').is_file()
+                   for language in ('eng', 'sin')):
+                return directory
+        raise RuntimeError('Installed OCR language data missing: install tesseract-ocr-eng and tesseract-ocr-sin offline.')
     TESSDATA_DIR.mkdir(parents=True, exist_ok=True)
 
     # 1. Check/Download Sinhala traineddata if not present
@@ -209,7 +219,8 @@ def extract_text(
     if image.mode not in ("RGB", "L"):
         image = image.convert("RGB")
 
-    has_sinhala = (TESSDATA_DIR / "sin.traineddata").is_file()
+    active_tessdata = _setup_tessdata_dir() if is_packaged_install() else TESSDATA_DIR
+    has_sinhala = (active_tessdata / "sin.traineddata").is_file()
 
     # ── 2. Run multi-pass OCR ────────────────────────────────────────────────
     try:
