@@ -1,0 +1,45 @@
+2026-11-15 toolbar simplification evidence
+Initial read-only Git: feat/background-service HEAD123093c, working tree/index clean.
+External commit25984b3 appeared during tests and captured six code/test changes; preserved, no agent staging/commit/push/reset/merge or branch change.
+
+Executed test commands/results:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -p test_toolbar_readability.py -v
+8 tests PASS (first targeted run0.229s).
+QT_QPA_PLATFORM=offscreen QT_SCALE_FACTOR=1.5 .venv/bin/python -m unittest discover -s tests -p test_toolbar_readability.py -v
+8 PASS0.376s (final scaled run).
+QT_QPA_PLATFORM=offscreen QT_SCALE_FACTOR=2 .venv/bin/python -m unittest discover -s tests -p test_toolbar_readability.py -v
+8 PASS0.487s (final scaled run).
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Restricted run196/18.655s, four local socket permission errors/two systemd parser permission failures.
+Authorized host final196/19.859s PASS.
+.venv/bin/python -m py_compile ui/overlay.py tests/test_toolbar_readability.py tests/test_phase01.py tests/test_display_mapping.py tests/production_clipboard_probe.py docs/phase-00-checks.py : PASS
+git diff --check : PASS
+sha256sum dist/stage-03.1-final/*.deb : 39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb (unchanged).
+
+Qt offscreen rendering:
+QT_QPA_PLATFORM=offscreen [QT_SCALE_FACTOR=1.5 or2] .venv/bin/python /tmp/snipping-segments-render.py
+Public white/dark parent, segments alternately selected, each host grab to /tmp/snipping-segments-{1,1.5,2}-{screenshot,extract_text}.png.
+All: toolbar613x66 logical pixels. DPR1/1.5/2. Each segment103x34, label allocation/hint58/58 and60/60px. Reviewed100% Screenshot,150% Extract Text/dark,200% Screenshot/bright; no clipping observed. No native GNOME display-scale changes.
+
+Native driver: /usr/bin/python3 /tmp/snipping-segments-native.py
+systemctl --user show/stop/start com.dulmina.aisnippingtool.service; wait4s after stop; bounded identified registration polling after start; repeated start PID comparison.
+systemd-run --user --wait --pipe --collect --unit=snipping-segments-clipboard --property=WorkingDirectory=/home/dulmina/Projects/ai-snipping-tool --setenv=QT_QPA_PLATFORM=wayland /home/dulmina/Projects/ai-snipping-tool/.venv/bin/python /home/dulmina/Projects/ai-snipping-tool/tests/production_clipboard_probe.py
+Gio session bus RegisteredStatusNotifierItems and GetConnectionUnixProcessID: no app-owned item; four unrelated items remain.
+Public fixture/selection/Qt paste programmatic; not physical tests. Unit runtime25.365s, exit0.
+Native service and clipboard ledger:
+
+{"test": "initial", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "1a0697c715e54be6853b18bd687ce41d", "MainPID": "122672", "Result": "success", "NRestarts": "0"}}
+{"test": "stop_no_relaunch", "status": "PASS", "state": {"ActiveState": "inactive", "UnitFileState": "enabled", "InvocationID": "1a0697c715e54be6853b18bd687ce41d", "MainPID": "0", "Result": "success", "NRestarts": "0"}}
+{"test": "native_programmatic_clipboard", "status": "PASS", "exit": 0}
+{"test": "registered", "status": "PASS", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "7664161b8879476e94e3f1e85f40ebe6", "MainPID": "138240", "Result": "success", "NRestarts": "0"}}
+{"test": "duplicate_prevention", "status": "PASS"}
+{"test": "no_application_status_notifier", "status": "PASS", "remaining_items": 4}
+
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+
+Native journal: com.dulmina.aisnippingtool host identity registered. CreateSession/BindShortcuts/ListShortcuts code0; requestedALT+SHIFT+s, actualPress <Control><Alt>s. No permission or binding changes. Service enabled/active restoredPID138240. Physical key/Window/paste/Escape/GNOME scaling/logout/reboot NOT RUN.

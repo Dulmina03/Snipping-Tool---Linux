@@ -298,3 +298,17 @@ Source: [trayless service follow-up](background-service-no-tray.md), [command/pr
 - PASS syntax/import/whitespace; old Debian artifact hash unchanged.
 - FAIL initial restricted suite: four socket permission errors and two systemd parser failures. Authorized host full suite passed.
 - NOT RUN physical: top-bar visual/quiet startup, shortcut opens toolbar with no tray, Escape/repeated captures, Rectangle and Window external image paste, English OCR external text paste, clean logout/login and reboot. Use actual journal-reported key; verify service stop/restart using documented commands. Earlier-version physical acceptance remains historical.
+
+
+## Toolbar simplification — 2026-11-15
+
+[Report and changed files](toolbar-simplification.md), [evidence](toolbar-simplification-evidence.txt).
+
+- PASS full suite:196 tests/19.859s, including existing screenshot pixel/save/clipboard/OCR/cancellation, no-tray lifetime, signal shutdown, duplicates/service parser tests.
+- PASS UI: Freeform absent/no gap; underlying enum/icon retained. No QComboBox. Screenshot default, exclusive one-click segments, clicking selected segment/setter emits no duplicate change, invalid setter preserves selection. Labels/icons/accessibility/focus and opaque selected/neutral pixel checks. Changing action with an existing selection emits no area/full/window/cancel request. Processing disables/restores both segments. Both actions dispatched correctly to all three existing controller routes only upon capture. Cross-monitor segment selection synchronizes without recursion.
+- PASS Qt scaling: eight rendered UI tests each at100%,150%,200%; toolbar613×66 logicalpx at all three, no icon/label/button bounds clipping; bright/dark public render previews visually inspected. These are offscreen Qt scale simulations, not changed GNOME display settings.
+- PASS native programmatic: production Rectangle/Full Screen/repeat, real English OCR, supplied Sinhala/ZWJ Unicode transfer, saved PNG integrity, two-process image/text retrieval and Qt paste across focus changes; Extract Text selected through the real new segment; native clean shutdown/thread stopped. Not physical input or Sinhala accuracy.
+- PASS native service/protocol: stop remains inactive beyond RestartSec, start/repeated start/duplicate prevention, same host identity and successful portal binding/List, no app StatusNotifierItem; restored enabled/activePID138240/NRestarts0. ActualCtrl+Alt+S/requestedAlt+Shift+S unchanged.
+- PASS syntax/import/whitespace; existing package hash unchanged/not rebuilt.
+- FAIL initial sandbox suite:196 tests/18.655s with four socket permission errors and two systemd parser permission failures; authorized host rerun passed.
+- NOT RUN physical: actual key/toolbar appearance, Rectangle and Window/paste, Full Screen, English OCR/external paste, Escape/repeat; native100/150/200% GNOME scaling; new-version logout/reboot. Minimum steps in report. Prior physical results are historical.

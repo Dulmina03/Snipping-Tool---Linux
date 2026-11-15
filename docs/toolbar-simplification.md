@@ -1,0 +1,38 @@
+# Capture toolbar simplification — 2026-11-15
+
+Scope: remove the visible Freeform control and replace the capture-action dropdown. Continued on `feat/background-service`, starting clean at `123093c`. Existing tray removal and external commits preserved. During testing external commit `25984b3` captured the six source/test changes; this agent issued no staging, commit, branch, merge, reset or push command. Recheck Git before subsequent work.
+
+## Result and changed files
+
+- `ui/overlay.py`: remove the disabled Freeform toolbar button, tooltip and unreachable UI wiring; preserve the underlying enum/icon for future work. Replace the combo box and chevron painter with an exclusive QButtonGroup containing adjacent Screenshot/camera and Extract Text/scan-text buttons. Screenshot is selected initially. Clicking the current segment does not unselect it or emit another change. The established `current_action`, `set_action` and `action_changed` interface remains intact. Invalid programmatic actions preserve the current selection.
+- The new segments use the existing charcoal/neutral palette, solid indigo selected fill and border, hover/pressed/disabled styles and visible keyboard-focus border. Both have readable labels and accessible names, vector icons, StrongFocus and Space activation. No gradients, animations or additional transparency. The toolbar remains centered at the existing top inset and **66 logical pixels high**, measuring **613 pixels wide** in this environment (14px beyond the approximately599px target). Removing Freeform leaves no reserved space. Qt handles device scaling once; button minimum widths account for label metrics.
+- Action changes only update selection. They cannot trigger screenshot/OCR. The same existing Rectangle, Window and Full Screen routes read the selected action when capture is requested. While processing, the entire action selector is disabled alongside existing mode controls. Close/Escape behavior is preserved.
+- `tests/test_toolbar_readability.py`: update control inventory/dimensions and add exclusive selection/emission, vector/label/selected-pixel/focus/geometry checks and action-change-with-existing-selection tests; preserve opaque background, selected mode, disabled and unchanged overlay dimming coverage.
+- `tests/test_phase01.py`: production controller/toolbar routing test exercises both actions across all three supported capture routes, asserting no capture dispatch from switching action alone. Existing actual capture/OCR/clipboard/lifecycle tests retained.
+- `tests/test_display_mapping.py`: cross-monitor action synchronization now exercises a segment click instead of calling the setter directly.
+- `tests/production_clipboard_probe.py`: native English OCR/Unicode workflow selects the real Extract Text segment instead of the removed combo box.
+- `docs/phase-00-checks.py`: live compatibility helper checks absence of Freeform rather than looking up a removed button. Historical audit observations remain unchanged.
+- This report, `docs/toolbar-simplification-evidence.txt`, `docs/handoff-summary.md` and `docs/test-matrix.md` document results and remaining checks.
+
+Capture/crop/saving algorithms, OCR recognition, clipboard implementation, shortcut assignment/registration, main.py, service configuration, trayless lifetime and approved toolbar charcoal surface/dimming are unchanged. No Freeform functionality or AI added; Debian package not rebuilt/installed.
+
+## Automated and visual verification
+
+- **PASS:** final full host suite `QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v`: **196 tests in19.859s**. Includes Rectangle/Window/Full Screen handlers, save/pixel accuracy, English OCR process, clipboard, synthetic Escape/repeated operations, actual main.py duplicate/SIGTERM/restart and no-tray lifetime checks. Mocked portal and synthetic key results are not physical desktop acceptance.
+- **PASS:** eight rendered UI tests each at Qt scale100%,150%,200%. Extra runs use `QT_SCALE_FACTOR=1.5` and `2`; scaled test times0.376s/0.487s. Logical toolbar613×66 at all three; native backing DPR1/1.5/2. Label and icon bounds fit; selected segments are opaque indigo and inactive segments dark neutral. Rendered public bright/dark previews at all scales were inspected with the image viewer; no clipping observed. These are offscreen Qt renders, not physical GNOME scaling changes.
+- **FAIL, restricted environment only:** initial full suite196/18.655s had four socket permission errors and two systemd parser permission failures. Authorized host rerun passed in full; no production failures suppressed.
+- **PASS — native Wayland programmatic production workflows:** Rectangle, Full Screen, repeated Rectangle, actual English OCR, and supplied Sinhala/ZWJ text transfer; saved PNG integrity and two independent readers/paste across focus changes. OCR and supplied text select the actual new Extract Text segment. Native probe exited0 and its shortcut thread stopped. This checks native clipboard delivery, not physical Ctrl+V or Sinhala recognition accuracy.
+- **PASS — genuine user service/protocol:** normal stop remained inactive for4s, explicit start restored one enabled/active instancePID138240, NRestarts0/Resultsuccess. Repeated start preserved the PID. Registry identity and CreateSession/Bind/List succeeded; actual assigned key **Ctrl+Alt+S**, requested **Alt+Shift+S**, unchanged. StatusNotifierWatcher has no item owned by this application; four unrelated items remain. No unit, environment, permissions or binding settings changed.
+- **PASS — syntax/import and whitespace:** changed Python files compiled, full suite imported successfully, `git diff --check` clean. Existing `.deb` SHA256 remains `39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb`; it predates these UI changes and was not rebuilt or installed.
+- **NOT RUN — physical:** real global key, actual GNOME Window picker and external physical paste, physical Escape/repeated capture, real GNOME fractional-scaling configurations, logout/reboot. Window success/cancel paths, Escape, no-tray background lifetime and duplicate/SIGTERM/restart remain covered by automated tests.
+
+Commands and native workflow/service observations: [evidence](toolbar-simplification-evidence.txt).
+
+## Minimum remaining physical checks — NOT RUN
+
+1. With the service running, press the actual journal-reported shortcut (previous/current assignment Ctrl+Alt+S, requested Alt+Shift+S). Check toolbar: no Freeform/dropdown, readable Screenshot and Extract Text buttons, Screenshot selected on each new capture. Switch actions and confirm no capture starts until selecting an area or clicking Window/Full Screen.
+2. Rectangle image → external paste; Full Screen capture; Window picker → image paste. Select Extract Text and capture English text → external paste. Escape and rapidly reopen; verify no stale overlay or duplicate window. Use physical keys/paste, not programmatic signals.
+3. Inspect at actual100%,150%,200% GNOME scaling if available: no clipped labels, icons or Close button; selection/toolbar remain correctly centered. No GNOME display settings were changed automatically.
+4. Confirm no application top-bar icon and service stop/start/restart still work. Existing auto-login configuration remains enabled; no logout/reboot was performed for this toolbar change.
+
+Use `systemctl --user stop|start|restart com.dulmina.aisnippingtool.service` for control without a tray. Read assigned shortcut/identity with `journalctl --user -u com.dulmina.aisnippingtool.service -n60 --no-pager`. Do not silently change the persisted binding to match the request. No physical acceptance is inferred from the preceding version's results.
