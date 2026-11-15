@@ -119,7 +119,7 @@ def writer():
                         await wait_for(lambda:not menu.busy,25)
                     else:
                         if 'ocr' in case or case=='unicode_transfer':
-                            overlay._toolbar.action_combo.setCurrentIndex(1)
+                            overlay._toolbar.action_buttons['extract_text'].click()
                         async def fake_text(path):
                             await asyncio.sleep(.3);return MIXED
                         context=patch.object(capture,'extract_text_async',fake_text) if case=='unicode_transfer' else patch.dict(os.environ,{})

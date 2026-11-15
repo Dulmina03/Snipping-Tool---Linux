@@ -246,7 +246,7 @@ class SessionTests(unittest.TestCase):
         self.session.begin(left, QPointF(0, 0))
         self.session.move(left, QPointF(9, 9))
         self.assertEqual(self.session.selection(), QRectF(0, 0, 10, 10))
-        left._toolbar.set_action('extract_text')
+        left._toolbar.action_buttons['extract_text'].click()
         self.assertEqual(right.capture_action, 'extract_text')
         self.session.set_processing()
         self.assertTrue(all(s._processing for s in self.session.surfaces))

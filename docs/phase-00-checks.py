@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='snipping-phase00-') as scratch:
     menu = CaptureMenu()
     print(f'OBSERVED: controller isVisible={menu.isVisible()}, size={menu.width()}x{menu.height()}')
     overlay = Overlay()
-    assert not overlay._toolbar._buttons[SnipMode.FREEFORM].isEnabled()
+    assert SnipMode.FREEFORM not in overlay._toolbar._buttons
     overlay.start_point, overlay.end_point = QPoint(10, 20), QPoint(40, 60)
     received = []
     overlay.area_selected.connect(received.append)

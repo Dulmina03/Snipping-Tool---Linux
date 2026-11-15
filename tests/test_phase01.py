@@ -180,6 +180,32 @@ class LifecycleTests(unittest.TestCase):
         self.assertIsNone(self.menu._overlay)
         self.assertFalse(self.menu.isVisible())
 
+    def test_segmented_action_reaches_each_existing_capture_route_only_after_capture(self):
+        from ui.overlay import SnipMode
+        from PySide6.QtCore import QPoint
+        for action in ('screenshot', 'extract_text'):
+            for mode in (SnipMode.RECTANGULAR, SnipMode.WINDOW, SnipMode.FULLSCREEN):
+                with self.subTest(action=action, mode=mode):
+                    Image.new('RGB', (100, 100), 'red').save(self.source)
+                    self.menu.launch_overlay()
+                    spin_until(lambda: self.menu._overlay is not None)
+                    overlay = self.menu._overlay
+                    with patch.object(self.menu, '_on_area_selected') as area, \
+                         patch.object(self.menu, '_on_window_requested') as window, \
+                         patch.object(self.menu, '_on_fullscreen') as full:
+                        overlay._toolbar.action_buttons[action].click()
+                        area.assert_not_called(); window.assert_not_called(); full.assert_not_called()
+                        if mode == SnipMode.RECTANGULAR:
+                            overlay.start_point, overlay.end_point = QPoint(10, 10), QPoint(40, 40)
+                            overlay.confirm_selection()
+                            self.assertEqual(area.call_args.args[-1], action)
+                        else:
+                            overlay._toolbar._buttons[mode].click()
+                            handler = window if mode == SnipMode.WINDOW else full
+                            self.assertEqual(handler.call_args.args[-1], action)
+                    self.menu._on_cancelled()
+                    spin_until(lambda: self.menu._overlay is None and not self.menu.busy)
+
     def test_window_cancel_does_not_report_success(self):
         with patch('ui.capture_menu.capture_window', new=AsyncMock(return_value=None)), \
              patch('ui.capture_menu.copy_image_to_clipboard') as clipboard:

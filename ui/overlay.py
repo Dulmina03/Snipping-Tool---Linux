@@ -18,7 +18,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QComboBox,
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
@@ -133,6 +132,22 @@ class VectorIconWidget(QWidget):
             painter.drawLine(QPointF(3, 17), QPointF(7, 17))
             painter.drawLine(QPointF(13, 17), QPointF(17, 17))
             painter.drawLine(QPointF(17, 17), QPointF(17, 13))
+
+        elif name == "screenshot":
+            painter.drawRoundedRect(QRectF(2, 5, 16, 12), 2, 2)
+            painter.drawEllipse(QRectF(7, 8, 6, 6))
+            painter.drawLine(QPointF(6, 5), QPointF(7, 2.5))
+            painter.drawLine(QPointF(7, 2.5), QPointF(13, 2.5))
+            painter.drawLine(QPointF(13, 2.5), QPointF(14, 5))
+
+        elif name == "extract_text":
+            for x, direction in ((2, 1), (18, -1)):
+                for y, vertical in ((3, 1), (17, -1)):
+                    painter.drawLine(QPointF(x, y), QPointF(x + 3 * direction, y))
+                    painter.drawLine(QPointF(x, y), QPointF(x, y + 3 * vertical))
+            painter.drawLine(QPointF(6, 7), QPointF(14, 7))
+            painter.drawLine(QPointF(10, 7), QPointF(10, 14))
+            painter.drawLine(QPointF(8, 14), QPointF(12, 14))
 
         elif name == "close":
             # Clean diagonal cross
@@ -279,18 +294,47 @@ class _ModeButton(QToolButton):
 #  Pill Toolbar — Docked at top-center
 # ─────────────────────────────────────────────────────────────────────────────
 
-class _ActionComboBox(QComboBox):
-    """High-contrast chevron, independent of the GNOME/Qt platform theme."""
-    def paintEvent(self, event) -> None:
-        super().paintEvent(event)
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        color = QColor('#FFFFFF' if self.isEnabled() else '#929AA8')
-        painter.setPen(QPen(color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-        x, y = self.width() - 14, self.height() / 2
-        painter.drawLine(QPointF(x - 3, y - 1.5), QPointF(x, y + 1.5))
-        painter.drawLine(QPointF(x, y + 1.5), QPointF(x + 3, y - 1.5))
-        painter.end()
+class _ActionButton(QToolButton):
+    """One segment of the exclusive action selector, in Qt logical pixels."""
+    def __init__(self, action: CaptureAction, label: str, parent=None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setAccessibleName(label)
+        self.setToolTip(label)
+        self.setFixedHeight(34)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(7, 0, 7, 0)
+        layout.setSpacing(5)
+        layout.setAlignment(Qt.AlignCenter)
+        self._icon = VectorIconWidget(action.value, self, size=16)
+        self._name_lbl = QLabel(label, self)
+        self._name_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._name_lbl.setStyleSheet(
+            "QLabel { background: transparent; color: #FFFFFF; font-size: 11px; font-weight: 500; }"
+            "QLabel:disabled { color: #929AA8; }")
+        layout.addWidget(self._icon)
+        layout.addWidget(self._name_lbl)
+        # Respect actual font metrics without multiplying by the screen DPR.
+        self.setMinimumWidth(max(103, self._name_lbl.sizeHint().width() + 35))
+        self.setStyleSheet("""
+            QToolButton {
+                background: #242A33; border: 1px solid transparent;
+                border-radius: 6px;
+            }
+            QToolButton:hover { background: #2D3440; border-color: #596477; }
+            QToolButton:pressed { background: #364155; border-color: #8994EC; }
+            QToolButton:checked { background: #303653; border-color: #8994EC; }
+            QToolButton:checked:hover { background: #3C4567; border-color: #B0B9FF; }
+            QToolButton:focus { border: 2px solid #B0B9FF; }
+            QToolButton:disabled { background: #1D2128; border-color: #343B47; }
+        """)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.EnabledChange and hasattr(self, '_icon'):
+            self._icon.set_color('#FFFFFF' if self.isEnabled() else '#929AA8')
 
 
 class SnipToolbar(QFrame):
@@ -298,8 +342,8 @@ class SnipToolbar(QFrame):
     Precision pill-shaped toolbar docked at the top of the overlay.
     Design language inspired by Linear, Raycast, and Arc:
       - Clean vector brand badge
-      - Muted dropdown for capture action (Screenshot vs Extract Text)
-      - Vector line-art mode buttons (Rectangular, Freeform, Window, Full Screen)
+      - Exclusive action segments (Screenshot vs Extract Text)
+      - Vector line-art mode buttons (Rectangle, Window, Full Screen)
       - Integrated dismiss button (✕)
     """
 
@@ -365,76 +409,30 @@ class SnipToolbar(QFrame):
         # ── Divider 1 ────────────────────────────────────────────────────────
         outer.addWidget(self._create_divider())
 
-        # ── 2. Action Dropdown (Screenshot vs Extract Text) ───────────────────
-        self.action_combo = _ActionComboBox()
-        self.action_combo.setObjectName("action_combo")
-        self.action_combo.addItem("Screenshot", CaptureAction.SCREENSHOT.value)
-        self.action_combo.addItem("Extract Text", CaptureAction.EXTRACT_TEXT.value)
-        self.action_combo.setCurrentIndex(0)
-        self.action_combo.setCursor(Qt.PointingHandCursor)
-        self.action_combo.setFixedSize(QSize(118, 34))
-        self.action_combo.setStyleSheet("""
-            QComboBox#action_combo {
-                background: #242A33;
-                color: #FFFFFF;
-                border: 1px solid #596477;
-                border-radius: 7px;
-                padding: 3px 24px 3px 10px;
-                font-size: 12px;
-                font-weight: 500;
-                font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
-            }
-            QComboBox#action_combo:hover {
-                background: #303846;
-                border-color: #7A879C;
-                color: #FFFFFF;
-            }
-            QComboBox#action_combo:disabled {
-                background: #1D2128;
-                color: #929AA8;
-                border-color: #343B47;
-            }
-            QComboBox#action_combo:on {
-                border-color: #8994EC;
-            }
-            QComboBox#action_combo::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: center right;
-                width: 20px;
-                border: none;
-                background: transparent;
-            }
-            QComboBox#action_combo::down-arrow {
-                image: none;
-            }
-            QComboBox#action_combo QAbstractItemView {
-                background-color: #181B20;
-                color: #FFFFFF;
-                selection-background-color: #303653;
-                selection-color: #FFFFFF;
-                border: 1px solid #596477;
-                border-radius: 8px;
-                padding: 4px;
-                outline: none;
-                font-size: 12px;
-                font-weight: 500;
-                font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
-            }
-            QComboBox#action_combo QAbstractItemView::item {
-                min-height: 28px;
-                padding: 4px 10px;
-                border-radius: 5px;
-                color: #FFFFFF;
-            }
-            QComboBox#action_combo QAbstractItemView::item:selected {
-                background-color: #303653;
-                color: #FFFFFF;
+        # Two adjacent exclusive segments; changing action never captures.
+        self.action_toggle = QFrame(self)
+        self.action_toggle.setObjectName('action_toggle')
+        self.action_toggle.setStyleSheet("""
+            QFrame#action_toggle {
+                background: #242A33; border: 1px solid #454D5B; border-radius: 9px;
             }
         """)
-        self.action_combo.currentIndexChanged.connect(
-            lambda: self.action_changed.emit(self.current_action)
-        )
-        outer.addWidget(self.action_combo)
+        action_layout = QHBoxLayout(self.action_toggle)
+        action_layout.setContentsMargins(3, 3, 3, 3)
+        action_layout.setSpacing(2)
+        self._action_group = QButtonGroup(self)
+        self._action_group.setExclusive(True)
+        self.action_buttons = {}
+        for action, label in ((CaptureAction.SCREENSHOT, 'Screenshot'),
+                              (CaptureAction.EXTRACT_TEXT, 'Extract Text')):
+            button = _ActionButton(action, label, self.action_toggle)
+            self._action_group.addButton(button)
+            self.action_buttons[action.value] = button
+            action_layout.addWidget(button)
+            button.toggled.connect(
+                lambda checked, value=action.value: self.action_changed.emit(value) if checked else None)
+        self.action_buttons[CaptureAction.SCREENSHOT.value].setChecked(True)
+        outer.addWidget(self.action_toggle)
 
         # ── Divider 2 ────────────────────────────────────────────────────────
         outer.addWidget(self._create_divider())
@@ -442,7 +440,6 @@ class SnipToolbar(QFrame):
         # ── 3. Mode Buttons ───────────────────────────────────────────────────
         modes = [
             (SnipMode.RECTANGULAR, "Rectangle",  True),
-            (SnipMode.FREEFORM,    "Freeform",   False),  # disabled — coming soon
             (SnipMode.WINDOW,      "Window",     True),
             (SnipMode.FULLSCREEN,  "Full Screen", True),
         ]
@@ -452,11 +449,8 @@ class SnipToolbar(QFrame):
 
         for mode, label, enabled in modes:
             btn = _ModeButton(mode, label, enabled=enabled)
-            if not enabled:
-                btn.setToolTip(f"{label} — coming soon")
-            else:
-                btn.setToolTip(label)
-                btn.clicked.connect(lambda checked, m=mode, b=btn: self._on_btn_clicked(m, b))
+            btn.setToolTip(label)
+            btn.clicked.connect(lambda checked, m=mode, b=btn: self._on_btn_clicked(m, b))
             self._buttons[mode] = btn
             self._btn_group.addButton(btn)
             outer.addWidget(btn)
@@ -522,17 +516,12 @@ class SnipToolbar(QFrame):
 
     @property
     def current_action(self) -> str:
-        data = self.action_combo.currentData()
-        if data:
-            return str(data)
-        if "Extract Text" in self.action_combo.currentText():
-            return CaptureAction.EXTRACT_TEXT.value
-        return CaptureAction.SCREENSHOT.value
+        return next(action for action, button in self.action_buttons.items() if button.isChecked())
 
     def set_action(self, action: str) -> None:
-        idx = self.action_combo.findData(action)
-        if idx >= 0:
-            self.action_combo.setCurrentIndex(idx)
+        button = self.action_buttons.get(action)
+        if button is not None:
+            button.setChecked(True)
 
     def select_mode(self, mode: SnipMode) -> None:
         if mode in self._buttons and self._buttons[mode].isEnabled():
@@ -692,7 +681,7 @@ class Overlay(QWidget):
         self._processing = processing
         for mode, button in self._toolbar._buttons.items():
             button.setEnabled(not processing and mode != SnipMode.FREEFORM)
-        self._toolbar.action_combo.setEnabled(not processing)
+        self._toolbar.action_toggle.setEnabled(not processing)
         self.setCursor(Qt.BusyCursor if processing else Qt.CrossCursor)
 
     def mouseReleaseEvent(self, event) -> None:
