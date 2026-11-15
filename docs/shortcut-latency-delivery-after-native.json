@@ -1,0 +1,714 @@
+{
+  "kind": "native portals/programmatic signal",
+  "samples": [
+    {
+      "index": 0,
+      "cold": true,
+      "stages_ms": {
+        "callback_dispatched": 2.160027,
+        "preparation_started": 3.581998,
+        "layout_before_begin": 3.667179,
+        "layout_before_done": 18.075547,
+        "portal_request_begin": 18.098738,
+        "portal_connected": 22.351916,
+        "portal_identity_registered": 28.252715,
+        "portal_method_call": 31.348225,
+        "portal_response_signal": 561.575627,
+        "portal_response_received": 562.390644,
+        "portal_returned": 562.679825,
+        "image_loaded": 627.342591,
+        "layout_after_done": 640.83295,
+        "mapping_completed": 641.439968,
+        "widgets_created": 685.723228,
+        "toolbar_visible": 688.066956,
+        "show_returned": 688.374832,
+        "toolbar_first_paint": 711.214356,
+        "toolbar_paint_processed": 734.519495,
+        "overlay_interactive": 777.812844
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 1,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.335989,
+        "preparation_started": 1.904913,
+        "layout_before_begin": 1.989546,
+        "layout_before_done": 23.656536,
+        "portal_request_begin": 23.679187,
+        "portal_connected": 28.356429,
+        "portal_identity_registered": 34.298423,
+        "portal_method_call": 38.005245,
+        "portal_response_signal": 582.27111,
+        "portal_response_received": 583.226248,
+        "portal_returned": 583.520593,
+        "image_loaded": 655.786857,
+        "layout_after_done": 670.548046,
+        "mapping_completed": 670.985774,
+        "widgets_created": 682.679164,
+        "toolbar_visible": 683.364048,
+        "show_returned": 683.614823,
+        "toolbar_first_paint": 706.333113,
+        "toolbar_paint_processed": 729.608854,
+        "overlay_interactive": 762.647312
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 2,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.342879,
+        "preparation_started": 1.875232,
+        "layout_before_begin": 1.96977,
+        "layout_before_done": 31.04638,
+        "portal_request_begin": 31.071564,
+        "portal_connected": 37.076593,
+        "portal_identity_registered": 42.817361,
+        "portal_method_call": 47.019684,
+        "portal_response_signal": 590.665149,
+        "portal_response_received": 591.397115,
+        "portal_returned": 591.553144,
+        "image_loaded": 644.97355,
+        "layout_after_done": 661.633166,
+        "mapping_completed": 662.006517,
+        "widgets_created": 674.431147,
+        "toolbar_visible": 675.1127,
+        "show_returned": 675.363505,
+        "toolbar_first_paint": 694.641838,
+        "toolbar_paint_processed": 714.249518,
+        "overlay_interactive": 740.120802
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 3,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.314667,
+        "preparation_started": 1.87009,
+        "layout_before_begin": 1.955612,
+        "layout_before_done": 26.801317,
+        "portal_request_begin": 26.820031,
+        "portal_connected": 33.794523,
+        "portal_identity_registered": 41.06874,
+        "portal_method_call": 45.278431,
+        "portal_response_signal": 610.448168,
+        "portal_response_received": 611.393164,
+        "portal_returned": 611.695609,
+        "image_loaded": 666.741435,
+        "layout_after_done": 679.817518,
+        "mapping_completed": 680.270611,
+        "widgets_created": 691.991326,
+        "toolbar_visible": 692.672201,
+        "show_returned": 692.935061,
+        "toolbar_first_paint": 716.796737,
+        "toolbar_paint_processed": 734.356607,
+        "overlay_interactive": 774.772372
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 4,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.323501,
+        "preparation_started": 1.731318,
+        "layout_before_begin": 1.791148,
+        "layout_before_done": 28.936023,
+        "portal_request_begin": 28.954374,
+        "portal_connected": 34.255772,
+        "portal_identity_registered": 40.484619,
+        "portal_method_call": 44.211673,
+        "portal_response_signal": 576.899418,
+        "portal_response_received": 577.670586,
+        "portal_returned": 577.856619,
+        "image_loaded": 635.212129,
+        "layout_after_done": 648.807698,
+        "mapping_completed": 649.241843,
+        "widgets_created": 666.732502,
+        "toolbar_visible": 667.474862,
+        "show_returned": 667.706242,
+        "toolbar_first_paint": 689.345207,
+        "toolbar_paint_processed": 709.049404,
+        "overlay_interactive": 739.641574
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 5,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.294537,
+        "preparation_started": 1.831663,
+        "layout_before_begin": 1.932973,
+        "layout_before_done": 25.791037,
+        "portal_request_begin": 25.836974,
+        "portal_connected": 31.528552,
+        "portal_identity_registered": 37.203174,
+        "portal_method_call": 41.28279,
+        "portal_response_signal": 562.092815,
+        "portal_response_received": 562.912533,
+        "portal_returned": 563.12041,
+        "image_loaded": 622.17325,
+        "layout_after_done": 637.661209,
+        "mapping_completed": 638.170113,
+        "widgets_created": 649.670715,
+        "toolbar_visible": 650.365605,
+        "show_returned": 650.632264,
+        "toolbar_first_paint": 677.641934,
+        "toolbar_paint_processed": 699.395582,
+        "overlay_interactive": 728.95001
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 6,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.268408,
+        "preparation_started": 1.780484,
+        "layout_before_begin": 1.844349,
+        "layout_before_done": 36.149089,
+        "portal_request_begin": 36.169501,
+        "portal_connected": 41.937524,
+        "portal_identity_registered": 47.849112,
+        "portal_method_call": 51.78742,
+        "portal_response_signal": 575.06173,
+        "portal_response_received": 575.794593,
+        "portal_returned": 576.000266,
+        "image_loaded": 639.665021,
+        "layout_after_done": 653.958868,
+        "mapping_completed": 654.416582,
+        "widgets_created": 665.626211,
+        "toolbar_visible": 666.294169,
+        "show_returned": 666.542827,
+        "toolbar_first_paint": 685.062635,
+        "toolbar_paint_processed": 704.536138,
+        "overlay_interactive": 739.613112
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 7,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.260839,
+        "preparation_started": 1.685682,
+        "layout_before_begin": 1.753793,
+        "layout_before_done": 24.783214,
+        "portal_request_begin": 24.806008,
+        "portal_connected": 30.809934,
+        "portal_identity_registered": 37.432872,
+        "portal_method_call": 41.811236,
+        "portal_response_signal": 562.673295,
+        "portal_response_received": 563.447361,
+        "portal_returned": 563.596009,
+        "image_loaded": 626.699972,
+        "layout_after_done": 638.30392,
+        "mapping_completed": 639.128671,
+        "widgets_created": 649.584787,
+        "toolbar_visible": 650.241972,
+        "show_returned": 650.51161,
+        "toolbar_first_paint": 670.624311,
+        "toolbar_paint_processed": 688.933459,
+        "overlay_interactive": 712.731539
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 8,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.25674,
+        "preparation_started": 1.695422,
+        "layout_before_begin": 1.777367,
+        "layout_before_done": 26.401436,
+        "portal_request_begin": 26.42153,
+        "portal_connected": 32.295368,
+        "portal_identity_registered": 52.684348,
+        "portal_method_call": 55.752068,
+        "portal_response_signal": 631.641915,
+        "portal_response_received": 632.580149,
+        "portal_returned": 632.783232,
+        "image_loaded": 687.770167,
+        "layout_after_done": 701.398142,
+        "mapping_completed": 702.412227,
+        "widgets_created": 720.063728,
+        "toolbar_visible": 721.395101,
+        "show_returned": 721.85482,
+        "toolbar_first_paint": 742.114054,
+        "toolbar_paint_processed": 761.52843,
+        "overlay_interactive": 781.175873
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 9,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.315421,
+        "preparation_started": 1.762606,
+        "layout_before_begin": 1.822814,
+        "layout_before_done": 23.967038,
+        "portal_request_begin": 23.983918,
+        "portal_connected": 29.314345,
+        "portal_identity_registered": 34.052897,
+        "portal_method_call": 38.836577,
+        "portal_response_signal": 573.720839,
+        "portal_response_received": 574.557043,
+        "portal_returned": 574.706209,
+        "image_loaded": 640.705734,
+        "layout_after_done": 653.044754,
+        "mapping_completed": 653.544617,
+        "widgets_created": 667.813982,
+        "toolbar_visible": 668.450638,
+        "show_returned": 668.688507,
+        "toolbar_first_paint": 691.759767,
+        "toolbar_paint_processed": 709.562646,
+        "overlay_interactive": 749.887198
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 10,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.535747,
+        "preparation_started": 2.173254,
+        "layout_before_begin": 2.278487,
+        "layout_before_done": 25.408132,
+        "portal_request_begin": 25.430062,
+        "portal_connected": 30.926752,
+        "portal_identity_registered": 34.799731,
+        "portal_method_call": 38.689963,
+        "portal_response_signal": 590.911946,
+        "portal_response_received": 591.642982,
+        "portal_returned": 591.791606,
+        "image_loaded": 641.541971,
+        "layout_after_done": 655.192088,
+        "mapping_completed": 655.623403,
+        "widgets_created": 670.015717,
+        "toolbar_visible": 670.720231,
+        "show_returned": 671.010167,
+        "toolbar_first_paint": 693.045219,
+        "toolbar_paint_processed": 720.882203,
+        "overlay_interactive": 748.216849
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 11,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.426209,
+        "preparation_started": 2.078405,
+        "layout_before_begin": 2.162145,
+        "layout_before_done": 32.518004,
+        "portal_request_begin": 32.539932,
+        "portal_connected": 38.172853,
+        "portal_identity_registered": 44.025431,
+        "portal_method_call": 47.153399,
+        "portal_response_signal": 588.934743,
+        "portal_response_received": 589.73745,
+        "portal_returned": 589.911628,
+        "image_loaded": 647.129153,
+        "layout_after_done": 659.113991,
+        "mapping_completed": 659.5162,
+        "widgets_created": 670.224578,
+        "toolbar_visible": 670.878712,
+        "show_returned": 671.144119,
+        "toolbar_first_paint": 694.144566,
+        "toolbar_paint_processed": 714.69794,
+        "overlay_interactive": 739.733151
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 12,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.23612,
+        "preparation_started": 1.749475,
+        "layout_before_begin": 1.812752,
+        "layout_before_done": 26.570281,
+        "portal_request_begin": 26.59497,
+        "portal_connected": 32.293547,
+        "portal_identity_registered": 38.331169,
+        "portal_method_call": 41.267026,
+        "portal_response_signal": 590.4232,
+        "portal_response_received": 591.27803,
+        "portal_returned": 591.511128,
+        "image_loaded": 648.936014,
+        "layout_after_done": 663.212496,
+        "mapping_completed": 663.560663,
+        "widgets_created": 673.281421,
+        "toolbar_visible": 673.890592,
+        "show_returned": 674.12061,
+        "toolbar_first_paint": 698.553933,
+        "toolbar_paint_processed": 719.618562,
+        "overlay_interactive": 744.127131
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 13,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.329565,
+        "preparation_started": 1.964834,
+        "layout_before_begin": 2.073693,
+        "layout_before_done": 16.147184,
+        "portal_request_begin": 16.173005,
+        "portal_connected": 21.074486,
+        "portal_identity_registered": 26.653016,
+        "portal_method_call": 30.048132,
+        "portal_response_signal": 583.046357,
+        "portal_response_received": 583.812976,
+        "portal_returned": 583.987005,
+        "image_loaded": 646.199716,
+        "layout_after_done": 660.142802,
+        "mapping_completed": 661.199856,
+        "widgets_created": 674.960202,
+        "toolbar_visible": 675.627621,
+        "show_returned": 675.888711,
+        "toolbar_first_paint": 702.418888,
+        "toolbar_paint_processed": 722.141273,
+        "overlay_interactive": 746.391341
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 14,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.217881,
+        "preparation_started": 1.614554,
+        "layout_before_begin": 1.689727,
+        "layout_before_done": 22.730414,
+        "portal_request_begin": 22.753024,
+        "portal_connected": 28.530225,
+        "portal_identity_registered": 34.203439,
+        "portal_method_call": 37.384065,
+        "portal_response_signal": 575.502107,
+        "portal_response_received": 576.224276,
+        "portal_returned": 576.381492,
+        "image_loaded": 625.64478,
+        "layout_after_done": 640.543086,
+        "mapping_completed": 640.955526,
+        "widgets_created": 651.48469,
+        "toolbar_visible": 652.121767,
+        "show_returned": 652.369834,
+        "toolbar_first_paint": 672.160561,
+        "toolbar_paint_processed": 693.325336,
+        "overlay_interactive": 723.843369
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 15,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.517026,
+        "preparation_started": 2.209089,
+        "layout_before_begin": 2.318566,
+        "layout_before_done": 30.892456,
+        "portal_request_begin": 30.910689,
+        "portal_connected": 36.526957,
+        "portal_identity_registered": 41.331453,
+        "portal_method_call": 45.192005,
+        "portal_response_signal": 594.299661,
+        "portal_response_received": 594.995413,
+        "portal_returned": 595.124034,
+        "image_loaded": 650.468686,
+        "layout_after_done": 667.349279,
+        "mapping_completed": 667.898571,
+        "widgets_created": 683.094291,
+        "toolbar_visible": 683.755199,
+        "show_returned": 683.998549,
+        "toolbar_first_paint": 710.984521,
+        "toolbar_paint_processed": 727.865648
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 16,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.247921,
+        "preparation_started": 1.785988,
+        "layout_before_begin": 1.879891,
+        "layout_before_done": 33.301751,
+        "portal_request_begin": 33.322005,
+        "portal_connected": 38.018472,
+        "portal_identity_registered": 42.63204,
+        "portal_method_call": 45.40461,
+        "portal_response_signal": 564.946512,
+        "portal_response_received": 565.645678,
+        "portal_returned": 565.779183,
+        "image_loaded": 622.106808,
+        "layout_after_done": 633.988172,
+        "mapping_completed": 634.484887,
+        "widgets_created": 644.976811,
+        "toolbar_visible": 645.713132,
+        "show_returned": 645.983672,
+        "toolbar_first_paint": 666.906818,
+        "toolbar_paint_processed": 692.655115,
+        "overlay_interactive": 718.973292
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 17,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.368403,
+        "preparation_started": 1.944443,
+        "layout_before_begin": 2.02353,
+        "layout_before_done": 33.397161,
+        "portal_request_begin": 33.418353,
+        "portal_connected": 38.864,
+        "portal_identity_registered": 44.906917,
+        "portal_method_call": 47.932575,
+        "portal_response_signal": 625.218658,
+        "portal_response_received": 626.051884,
+        "portal_returned": 626.342458,
+        "image_loaded": 688.757647,
+        "layout_after_done": 701.299993,
+        "mapping_completed": 701.965406,
+        "widgets_created": 712.339956,
+        "toolbar_visible": 712.960098,
+        "show_returned": 713.199743,
+        "toolbar_first_paint": 735.950718,
+        "toolbar_paint_processed": 756.614009,
+        "overlay_interactive": 781.604184
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 18,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.225558,
+        "preparation_started": 1.741991,
+        "layout_before_begin": 1.845836,
+        "layout_before_done": 32.743126,
+        "portal_request_begin": 32.763242,
+        "portal_connected": 38.716328,
+        "portal_identity_registered": 44.009225,
+        "portal_method_call": 48.38971,
+        "portal_response_signal": 600.086765,
+        "portal_response_received": 600.808086,
+        "portal_returned": 600.950616,
+        "image_loaded": 649.900795,
+        "layout_after_done": 664.039688,
+        "mapping_completed": 664.564598,
+        "widgets_created": 675.798262,
+        "toolbar_visible": 676.470995,
+        "show_returned": 676.732018,
+        "toolbar_first_paint": 695.768743,
+        "toolbar_paint_processed": 718.620169,
+        "overlay_interactive": 744.315537
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 19,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.274906,
+        "preparation_started": 1.722247,
+        "layout_before_begin": 1.799449,
+        "layout_before_done": 25.275961,
+        "portal_request_begin": 25.329338,
+        "portal_connected": 30.125892,
+        "portal_identity_registered": 35.500196,
+        "portal_method_call": 39.765207,
+        "portal_response_signal": 553.698428,
+        "portal_response_received": 554.451653,
+        "portal_returned": 554.595375,
+        "image_loaded": 643.840638,
+        "layout_after_done": 662.180945,
+        "mapping_completed": 662.659278,
+        "widgets_created": 676.776267,
+        "toolbar_visible": 677.67343,
+        "show_returned": 678.0799,
+        "toolbar_first_paint": 707.887355,
+        "toolbar_paint_processed": 733.270327,
+        "overlay_interactive": 761.197237
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 20,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.288772,
+        "preparation_started": 2.626941,
+        "layout_before_begin": 2.808208,
+        "layout_before_done": 25.116206,
+        "portal_request_begin": 25.148904,
+        "portal_connected": 30.784945,
+        "portal_identity_registered": 36.415598,
+        "portal_method_call": 40.324972,
+        "portal_response_signal": 558.773588,
+        "portal_response_received": 559.513,
+        "portal_returned": 559.67236,
+        "image_loaded": 624.127652,
+        "layout_after_done": 638.097929,
+        "mapping_completed": 638.502476,
+        "widgets_created": 649.286737,
+        "toolbar_visible": 649.932404,
+        "show_returned": 650.174125,
+        "toolbar_first_paint": 670.288792,
+        "toolbar_paint_processed": 692.535021,
+        "overlay_interactive": 720.991297
+      },
+      "active": true,
+      "controls_enabled": true
+    }
+  ],
+  "warm_summary_ms": {
+    "callback_dispatched": {
+      "n": 20,
+      "median": 0.304602,
+      "p95": 0.517026
+    },
+    "image_loaded": {
+      "n": 20,
+      "median": 644.407094,
+      "p95": 687.770167
+    },
+    "layout_after_done": {
+      "n": 20,
+      "median": 659.6283965,
+      "p95": 701.299993
+    },
+    "layout_before_begin": {
+      "n": 20,
+      "median": 1.9064320000000001,
+      "p95": 2.318566
+    },
+    "layout_before_done": {
+      "n": 20,
+      "median": 26.4858585,
+      "p95": 33.397161
+    },
+    "mapping_completed": {
+      "n": 20,
+      "median": 660.358028,
+      "p95": 701.965406
+    },
+    "overlay_interactive": {
+      "n": 19,
+      "median": 744.127131,
+      "p95": 781.604184
+    },
+    "portal_connected": {
+      "n": 20,
+      "median": 32.2944575,
+      "p95": 38.864
+    },
+    "portal_identity_registered": {
+      "n": 20,
+      "median": 39.407894,
+      "p95": 47.849112
+    },
+    "portal_method_call": {
+      "n": 20,
+      "median": 43.0114545,
+      "p95": 51.78742
+    },
+    "portal_request_begin": {
+      "n": 20,
+      "median": 26.50825,
+      "p95": 33.418353
+    },
+    "portal_response_received": {
+      "n": 20,
+      "median": 583.519612,
+      "p95": 626.051884
+    },
+    "portal_response_signal": {
+      "n": 20,
+      "median": 582.6587334999999,
+      "p95": 625.218658
+    },
+    "portal_returned": {
+      "n": 20,
+      "median": 583.753799,
+      "p95": 626.342458
+    },
+    "preparation_started": {
+      "n": 20,
+      "median": 1.8088255,
+      "p95": 2.209089
+    },
+    "show_returned": {
+      "n": 20,
+      "median": 672.6323645,
+      "p95": 713.199743
+    },
+    "toolbar_first_paint": {
+      "n": 20,
+      "median": 694.393202,
+      "p95": 735.950718
+    },
+    "toolbar_paint_processed": {
+      "n": 20,
+      "median": 716.6590545,
+      "p95": 756.614009
+    },
+    "toolbar_visible": {
+      "n": 20,
+      "median": 672.384652,
+      "p95": 712.960098
+    },
+    "widgets_created": {
+      "n": 20,
+      "median": 671.7529995,
+      "p95": 712.339956
+    }
+  },
+  "resources_before": {
+    "fds": 18,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "resources_after_shutdown_uncollected": {
+    "fds": 58,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "resources_after_shutdown": {
+    "fds": 20,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "scheduler_source": "current utils/async_jobs.py",
+  "pending_tasks": 0
+}

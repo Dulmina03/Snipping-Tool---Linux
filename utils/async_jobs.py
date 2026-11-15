@@ -14,11 +14,15 @@ class AsyncJobs(QObject):
         self.timer = QTimer(self)
         # D-Bus operations contain many short await boundaries. Advancing only
         # every 10ms multiplied their round-trip latency on the native path.
-        self.timer.setTimerType(Qt.PreciseTimer)
-        self.timer.setInterval(1)
+        # Keep a low-rate Python callback while idle: otherwise Qt can sleep
+        # entirely in C++, leaving Python SIGTERM handling pending indefinitely.
+        self.timer.setTimerType(Qt.CoarseTimer)
+        self.timer.setInterval(100)
         self.timer.timeout.connect(self.tick)
+        self.timer.start()
         self.tasks = set()
         self.closed = False
+        self._closing = False
         self.file_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='snipping-file')
 
     async def run_file(self, function, *args, **kwargs):
@@ -27,7 +31,7 @@ class AsyncJobs(QObject):
         A running filesystem write cannot safely be interrupted. Drain it on
         cancellation so source cleanup, retry and shutdown cannot race it.
         """
-        if self.closed:
+        if self.closed or self._closing:
             raise RuntimeError('Application is shutting down')
         future = self.file_executor.submit(partial(function, *args, **kwargs))
         cancelled = False
@@ -45,20 +49,22 @@ class AsyncJobs(QObject):
         return future.result()
 
     def submit(self, coroutine):
-        if self.closed:
+        if self.closed or self._closing:
             coroutine.close()
             raise RuntimeError('Application is shutting down')
         task = self.loop.create_task(coroutine)
         self.tasks.add(task)
         task.add_done_callback(self._finished)
-        if not self.timer.isActive():
-            self.timer.start()
+        if self.timer.interval() != 1:
+            self.timer.setTimerType(Qt.PreciseTimer)
+            self.timer.start(1)
         return task
 
     def _finished(self, task):
         self.tasks.discard(task)
-        if not self.tasks:
-            self.timer.stop()
+        if not self.tasks and not self._closing:
+            self.timer.setTimerType(Qt.CoarseTimer)
+            self.timer.start(100)
         if not task.cancelled() and task.exception() is not None:
             logging.getLogger(__name__).error('Background operation failed: %s', task.exception())
 
@@ -73,6 +79,7 @@ class AsyncJobs(QObject):
         """Called after Qt exec returns; cancel I/O and reap child processes."""
         if self.closed:
             return
+        self._closing = True
         self.timer.stop()
         # Cancel owned roots first: their finally blocks reap subprocesses.
         # Cancelling shielded spawn tasks directly can orphan a child.

@@ -20,8 +20,9 @@ class SchedulingTests(unittest.TestCase):
         self.jobs = AsyncJobs()
         self.addCleanup(self.jobs.close)
 
-    def test_idle_has_no_wakeups_and_active_jobs_return_to_idle(self):
-        self.assertFalse(self.jobs.timer.isActive())
+    def test_idle_keeps_signal_checkpoint_and_active_jobs_return_to_idle(self):
+        self.assertTrue(self.jobs.timer.isActive())
+        self.assertEqual(self.jobs.timer.interval(),100)
         async def operation():
             for _ in range(15):
                 await asyncio.sleep(0)
@@ -30,7 +31,8 @@ class SchedulingTests(unittest.TestCase):
         self.assertTrue(self.jobs.timer.isActive())
         spin_until(lambda:task.done() and not self.jobs.tasks)
         self.assertTrue(task.result())
-        self.assertFalse(self.jobs.timer.isActive())
+        self.assertTrue(self.jobs.timer.isActive())
+        self.assertEqual(self.jobs.timer.interval(),100)
         second=self.jobs.submit(operation())
         spin_until(lambda:second.done() and not self.jobs.tasks)
         self.assertTrue(second.result())
@@ -47,7 +49,7 @@ class SchedulingTests(unittest.TestCase):
         self.assertFalse(slow.done())
         release.set()
         spin_until(lambda:not self.jobs.tasks)
-        self.assertFalse(self.jobs.timer.isActive())
+        self.assertEqual(self.jobs.timer.interval(),100)
 
     def test_completion_callback_can_submit_next_job_after_idle_transition(self):
         rows=[]
@@ -57,7 +59,7 @@ class SchedulingTests(unittest.TestCase):
         first=self.jobs.submit(operation(1))
         first.add_done_callback(lambda task:self.jobs.submit(operation(2)))
         spin_until(lambda:rows==[1,2] and not self.jobs.tasks)
-        self.assertFalse(self.jobs.timer.isActive())
+        self.assertEqual(self.jobs.timer.interval(),100)
 
     def test_suspended_io_keeps_qt_responsive_and_does_not_reenter_asyncio(self):
         beats=[]

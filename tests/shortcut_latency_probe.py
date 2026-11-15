@@ -39,6 +39,8 @@ def resource_counts():
 def run(output, count=21, native=False, scheduler_source=None):
     app=QApplication.instance() or QApplication([])
     app.setQuitOnLastWindowClosed(False)
+    app.setApplicationName(main.APP_ID)
+    app.setDesktopFileName(main.APP_ID)
     if scheduler_source is not None:
         spec=importlib.util.spec_from_file_location('latency_original_jobs',scheduler_source)
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)

@@ -1,0 +1,545 @@
+{
+  "before": [
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.146215,
+            "preparation_started": 2.311169,
+            "layout_before_begin": 2.391519,
+            "layout_before_done": 102.570012,
+            "portal_request_begin": 102.591323,
+            "portal_connected": 142.404451,
+            "portal_identity_registered": 173.159984,
+            "portal_method_call": 202.97737,
+            "portal_response_signal": 743.770457,
+            "portal_response_received": 753.064558,
+            "portal_returned": 753.476609,
+            "image_loaded": 815.565858,
+            "layout_after_done": 907.159785,
+            "mapping_completed": 908.977985,
+            "widgets_created": 952.226767,
+            "toolbar_visible": 954.486381,
+            "show_returned": 954.792101,
+            "toolbar_first_paint": 973.435883,
+            "toolbar_paint_processed": 997.977289,
+            "overlay_interactive": 1028.33451
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "/tmp/snipping-latency-original-jobs.py",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.089959,
+            "preparation_started": 2.29638,
+            "layout_before_begin": 2.391577,
+            "layout_before_done": 102.543663,
+            "portal_request_begin": 102.570275,
+            "portal_connected": 142.736073,
+            "portal_identity_registered": 172.800891,
+            "portal_method_call": 202.675273,
+            "portal_response_signal": 753.089631,
+            "portal_response_received": 762.381468,
+            "portal_returned": 762.719536,
+            "image_loaded": 816.012958,
+            "layout_after_done": 907.581997,
+            "mapping_completed": 909.029141,
+            "widgets_created": 952.560729,
+            "toolbar_visible": 954.845033,
+            "show_returned": 955.160708,
+            "toolbar_first_paint": 973.422655,
+            "toolbar_paint_processed": 996.551304,
+            "overlay_interactive": 1032.222356
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "/tmp/snipping-latency-original-jobs.py",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.105505,
+            "preparation_started": 2.294445,
+            "layout_before_begin": 2.379133,
+            "layout_before_done": 102.848704,
+            "portal_request_begin": 102.875025,
+            "portal_connected": 142.791263,
+            "portal_identity_registered": 172.361976,
+            "portal_method_call": 202.706999,
+            "portal_response_signal": 753.108307,
+            "portal_response_received": 762.815042,
+            "portal_returned": 763.167169,
+            "image_loaded": 818.060777,
+            "layout_after_done": 909.557991,
+            "mapping_completed": 910.790308,
+            "widgets_created": 955.762978,
+            "toolbar_visible": 958.179481,
+            "show_returned": 958.513185,
+            "toolbar_first_paint": 982.860442,
+            "toolbar_paint_processed": 1009.918208,
+            "overlay_interactive": 1051.714984
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "/tmp/snipping-latency-original-jobs.py",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.462222,
+            "preparation_started": 2.64676,
+            "layout_before_begin": 2.743828,
+            "layout_before_done": 103.025158,
+            "portal_request_begin": 103.052355,
+            "portal_connected": 143.273048,
+            "portal_identity_registered": 172.792793,
+            "portal_method_call": 203.124875,
+            "portal_response_signal": 753.773526,
+            "portal_response_received": 762.967614,
+            "portal_returned": 763.311579,
+            "image_loaded": 825.627099,
+            "layout_after_done": 916.99418,
+            "mapping_completed": 917.803196,
+            "widgets_created": 962.113977,
+            "toolbar_visible": 964.289739,
+            "show_returned": 964.595331,
+            "toolbar_first_paint": 986.876824,
+            "toolbar_paint_processed": 1009.914365,
+            "overlay_interactive": 1042.104823
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "/tmp/snipping-latency-original-jobs.py",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 1.989362,
+            "preparation_started": 2.163376,
+            "layout_before_begin": 2.24879,
+            "layout_before_done": 102.331319,
+            "portal_request_begin": 102.355443,
+            "portal_connected": 142.354125,
+            "portal_identity_registered": 172.679008,
+            "portal_method_call": 202.656868,
+            "portal_response_signal": 752.89255,
+            "portal_response_received": 762.406003,
+            "portal_returned": 762.677291,
+            "image_loaded": 831.830627,
+            "layout_after_done": 923.698989,
+            "mapping_completed": 924.915059,
+            "widgets_created": 970.770049,
+            "toolbar_visible": 972.865723,
+            "show_returned": 973.142028,
+            "toolbar_first_paint": 994.4999,
+            "toolbar_paint_processed": 1017.116433
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "/tmp/snipping-latency-original-jobs.py",
+      "pending_tasks": 0
+    }
+  ],
+  "after": [
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.097882,
+            "preparation_started": 3.607841,
+            "layout_before_begin": 3.728452,
+            "layout_before_done": 16.986533,
+            "portal_request_begin": 17.009213,
+            "portal_connected": 21.700341,
+            "portal_identity_registered": 27.014572,
+            "portal_method_call": 30.019485,
+            "portal_response_signal": 577.622003,
+            "portal_response_received": 578.366518,
+            "portal_returned": 578.57053,
+            "image_loaded": 632.118912,
+            "layout_after_done": 645.780524,
+            "mapping_completed": 646.422811,
+            "widgets_created": 693.377367,
+            "toolbar_visible": 695.674707,
+            "show_returned": 696.010942,
+            "toolbar_first_paint": 714.921662,
+            "toolbar_paint_processed": 735.256983,
+            "overlay_interactive": 758.185323
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "None",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.284923,
+            "preparation_started": 3.991305,
+            "layout_before_begin": 4.130263,
+            "layout_before_done": 32.520947,
+            "portal_request_begin": 32.551868,
+            "portal_connected": 37.110905,
+            "portal_identity_registered": 41.972356,
+            "portal_method_call": 46.181673,
+            "portal_response_signal": 563.918557,
+            "portal_response_received": 564.698178,
+            "portal_returned": 564.986132,
+            "image_loaded": 628.987996,
+            "layout_after_done": 643.490363,
+            "mapping_completed": 644.091089,
+            "widgets_created": 689.702658,
+            "toolbar_visible": 692.598311,
+            "show_returned": 692.963724,
+            "toolbar_first_paint": 720.219049,
+            "toolbar_paint_processed": 740.335983,
+            "overlay_interactive": 780.143178
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "None",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.43683,
+            "preparation_started": 3.991834,
+            "layout_before_begin": 4.116454,
+            "layout_before_done": 17.193031,
+            "portal_request_begin": 17.21487,
+            "portal_connected": 21.592894,
+            "portal_identity_registered": 25.440003,
+            "portal_method_call": 28.486977,
+            "portal_response_signal": 568.71017,
+            "portal_response_received": 569.49312,
+            "portal_returned": 569.813205,
+            "image_loaded": 635.949692,
+            "layout_after_done": 649.35715,
+            "mapping_completed": 650.071319,
+            "widgets_created": 694.981166,
+            "toolbar_visible": 697.136198,
+            "show_returned": 697.45177,
+            "toolbar_first_paint": 719.457133,
+            "toolbar_paint_processed": 742.563446,
+            "overlay_interactive": 779.681856
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "None",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 2.158207,
+            "preparation_started": 3.742775,
+            "layout_before_begin": 3.842875,
+            "layout_before_done": 15.751122,
+            "portal_request_begin": 15.770366,
+            "portal_connected": 20.491078,
+            "portal_identity_registered": 26.050565,
+            "portal_method_call": 29.744545,
+            "portal_response_signal": 563.493133,
+            "portal_response_received": 564.212999,
+            "portal_returned": 564.409626,
+            "image_loaded": 624.888262,
+            "layout_after_done": 638.616797,
+            "mapping_completed": 639.359993,
+            "widgets_created": 683.352008,
+            "toolbar_visible": 685.833473,
+            "show_returned": 686.155058,
+            "toolbar_first_paint": 709.640435,
+            "toolbar_paint_processed": 734.581223,
+            "overlay_interactive": 772.024553
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "None",
+      "pending_tasks": 0
+    },
+    {
+      "kind": "native portals/programmatic signal",
+      "samples": [
+        {
+          "index": 0,
+          "cold": true,
+          "stages_ms": {
+            "callback_dispatched": 1.990374,
+            "preparation_started": 3.631802,
+            "layout_before_begin": 3.757126,
+            "layout_before_done": 16.938511,
+            "portal_request_begin": 16.976849,
+            "portal_connected": 21.750464,
+            "portal_identity_registered": 27.240812,
+            "portal_method_call": 30.895982,
+            "portal_response_signal": 590.652565,
+            "portal_response_received": 591.430101,
+            "portal_returned": 591.72865,
+            "image_loaded": 657.720856,
+            "layout_after_done": 671.868549,
+            "mapping_completed": 672.669651,
+            "widgets_created": 722.015121,
+            "toolbar_visible": 724.452542,
+            "show_returned": 724.808437,
+            "toolbar_first_paint": 750.562238,
+            "toolbar_paint_processed": 771.617253,
+            "overlay_interactive": 816.357957
+          },
+          "active": true,
+          "controls_enabled": true
+        }
+      ],
+      "warm_summary_ms": {},
+      "resources_before": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown_uncollected": {
+        "fds": 21,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "resources_after_shutdown": {
+        "fds": 18,
+        "python_threads": [
+          "MainThread"
+        ]
+      },
+      "scheduler_source": "None",
+      "pending_tasks": 0
+    }
+  ]
+}

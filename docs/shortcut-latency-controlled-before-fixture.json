@@ -1,0 +1,861 @@
+{
+  "kind": "public fixture/offscreen/programmatic signal",
+  "samples": [
+    {
+      "index": 0,
+      "cold": true,
+      "stages_ms": {
+        "callback_dispatched": 0.567778,
+        "preparation_started": 0.76931,
+        "portal_request_begin": 0.893852,
+        "portal_returned": 21.447955,
+        "image_loaded": 54.084793,
+        "widgets_created": 96.410414,
+        "toolbar_visible": 97.256937,
+        "show_returned": 97.54863,
+        "toolbar_first_paint": 103.412955,
+        "toolbar_paint_processed": 108.343155,
+        "overlay_interactive": 108.374262
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 1,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.331237,
+        "preparation_started": 6.662256,
+        "portal_request_begin": 6.832006,
+        "portal_returned": 27.521166,
+        "image_loaded": 74.386773,
+        "widgets_created": 86.93898,
+        "toolbar_visible": 87.700846,
+        "show_returned": 87.950563,
+        "toolbar_first_paint": 94.240216,
+        "toolbar_paint_processed": 99.569969,
+        "overlay_interactive": 99.620791
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 2,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.326042,
+        "preparation_started": 6.162653,
+        "portal_request_begin": 6.28342,
+        "portal_returned": 26.725823,
+        "image_loaded": 66.605822,
+        "widgets_created": 77.497839,
+        "toolbar_visible": 78.273597,
+        "show_returned": 78.551402,
+        "toolbar_first_paint": 82.574612,
+        "toolbar_paint_processed": 86.558459,
+        "overlay_interactive": 86.594829
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 3,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.550187,
+        "preparation_started": 0.700607,
+        "portal_request_begin": 0.769129,
+        "portal_returned": 21.169342,
+        "image_loaded": 52.656987,
+        "widgets_created": 62.536691,
+        "toolbar_visible": 63.180273,
+        "show_returned": 63.472415,
+        "toolbar_first_paint": 67.357964,
+        "toolbar_paint_processed": 71.505282,
+        "overlay_interactive": 71.532593
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 4,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.534528,
+        "preparation_started": 0.73659,
+        "portal_request_begin": 0.851318,
+        "portal_returned": 19.749348,
+        "image_loaded": 51.005256,
+        "widgets_created": 61.028061,
+        "toolbar_visible": 61.777468,
+        "show_returned": 62.012091,
+        "toolbar_first_paint": 65.581198,
+        "toolbar_paint_processed": 69.702036,
+        "overlay_interactive": 69.751464
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 5,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.416623,
+        "preparation_started": 1.228922,
+        "portal_request_begin": 1.345618,
+        "portal_returned": 21.694073,
+        "image_loaded": 79.746334,
+        "widgets_created": 92.970577,
+        "toolbar_visible": 93.664923,
+        "show_returned": 93.933263,
+        "toolbar_first_paint": 98.633759,
+        "toolbar_paint_processed": 102.780609,
+        "overlay_interactive": 102.830491
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 6,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.299543,
+        "preparation_started": 9.110082,
+        "portal_request_begin": 9.212747,
+        "portal_returned": 29.395569,
+        "image_loaded": 58.303581,
+        "widgets_created": 68.638837,
+        "toolbar_visible": 69.322178,
+        "show_returned": 69.560312,
+        "toolbar_first_paint": 73.568137,
+        "toolbar_paint_processed": 77.652161,
+        "overlay_interactive": 77.685657
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 7,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.573317,
+        "preparation_started": 9.227485,
+        "portal_request_begin": 9.392017,
+        "portal_returned": 29.990259,
+        "image_loaded": 82.610873,
+        "widgets_created": 94.473044,
+        "toolbar_visible": 95.164552,
+        "show_returned": 95.452586,
+        "toolbar_first_paint": 99.263259,
+        "toolbar_paint_processed": 103.45034,
+        "overlay_interactive": 103.477091
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 8,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.397912,
+        "preparation_started": 0.602921,
+        "portal_request_begin": 0.730717,
+        "portal_returned": 20.355018,
+        "image_loaded": 51.370041,
+        "widgets_created": 61.35426,
+        "toolbar_visible": 61.964387,
+        "show_returned": 62.173042,
+        "toolbar_first_paint": 65.707354,
+        "toolbar_paint_processed": 69.706746,
+        "overlay_interactive": 69.732706
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 9,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.447229,
+        "preparation_started": 1.203727,
+        "portal_request_begin": 1.306344,
+        "portal_returned": 21.54905,
+        "image_loaded": 52.916962,
+        "widgets_created": 62.892387,
+        "toolbar_visible": 63.629154,
+        "show_returned": 63.867571,
+        "toolbar_first_paint": 68.230474,
+        "toolbar_paint_processed": 73.742842,
+        "overlay_interactive": 73.779119
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 10,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.333283,
+        "preparation_started": 7.229993,
+        "portal_request_begin": 7.313954,
+        "portal_returned": 27.420876,
+        "image_loaded": 63.11137,
+        "widgets_created": 74.248219,
+        "toolbar_visible": 75.063539,
+        "show_returned": 75.33061,
+        "toolbar_first_paint": 79.718808,
+        "toolbar_paint_processed": 86.967143,
+        "overlay_interactive": 87.029023
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 11,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.306339,
+        "preparation_started": 5.70059,
+        "portal_request_begin": 5.801036,
+        "portal_returned": 26.432681,
+        "image_loaded": 62.969082,
+        "widgets_created": 74.728333,
+        "toolbar_visible": 75.681302,
+        "show_returned": 76.010063,
+        "toolbar_first_paint": 80.114193,
+        "toolbar_paint_processed": 84.590791,
+        "overlay_interactive": 84.616699
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 12,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.333363,
+        "preparation_started": 0.52265,
+        "portal_request_begin": 0.617186,
+        "portal_returned": 20.622842,
+        "image_loaded": 91.516554,
+        "widgets_created": 107.56047,
+        "toolbar_visible": 108.722544,
+        "show_returned": 109.107258,
+        "toolbar_first_paint": 114.226791,
+        "toolbar_paint_processed": 121.531904,
+        "overlay_interactive": 121.592304
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 13,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.485275,
+        "preparation_started": 5.583354,
+        "portal_request_begin": 5.694219,
+        "portal_returned": 26.386271,
+        "image_loaded": 71.393558,
+        "widgets_created": 84.716454,
+        "toolbar_visible": 85.553593,
+        "show_returned": 85.82422,
+        "toolbar_first_paint": 89.453908,
+        "toolbar_paint_processed": 93.983778,
+        "overlay_interactive": 94.025452
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 14,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.597689,
+        "preparation_started": 0.868286,
+        "portal_request_begin": 0.983039,
+        "portal_returned": 20.035758,
+        "image_loaded": 51.479716,
+        "widgets_created": 61.729077,
+        "toolbar_visible": 62.435656,
+        "show_returned": 62.669973,
+        "toolbar_first_paint": 67.423025,
+        "toolbar_paint_processed": 71.324661,
+        "overlay_interactive": 71.360286
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 15,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.558493,
+        "preparation_started": 9.054479,
+        "portal_request_begin": 9.157141,
+        "portal_returned": 29.40323,
+        "image_loaded": 63.330057,
+        "widgets_created": 73.616211,
+        "toolbar_visible": 74.311459,
+        "show_returned": 74.535827,
+        "toolbar_first_paint": 78.511826,
+        "toolbar_paint_processed": 82.343853,
+        "overlay_interactive": 82.376837
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 16,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.410623,
+        "preparation_started": 0.655103,
+        "portal_request_begin": 0.788753,
+        "portal_returned": 20.218552,
+        "image_loaded": 73.407474,
+        "widgets_created": 83.713211,
+        "toolbar_visible": 84.371271,
+        "show_returned": 84.598904,
+        "toolbar_first_paint": 88.526199,
+        "toolbar_paint_processed": 92.664228,
+        "overlay_interactive": 92.716773
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 17,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.382318,
+        "preparation_started": 0.58985,
+        "portal_request_begin": 0.732751,
+        "portal_returned": 19.955115,
+        "image_loaded": 50.6041,
+        "widgets_created": 60.485926,
+        "toolbar_visible": 61.213833,
+        "show_returned": 61.460499,
+        "toolbar_first_paint": 65.309613,
+        "toolbar_paint_processed": 68.857456,
+        "overlay_interactive": 68.884633
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 18,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.262622,
+        "preparation_started": 1.592169,
+        "portal_request_begin": 1.666037,
+        "portal_returned": 22.381579,
+        "image_loaded": 55.676315,
+        "widgets_created": 69.854934,
+        "toolbar_visible": 70.650646,
+        "show_returned": 70.907063,
+        "toolbar_first_paint": 74.618569,
+        "toolbar_paint_processed": 78.308816,
+        "overlay_interactive": 78.353534
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 19,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.225934,
+        "preparation_started": 1.083913,
+        "portal_request_begin": 1.167147,
+        "portal_returned": 21.400753,
+        "image_loaded": 53.042085,
+        "widgets_created": 63.288013,
+        "toolbar_visible": 63.951533,
+        "show_returned": 64.177453,
+        "toolbar_first_paint": 67.899735,
+        "toolbar_paint_processed": 71.43468,
+        "overlay_interactive": 71.460512
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 20,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.310831,
+        "preparation_started": 1.221005,
+        "portal_request_begin": 1.315748,
+        "portal_returned": 21.47199,
+        "image_loaded": 53.880582,
+        "widgets_created": 64.51822,
+        "toolbar_visible": 65.228921,
+        "show_returned": 65.465443,
+        "toolbar_first_paint": 69.386462,
+        "toolbar_paint_processed": 74.213453,
+        "overlay_interactive": 74.258516
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 21,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.425845,
+        "preparation_started": 0.55359,
+        "portal_request_begin": 0.619795,
+        "portal_returned": 20.009189,
+        "image_loaded": 52.174807,
+        "widgets_created": 62.793284,
+        "toolbar_visible": 63.764426,
+        "show_returned": 64.116635,
+        "toolbar_first_paint": 68.15761,
+        "toolbar_paint_processed": 72.228702,
+        "overlay_interactive": 72.266196
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 22,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.415333,
+        "preparation_started": 0.665231,
+        "portal_request_begin": 0.774368,
+        "portal_returned": 20.826161,
+        "image_loaded": 48.646464,
+        "widgets_created": 59.025357,
+        "toolbar_visible": 59.76814,
+        "show_returned": 60.043358,
+        "toolbar_first_paint": 63.768994,
+        "toolbar_paint_processed": 67.607198,
+        "overlay_interactive": 67.633936
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 23,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.316486,
+        "preparation_started": 1.156853,
+        "portal_request_begin": 1.226248,
+        "portal_returned": 21.453478,
+        "image_loaded": 51.057525,
+        "widgets_created": 61.390509,
+        "toolbar_visible": 62.096136,
+        "show_returned": 62.351048,
+        "toolbar_first_paint": 67.514363,
+        "toolbar_paint_processed": 72.629569,
+        "overlay_interactive": 72.668624
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 24,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.292805,
+        "preparation_started": 8.449508,
+        "portal_request_begin": 8.561602,
+        "portal_returned": 28.985004,
+        "image_loaded": 59.842485,
+        "widgets_created": 69.586369,
+        "toolbar_visible": 70.236719,
+        "show_returned": 70.46172,
+        "toolbar_first_paint": 74.398153,
+        "toolbar_paint_processed": 78.268686,
+        "overlay_interactive": 78.302415
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 25,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.45626,
+        "preparation_started": 0.636415,
+        "portal_request_begin": 0.734259,
+        "portal_returned": 20.576966,
+        "image_loaded": 51.056703,
+        "widgets_created": 61.047982,
+        "toolbar_visible": 61.715922,
+        "show_returned": 61.945557,
+        "toolbar_first_paint": 65.527758,
+        "toolbar_paint_processed": 69.18507,
+        "overlay_interactive": 69.211767
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 26,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.275867,
+        "preparation_started": 1.056165,
+        "portal_request_begin": 1.138389,
+        "portal_returned": 21.261499,
+        "image_loaded": 64.640924,
+        "widgets_created": 76.704965,
+        "toolbar_visible": 77.790513,
+        "show_returned": 78.173935,
+        "toolbar_first_paint": 83.508072,
+        "toolbar_paint_processed": 89.777574,
+        "overlay_interactive": 89.823541
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 27,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.449037,
+        "preparation_started": 7.404939,
+        "portal_request_begin": 7.494099,
+        "portal_returned": 27.723443,
+        "image_loaded": 61.449003,
+        "widgets_created": 71.748271,
+        "toolbar_visible": 72.490365,
+        "show_returned": 72.731774,
+        "toolbar_first_paint": 76.474617,
+        "toolbar_paint_processed": 80.458634,
+        "overlay_interactive": 80.495635
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 28,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.282886,
+        "preparation_started": 0.427626,
+        "portal_request_begin": 0.498561,
+        "portal_returned": 20.18148,
+        "image_loaded": 60.62561,
+        "widgets_created": 70.419834,
+        "toolbar_visible": 71.227888,
+        "show_returned": 71.455446,
+        "toolbar_first_paint": 75.318017,
+        "toolbar_paint_processed": 78.84984,
+        "overlay_interactive": 78.878822
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 29,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.342834,
+        "preparation_started": 1.20721,
+        "portal_request_begin": 1.313538,
+        "portal_returned": 21.130698,
+        "image_loaded": 52.919796,
+        "widgets_created": 64.652486,
+        "toolbar_visible": 65.365367,
+        "show_returned": 65.598178,
+        "toolbar_first_paint": 69.135864,
+        "toolbar_paint_processed": 72.78007,
+        "overlay_interactive": 72.807824
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 30,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.441462,
+        "preparation_started": 1.457184,
+        "portal_request_begin": 1.612906,
+        "portal_returned": 22.141291,
+        "image_loaded": 52.913282,
+        "widgets_created": 67.661365,
+        "toolbar_visible": 68.71746,
+        "show_returned": 69.052558,
+        "toolbar_first_paint": 74.42989,
+        "toolbar_paint_processed": 80.628212,
+        "overlay_interactive": 80.677669
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 31,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.507467,
+        "preparation_started": 4.981189,
+        "portal_request_begin": 5.071292,
+        "portal_returned": 25.523892,
+        "image_loaded": 55.524356,
+        "widgets_created": 64.753265,
+        "toolbar_visible": 65.419912,
+        "show_returned": 65.653579,
+        "toolbar_first_paint": 69.290523,
+        "toolbar_paint_processed": 73.115615,
+        "overlay_interactive": 73.141132
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 32,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.301455,
+        "preparation_started": 1.062176,
+        "portal_request_begin": 1.174678,
+        "portal_returned": 21.945848,
+        "image_loaded": 52.678119,
+        "widgets_created": 62.835672,
+        "toolbar_visible": 63.534236,
+        "show_returned": 63.763641,
+        "toolbar_first_paint": 67.76071,
+        "toolbar_paint_processed": 71.968505,
+        "overlay_interactive": 71.993937
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 33,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.63188,
+        "preparation_started": 0.830722,
+        "portal_request_begin": 0.939378,
+        "portal_returned": 20.326197,
+        "image_loaded": 51.285973,
+        "widgets_created": 62.387159,
+        "toolbar_visible": 63.316874,
+        "show_returned": 63.648059,
+        "toolbar_first_paint": 68.310147,
+        "toolbar_paint_processed": 74.049085,
+        "overlay_interactive": 74.097887
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 34,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.347008,
+        "preparation_started": 7.832652,
+        "portal_request_begin": 7.98165,
+        "portal_returned": 27.810041,
+        "image_loaded": 59.104602,
+        "widgets_created": 68.333875,
+        "toolbar_visible": 68.982274,
+        "show_returned": 69.216416,
+        "toolbar_first_paint": 72.783296,
+        "toolbar_paint_processed": 76.593275,
+        "overlay_interactive": 76.627832
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 35,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.486037,
+        "preparation_started": 0.683313,
+        "portal_request_begin": 0.780679,
+        "portal_returned": 20.798058,
+        "image_loaded": 52.801426,
+        "widgets_created": 62.883102,
+        "toolbar_visible": 63.570735,
+        "show_returned": 63.782601,
+        "toolbar_first_paint": 67.879039,
+        "toolbar_paint_processed": 71.505433,
+        "overlay_interactive": 71.533965
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 36,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.471883,
+        "preparation_started": 0.674394,
+        "portal_request_begin": 0.780388,
+        "portal_returned": 20.27134,
+        "image_loaded": 51.774244,
+        "widgets_created": 62.722648,
+        "toolbar_visible": 63.411703,
+        "show_returned": 63.657979,
+        "toolbar_first_paint": 67.055753,
+        "toolbar_paint_processed": 70.854614,
+        "overlay_interactive": 70.888062
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 37,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.257092,
+        "preparation_started": 1.642822,
+        "portal_request_begin": 1.748722,
+        "portal_returned": 21.50311,
+        "image_loaded": 59.402061,
+        "widgets_created": 76.349916,
+        "toolbar_visible": 77.248892,
+        "show_returned": 77.552909,
+        "toolbar_first_paint": 82.0545,
+        "toolbar_paint_processed": 87.82808,
+        "overlay_interactive": 87.873983
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 38,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.357244,
+        "preparation_started": 6.802323,
+        "portal_request_begin": 6.906618,
+        "portal_returned": 27.609879,
+        "image_loaded": 76.062597,
+        "widgets_created": 87.314735,
+        "toolbar_visible": 88.040433,
+        "show_returned": 88.53113,
+        "toolbar_first_paint": 92.007692,
+        "toolbar_paint_processed": 95.944732,
+        "overlay_interactive": 95.980979
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 39,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.353989,
+        "preparation_started": 0.511613,
+        "portal_request_begin": 0.61446,
+        "portal_returned": 20.20842,
+        "image_loaded": 53.653029,
+        "widgets_created": 63.655238,
+        "toolbar_visible": 64.356485,
+        "show_returned": 64.59247,
+        "toolbar_first_paint": 68.349211,
+        "toolbar_paint_processed": 71.900559,
+        "overlay_interactive": 71.925933
+      },
+      "active": true,
+      "controls_enabled": true
+    },
+    {
+      "index": 40,
+      "cold": false,
+      "stages_ms": {
+        "callback_dispatched": 0.379705,
+        "preparation_started": 0.52928,
+        "portal_request_begin": 0.60152,
+        "portal_returned": 21.084433,
+        "image_loaded": 52.078241,
+        "widgets_created": 62.525842,
+        "toolbar_visible": 63.216199,
+        "show_returned": 63.442869,
+        "toolbar_first_paint": 67.14405,
+        "toolbar_paint_processed": 70.437818,
+        "overlay_interactive": 70.472739
+      },
+      "active": true,
+      "controls_enabled": true
+    }
+  ],
+  "warm_summary_ms": {
+    "callback_dispatched": {
+      "n": 40,
+      "median": 0.3810115,
+      "p95": 0.573317
+    },
+    "image_loaded": {
+      "n": 40,
+      "median": 54.702468999999994,
+      "p95": 79.746334
+    },
+    "overlay_interactive": {
+      "n": 40,
+      "median": 75.443174,
+      "p95": 102.830491
+    },
+    "portal_request_begin": {
+      "n": 40,
+      "median": 1.266296,
+      "p95": 9.157141
+    },
+    "portal_returned": {
+      "n": 40,
+      "median": 21.462734,
+      "p95": 29.395569
+    },
+    "preparation_started": {
+      "n": 40,
+      "median": 1.1802899999999998,
+      "p95": 9.054479
+    },
+    "show_returned": {
+      "n": 40,
+      "median": 67.3530685,
+      "p95": 93.933263
+    },
+    "toolbar_first_paint": {
+      "n": 40,
+      "median": 71.084879,
+      "p95": 98.633759
+    },
+    "toolbar_paint_processed": {
+      "n": 40,
+      "median": 75.40336400000001,
+      "p95": 102.780609
+    },
+    "toolbar_visible": {
+      "n": 40,
+      "median": 67.068686,
+      "p95": 93.664923
+    },
+    "widgets_created": {
+      "n": 40,
+      "median": 66.207315,
+      "p95": 92.970577
+    }
+  },
+  "resources_before": {
+    "fds": 9,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "resources_after_shutdown_uncollected": {
+    "fds": 11,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "resources_after_shutdown": {
+    "fds": 11,
+    "python_threads": [
+      "MainThread"
+    ]
+  },
+  "scheduler_source": "a0428d3:utils/async_jobs.py",
+  "pending_tasks": 0
+}
