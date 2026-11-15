@@ -4,7 +4,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
-from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QObject, QTimer, Qt
 
 
 class AsyncJobs(QObject):
@@ -12,9 +12,11 @@ class AsyncJobs(QObject):
         super().__init__(parent)
         self.loop = asyncio.new_event_loop()
         self.timer = QTimer(self)
-        self.timer.setInterval(10)
+        # D-Bus operations contain many short await boundaries. Advancing only
+        # every 10ms multiplied their round-trip latency on the native path.
+        self.timer.setTimerType(Qt.PreciseTimer)
+        self.timer.setInterval(1)
         self.timer.timeout.connect(self.tick)
-        self.timer.start()
         self.tasks = set()
         self.closed = False
         self.file_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='snipping-file')
@@ -49,10 +51,14 @@ class AsyncJobs(QObject):
         task = self.loop.create_task(coroutine)
         self.tasks.add(task)
         task.add_done_callback(self._finished)
+        if not self.timer.isActive():
+            self.timer.start()
         return task
 
     def _finished(self, task):
         self.tasks.discard(task)
+        if not self.tasks:
+            self.timer.stop()
         if not task.cancelled() and task.exception() is not None:
             logging.getLogger(__name__).error('Background operation failed: %s', task.exception())
 
