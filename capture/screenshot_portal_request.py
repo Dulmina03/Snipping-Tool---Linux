@@ -8,6 +8,7 @@ import uuid
 from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 from utils.desktop_entry import APP_ID
+from utils.capture_latency import active_capture
 from utils.capture_diagnostics import trace, timed
 
 BUS_NAME = 'org.freedesktop.portal.Desktop'
@@ -36,6 +37,8 @@ def method_error(reply, operation):
 
 @timed('portal_request_including_registration_and_user_dialog')
 async def request_screenshot(interactive=False, parent_window=''):
+    latency = active_capture.get()
+    mark = latency.mark if latency is not None else lambda stage: None
     bus = MessageBus()
     handler = None
     request_started = False
@@ -44,6 +47,7 @@ async def request_screenshot(interactive=False, parent_window=''):
     request_path = None
     try:
         await asyncio.wait_for(bus.connect(), 10)
+        mark("portal_connected")
         # Registry attribution is per D-Bus connection, not per process. Never
         # rely on the separate GlobalShortcuts connection's registration.
         reply = await asyncio.wait_for(bus.call(Message(
@@ -53,6 +57,7 @@ async def request_screenshot(interactive=False, parent_window=''):
         if reply.message_type == MessageType.ERROR:
             raise ScreenshotPortalError('identity',
                 f'Screenshot identity registration failed: {reply.error_name}: {reply.body}')
+        mark("portal_identity_registered")
         logger.info('Screenshot identity registered: app=%s connection=%s', APP_ID, bus.unique_name)
         version_reply = await asyncio.wait_for(bus.call(Message(
             destination=BUS_NAME, path=OBJECT_PATH,
@@ -70,6 +75,7 @@ async def request_screenshot(interactive=False, parent_window=''):
                     and message.interface == 'org.freedesktop.portal.Request'
                     and message.member == 'Response'):
                 if message.path == request_path and not future.done():
+                    mark("portal_response_signal")
                     future.set_result(message.body)
                 elif not future.done():
                     early[message.path] = message.body
@@ -81,6 +87,7 @@ async def request_screenshot(interactive=False, parent_window=''):
         logger.info('Screenshot request: connection=%s parent=%r interactive=%s modal=True token=%s',
                     bus.unique_name, parent_window, interactive, token)
         request_started = True
+        mark("portal_method_call")
         reply = await asyncio.wait_for(bus.call(Message(
             destination=BUS_NAME, path=OBJECT_PATH, interface=INTERFACE,
             member='Screenshot', signature='sa{sv}', body=[parent_window, options])), 15)
@@ -93,6 +100,7 @@ async def request_screenshot(interactive=False, parent_window=''):
         if request_path in early and not future.done():
             future.set_result(early[request_path])
         response = await asyncio.wait_for(future, 120)
+        mark("portal_response_received")
         if len(response) != 2:
             raise ScreenshotPortalError('unexpected', 'Malformed Screenshot portal response.')
         code, results = response

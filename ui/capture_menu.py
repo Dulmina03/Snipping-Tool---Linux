@@ -53,7 +53,7 @@ from ui.display_overlay import DisplayOverlay, screen_fingerprint
 from capture.display_mapping import (Rect, DisplayMappingError, compatibility_mapping, read_gnome_layout)
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 from utils.capture_diagnostics import trace, image_trace, timed
-from utils.capture_latency import CaptureLatency
+from utils.capture_latency import CaptureLatency, active_capture
 from utils.screenshot_files import copy_screenshot, save_png, cleanup_capture_source
 
 
@@ -307,6 +307,7 @@ class CaptureMenu(QWidget):
     @timed('activation_to_overlay_prepare')
     async def _launch_overlay(self, permission_retry=False):
         latency = getattr(self, "_capture_latency", None) or CaptureLatency()
+        latency_token = active_capture.set(latency)
         try:
             latency.mark("preparation_started")
             native_wayland = QGuiApplication.platformName() == 'wayland'
@@ -329,7 +330,9 @@ class CaptureMenu(QWidget):
                 self._dismiss_permission_prompt()
                 self._cleanup_source(source_path)
                 await asyncio.sleep(.2)
+                latency.mark("portal_request_begin")
                 source_path = await _portal_screenshot(interactive=False)
+                latency.mark("portal_returned")
             image_trace('portal_source', source_path)
             self._src_path = source_path
             bg_pixmap = QPixmap(str(source_path))
@@ -352,6 +355,7 @@ class CaptureMenu(QWidget):
                 except DisplayMappingError as error:
                     mapping_error = str(error)
             if overlay is None:
+                latency.mark("mapping_unverified" if native_wayland else "mapping_not_required")
                 overlay = Overlay(bg_pixmap=bg_pixmap)
                 if native_wayland:
                     # Keep server-side Full Screen and Window available, but do
@@ -383,8 +387,10 @@ class CaptureMenu(QWidget):
                 self.status_label.setText(mapping_error)
                 self._show_toast(mapping_error)
         except asyncio.CancelledError:
+            latency.mark("capture_cancelled")
             raise
         except Exception as error:
+            latency.mark("capture_failed")
             self._cleanup_source(self._src_path)
             self._src_path = None
             if isinstance(error, ScreenshotPortalError):
@@ -401,6 +407,7 @@ class CaptureMenu(QWidget):
             self._show_toast(self.status_label.text())
             self.capture_finished.emit()
         finally:
+            active_capture.reset(latency_token)
             if self._permission_prompt is not None:
                 self._permission_prompt.continue_button.setEnabled(True)
 

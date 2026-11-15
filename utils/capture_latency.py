@@ -1,5 +1,6 @@
 """Opt-in monotonic capture readiness timings; no image paths or contents."""
 import itertools
+from contextvars import ContextVar
 import json
 import logging
 import os
@@ -8,6 +9,7 @@ import time
 from PySide6.QtCore import QObject, QEvent, QTimer, Slot
 
 _counter = itertools.count(1)
+active_capture = ContextVar("active_capture_latency", default=None)
 
 
 def signal_received():

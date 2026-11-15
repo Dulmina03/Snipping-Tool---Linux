@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from PIL import Image
-from PySide6.QtCore import QCoreApplication, QEvent, QThread, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QThread, QTimer, Qt
+from PySide6.QtTest import QTest
 from test_phase01 import app, spin_until
 import ui.capture_menu as capture
 from utils.async_jobs import AsyncJobs
@@ -133,6 +134,14 @@ class ReadinessTests(unittest.TestCase):
         for _ in range(5):app.processEvents()
         self.assertEqual(len(self.rows),count)
         self.assertIsNone(self.menu._overlay)
+
+    def test_rapid_synthetic_escape_does_not_leave_probe_or_overlay(self):
+        for _ in range(15):
+            self.rows.clear();source=self.launch()
+            QTest.keyClick(self.menu._overlay, Qt.Key_Escape)
+            spin_until(lambda:self.menu._overlay is None and not self.menu.jobs.tasks)
+            QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete)
+            self.assertFalse(source.exists())
 
     def test_disabled_diagnostics_do_not_attach_qt_probe(self):
         with patch.dict('os.environ',{'SNIPPING_LATENCY_DIAGNOSTICS':'0'}):
