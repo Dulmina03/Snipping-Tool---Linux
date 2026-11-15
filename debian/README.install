@@ -1,0 +1,55 @@
+AI Snipping Tool Stage 3.1 — private Ubuntu 26.04 amd64 prototype
+
+INSTALLATION (fresh test machine/account first)
+The .deb makes no network requests, runs no pip and has no maintainer scripts.
+Preinstall/cache its declared Ubuntu dependencies. For an offline installation:
+  sudo apt --no-download install ./ai-snipping-tool_0.3.1~stage3.1-1_amd64.deb
+Missing dependencies must be supplied from a prepared Ubuntu archive first.
+This small package does not contain an entire Ubuntu/Qt dependency mirror.
+Never run the GUI with sudo. Command: ai-snipping-tool
+
+PER-USER STARTUP (not automatically enabled by package installation)
+First inspect existing overrides and launchers:
+  systemctl --user show com.dulmina.aisnippingtool.service -p FragmentPath
+  systemctl --user cat com.dulmina.aisnippingtool.service
+Do not enable if a development/custom ~/.config/systemd/user unit shadows
+/usr/lib/systemd/user/com.dulmina.aisnippingtool.service. Preserve it and follow
+the reviewed migration instructions in the project packaging report.
+On a fresh supported GNOME Wayland user session without an override:
+  systemctl --user daemon-reload
+  systemctl --user enable --now com.dulmina.aisnippingtool.service
+Each account opts in independently. No global enable, lingering or autostart.
+The service must have the genuine graphical-session environment, not an
+editor's sandbox scope. Log out/in if the user manager environment is stale;
+do not guess or import display variables from an editor.
+
+DESKTOP IDENTITY / DATA
+Stable ID com.dulmina.aisnippingtool and shortcut ID open_capture_menu retained.
+Requested Alt+Shift+S; actual binding is whatever GNOME reports. Confirm portal
+permissions interactively if requested; no permission/binding database changes.
+Existing ~/.local/share/applications/com.dulmina.aisnippingtool.desktop may shadow
+the installed launcher: review/back up explicitly; the package never edits it.
+Screenshots remain ~/Pictures/Screenshots. OCR reads Ubuntu eng/sin model data;
+no models or screenshots are uploaded or downloaded by the installed build.
+The application's existing runtime lock prevents a second capture instance.
+
+UPGRADE / REMOVE / ROLLBACK
+Before upgrading/removing in EACH opted-in account:
+  systemctl --user disable --now com.dulmina.aisnippingtool.service
+Upgrades do not stop existing processes automatically. After a reviewed upgrade:
+  systemctl --user daemon-reload
+  systemctl --user enable --now com.dulmina.aisnippingtool.service
+Removal (after opted-in services are stopped): sudo apt remove ai-snipping-tool
+Then systemctl --user daemon-reload. No package scripts delete screenshots,
+settings, user service files, launchers or permissions. Other logged-in users
+must stop their service too. Do not remove a running multi-user installation.
+For rollback, reinstall a retained previous .deb with --no-download, reload and
+explicitly activate. For development rollback, stop the packaged service and
+restore only reviewed backups of your own previous user unit/launcher; reload
+and explicitly restart. Never let both startup mechanisms compete.
+
+ACCEPTANCE
+This prototype is not yet clean-machine/physical-package accepted. Check quiet
+login startup, correct actual shortcut/overlay/Escape, Rectangle/Window image
+paste, English OCR paste, tray Quit staying stopped and reboot startup.
+No public release; project license remains unspecified by owner's choice.

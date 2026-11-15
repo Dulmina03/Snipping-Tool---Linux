@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 ocr/tessdata/
+# Local Debian build artifacts and downloaded build inputs
+dist/

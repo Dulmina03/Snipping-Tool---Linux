@@ -1,0 +1,24 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: AI Snipping Tool
+Source: https://github.com/Dulmina03/Snipping-Tool---Linux
+
+Files: *
+Copyright: Dulmina03 and other upstream contributors (see repository history)
+License: LicenseRef-Upstream-Unspecified
+ No project license grant was found in the source repository.
+ The owner requested retaining local, unpublished prototype status.
+ This metadata grants no redistribution rights and does not license or
+ relicense the project. Do not publish this package before the copyright
+ holders specify the project license.
+
+Files: usr/lib/ai-snipping-tool/pytesseract/*
+Copyright: Python Tesseract contributors (see bundled upstream license)
+License: Apache-2.0
+ Full upstream license and notice: pytesseract-LICENSE in this directory.
+
+Comment:
+ Ubuntu-managed runtime dependencies are not bundled; their copyright and
+ license files are installed by their own Debian packages under
+ /usr/share/doc/<package>/copyright. PySide6/Qt remain distro-managed.
+ The SVG icon is a source rendering of the existing application's fallback
+ camera icon, and has the same unspecified project license status.

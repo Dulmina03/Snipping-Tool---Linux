@@ -7,6 +7,10 @@ APP_ID = 'com.dulmina.aisnippingtool'
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def is_packaged_install():
+    return (ROOT / '.packaged-install').is_file()
+
+
 def exec_quote(value):
     # Desktop Exec escaping is not shell quoting. Double % escapes field codes.
     value = str(value)
@@ -27,6 +31,13 @@ def desktop_entry(project_root=ROOT, python_bin=None):
 
 
 def ensure_desktop_entry(project_root=ROOT, python_bin=None, applications_dir=None):
+    if is_packaged_install():
+        # dpkg owns this resource. Never generate a checkout launcher or replace
+        # a user's custom/development launcher from a packaged process.
+        installed = ROOT.parents[1] / 'share/applications' / f'{APP_ID}.desktop'
+        if not installed.is_file():
+            raise RuntimeError(f'Installed desktop entry missing: {installed}')
+        return installed
     apps = Path(applications_dir) if applications_dir is not None else (
         Path(os.environ.get('XDG_DATA_HOME', Path.home() / '.local/share')) / 'applications')
     target = apps / f'{APP_ID}.desktop'
