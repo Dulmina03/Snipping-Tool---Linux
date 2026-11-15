@@ -1,3 +1,5 @@
+Current behavior (2026-11-15): **the application tray icon/menu is removed**. Control the running app with `systemctl --user start|stop|restart com.dulmina.aisnippingtool.service`; disable future startup with `systemctl --user disable --now com.dulmina.aisnippingtool.service`. Assignment/identity are in the journal. See [trayless service follow-up and verification](background-service-no-tray.md). Tray/Quit instructions and observations below describe earlier versions. Service configuration and login enablement are unchanged.
+
 # Background service integration — Stage 1
 
 **Acceptance update from the Stage 2 request (2026-11-14): the user confirms all six physical Stage 1 tests PASS, including shortcut, Escape, Rectangle/paste, English OCR/paste, Window/paste and tray/Quit. Stage 1 is accepted. Manual-only/NOT RUN statements below describe the historical Stage 1 implementation run. Current login configuration is documented in [Stage 2](background-service-stage-02.md).**

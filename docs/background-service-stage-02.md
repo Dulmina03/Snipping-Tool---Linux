@@ -1,3 +1,5 @@
+Current behavior (2026-11-15): **the application tray icon/menu is removed**. Control the running app with `systemctl --user start|stop|restart com.dulmina.aisnippingtool.service`; disable future startup with `systemctl --user disable --now com.dulmina.aisnippingtool.service`. Assignment/identity are in the journal. See [trayless service follow-up and verification](background-service-no-tray.md). Tray/Quit instructions and observations below describe earlier versions. Service configuration and login enablement are unchanged.
+
 # Background service Stage 2 — Automatic GNOME login startup
 
 ## Login registration failure follow-up — 2026-11-14

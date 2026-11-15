@@ -9,41 +9,12 @@ from pathlib import Path
 
 from utils.desktop_entry import APP_ID, ensure_desktop_entry
 
-from PySide6.QtCore import QLockFile, QStandardPaths, Qt, QTimer
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtCore import QLockFile, QStandardPaths, QTimer
+from PySide6.QtWidgets import QApplication
 
 from shortcuts.global_shortcut import GlobalShortcutManager
 from ui.capture_menu import CaptureMenu
-from ui.shortcut_status import ShortcutStatus
 from utils.capture_diagnostics import trace
-
-
-def create_tray_icon() -> QIcon:
-    """Create a high-resolution tray icon or load from theme."""
-    icon = QIcon.fromTheme("camera-photo")
-    if not icon.isNull():
-        return icon
-
-    pixmap = QPixmap(64, 64)
-    pixmap.fill(Qt.transparent)
-
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-
-    # Rounded background badge
-    painter.setPen(Qt.NoPen)
-    painter.setBrush(QColor(30, 144, 255))
-    painter.drawRoundedRect(4, 4, 56, 56, 12, 12)
-
-    # Snipping tool camera / crosshair symbol
-    painter.setPen(QPen(QColor(255, 255, 255), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-    painter.drawRoundedRect(14, 18, 36, 28, 6, 6)
-    painter.drawEllipse(24, 24, 16, 16)
-    painter.drawPoint(42, 22)
-    painter.end()
-
-    return QIcon(pixmap)
 
 
 def prepare_qt_environment():
@@ -88,45 +59,17 @@ def configure_application(application):
             capture_jobs=len(menu.jobs.tasks)))
         heartbeat.start()
 
-    # System Tray setup
-    tray_icon = QSystemTrayIcon(create_tray_icon(), application)
-    tray_icon.setToolTip("AI Snipping Tool\nShortcut assignment pending")
-
-    tray_menu = QMenu()
-    capture_action = tray_menu.addAction("Capture")
-    capture_action.triggered.connect(menu.launch_overlay)
-
-    tray_menu.addSeparator()
-
-    shortcut_status_action = tray_menu.addAction("Shortcut assignment pending")
-    shortcut_status_action.setEnabled(False)
-    identity_action = tray_menu.addAction("Application identity: checking")
-    identity_action.setEnabled(False)
-    configure_action = tray_menu.addAction("Configure Shortcut (unavailable)")
-    tray_menu.addSeparator()
-    quit_action = tray_menu.addAction("Quit")
-    def request_quit():
-        logging.getLogger(__name__).info('Tray Quit action received; scheduling QApplication.quit')
-        QTimer.singleShot(0, application.quit)
-    quit_action.triggered.connect(request_quit)
-
-    tray_icon.setContextMenu(tray_menu)
-    tray_icon.activated.connect(
-        lambda reason: menu.launch_overlay()
-        if reason == QSystemTrayIcon.Trigger
-        else None
-    )
-    tray_icon.show()
-
-    # Wire global shortcut signals
+    # No tray/status window: the service owns background lifetime and control.
     shortcut_manager.shortcut_activated.connect(menu.launch_overlay)
-    menu.shortcut_status = ShortcutStatus(menu, shortcut_manager, tray_icon, capture_action,
-        shortcut_status_action, identity_action, configure_action)
+    shortcut_manager.identity_changed.connect(
+        lambda status: logging.getLogger(__name__).info('Application identity: %s', status))
+    shortcut_manager.registration_failed.connect(
+        lambda error: logging.getLogger(__name__).error('Shortcut registration failed: %s', error))
     application.aboutToQuit.connect(
         lambda: logging.getLogger(__name__).info('QApplication aboutToQuit emitted'))
     application.aboutToQuit.connect(menu.shutdown)
 
-    return menu, shortcut_manager, tray_icon, tray_menu
+    return menu, shortcut_manager
 
 
 def main() -> int:
@@ -144,7 +87,7 @@ def main() -> int:
     if lock is None:
         print("AI Snipping Tool is already running, or its runtime lock is unavailable.", file=sys.stderr)
         return 0
-    menu, shortcut_manager, tray_icon, tray_menu = configure_application(application)
+    menu, shortcut_manager = configure_application(application)
     previous_handlers = {}
     for sig in (signal.SIGINT, signal.SIGTERM):
         previous_handlers[sig] = signal.signal(sig, lambda *_: application.quit())
@@ -157,7 +100,6 @@ def main() -> int:
         menu.jobs.close()
         logging.getLogger(__name__).info('Shutdown: closing shortcut portal session')
         shortcut_manager.stop()
-        tray_icon.hide()
         lock.unlock()
         logging.getLogger(__name__).info('Shutdown complete')
         for sig, handler in previous_handlers.items():

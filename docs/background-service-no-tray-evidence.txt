@@ -1,0 +1,46 @@
+2026-11-15 — tray removal evidence; no private screenshots/text recorded.
+Initial: git status --short (empty), branch feat/background-service, HEAD67789bd, staged diff empty.
+Read AGENTS.md/CODEX_START.md/build plan, current handoff, service Stage1/2 reports, prior performance/task report, main and related tests.
+
+Commands/results:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Restricted run:191 tests/19.994s, failures2/systemd permission, errors4/socket PermissionError.
+Host run:191 tests/20.504s PASS.
+Final host run including new lifetime regression:192 tests/21.786s PASS.
+.venv/bin/python -m py_compile main.py test_global_shortcut.py tests/test_phase01.py tests/test_shortcut_assignment.py tests/test_screenshot_permission.py tests/production_clipboard_probe.py : PASS
+ git diff --check : PASS
+
+Native driver /usr/bin/python3 /tmp/snipping-no-tray-native.py:
+systemctl --user show/stop/start/restart com.dulmina.aisnippingtool.service
+systemctl --user kill --kill-whom=main --signal=SIGKILL com.dulmina.aisnippingtool.service (one intentional failure)
+Gio session D-Bus: StatusNotifierWatcher RegisteredStatusNotifierItems and GetConnectionUnixProcessID.
+Four-second observation after stop; bounded registration polling after start/recovery.
+systemd-run --user --wait --pipe --collect --unit=snipping-no-tray-clipboard --property=WorkingDirectory=/home/dulmina/Projects/ai-snipping-tool --setenv=QT_QPA_PLATFORM=wayland /home/dulmina/Projects/ai-snipping-tool/.venv/bin/python /home/dulmina/Projects/ai-snipping-tool/tests/production_clipboard_probe.py
+Native unit exit0; six JSON cases below include shutdown; temporary unit collected.
+All selection/Qt paste interactions programmatic, not physical tests.
+
+Native service/notifier ledger:
+{"test": "before", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "9b5e6ba08c8e4a40bb3d71c2aab7933d", "MainPID": "88627", "Result": "success", "NRestarts": "0"}, "notifiers": [{"item": ":1.64@/org/ayatana/NotificationItem/software_update_available", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/livepatch", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/unattended_upgrade", "pid": 8857}, {"item": ":1.79@/org/ayatana/NotificationItem/QwBHB2EajA", "pid": 9101}, {"item": ":1.2482@/StatusNotifierItem", "pid": 88627}]}
+{"test": "intentional_stop_no_relaunch", "status": "PASS", "state": {"ActiveState": "inactive", "UnitFileState": "enabled", "InvocationID": "9b5e6ba08c8e4a40bb3d71c2aab7933d", "MainPID": "0", "Result": "success", "NRestarts": "0"}}
+{"test": "native_programmatic_clipboard", "status": "PASS", "exit": 0}
+{"test": "registered_no_status_notifier", "status": "PASS", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "a1548b597f6a46499c9a5a472a47e24f", "MainPID": "121445", "Result": "success", "NRestarts": "0"}, "notifiers": [{"item": ":1.64@/org/ayatana/NotificationItem/software_update_available", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/livepatch", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/unattended_upgrade", "pid": 8857}, {"item": ":1.79@/org/ayatana/NotificationItem/QwBHB2EajA", "pid": 9101}]}
+{"test": "repeated_start_same_pid", "status": "PASS"}
+{"test": "unexpected_crash_recovery", "status": "PASS", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "1b25d172708146ccbc1aa3e3003aa0f8", "MainPID": "121550", "Result": "success", "NRestarts": "1"}}
+{"test": "explicit_restart", "status": "PASS", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "7ec74b46eb8442688816cc7e38600dfe", "MainPID": "121573", "Result": "success", "NRestarts": "0"}}
+{"test": "final_no_status_notifier", "status": "PASS", "state": {"ActiveState": "active", "UnitFileState": "enabled", "InvocationID": "7ec74b46eb8442688816cc7e38600dfe", "MainPID": "121573", "Result": "success", "NRestarts": "0"}, "notifiers": [{"item": ":1.64@/org/ayatana/NotificationItem/software_update_available", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/livepatch", "pid": 8857}, {"item": ":1.64@/org/ayatana/NotificationItem/unattended_upgrade", "pid": 8857}, {"item": ":1.79@/org/ayatana/NotificationItem/QwBHB2EajA", "pid": 9101}]}
+
+Native clipboard result ledger:
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+
+Recovered PID121550 clean explicit-restart shutdown: aboutToQuit -> stopping capture jobs -> Session.Close elapsed0.005s/errornone -> Shutdown complete.
+pgrep matching main.py/clipboard/OCR probe found only normal main.py PID121573.
+Service enablement unchanged; no logout/reboot/physical tests.
+Package SHA25639a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb, unchanged/not rebuilt.
+
+Follow-up updated-source service stop: inactive/MainPID0/Resultsuccess after4s, stillenabled. Explicit start restored PID122672, active/enabled/Resultsuccess/NRestarts0; bounded journal check confirms identified registration and ListShortcuts. No automatic restart on intentional stop.
+Final Git: feat/background-service HEAD67789bd, cached diff empty;12 task files changed/untracked, no pre-existing edits, diff --check PASS.

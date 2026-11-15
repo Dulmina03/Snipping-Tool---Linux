@@ -17,9 +17,9 @@ def main():
     app = QApplication(sys.argv)
     lock = acquire_instance_lock()
     if lock is None:
-        print('NOT RUN: quit the existing app before this manual test.')
+        print('NOT RUN: stop the existing service before this manual test.')
         return 1
-    menu, shortcuts, tray, tray_menu = configure_application(app)
+    menu, shortcuts = configure_application(app)
     observed = {'key': False, 'passed': False}
     shortcuts.shortcut_activated.connect(lambda: observed.update(key=True))
     shortcuts.registration_succeeded.connect(
@@ -41,7 +41,6 @@ def main():
         menu.shutdown()
         menu.jobs.close()
         shortcuts.stop()
-        tray.hide()
         lock.unlock()
     print('PASS: portal Activated reached the overlay; inspect desktop visually.' if observed['passed']
           else 'FAIL: no successful real shortcut/overlay within timeout.')
