@@ -78,7 +78,7 @@ def writer():
             return json.loads(output)
         finally:
             if process.returncode is None:process.kill();await process.wait()
-    async def run(app,menu,manager,tray,tray_menu):
+    async def run(app,menu,manager):
         try:
             # This public OCR/reference fixture uses fixed 100%-scale positions.
             # Geometry fixtures cover other layouts; do not report a false native
@@ -148,7 +148,7 @@ def writer():
         except Exception as error:
             record('harness','FAIL',error=type(error).__name__,detail=str(error))
         finally:
-            tray_menu.actions()[-1].trigger()
+            QTimer.singleShot(0, app.quit)
     def configure(app):
         values=original(app);owned['manager']=values[1]
         timer=QTimer(values[0]);timer.timeout.connect(lambda:beats.__setitem__(0,beats[0]+1));timer.start(20)

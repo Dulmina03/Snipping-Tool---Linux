@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace as NS
 import unittest
 import threading
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from dbus_next import MessageType, Variant
 from PySide6.QtCore import QThread, QRect, Qt
@@ -331,13 +331,20 @@ class PresentationTests(unittest.TestCase):
 
 
     def setUp(self):
-        self.menu, self.manager, self.tray, self.tray_menu = configure_application(app)
-        self.status = self.menu.shortcut_status
+        # Legacy presentation remains isolated; production never creates a tray.
+        from PySide6.QtWidgets import QMenu
+        from ui.shortcut_status import ShortcutStatus
+        self.menu, self.manager = configure_application(app)
+        self.tray = MagicMock()
+        self.tray_menu = QMenu()
+        actions = [self.tray_menu.addAction(label) for label in
+                   ('Capture', 'Status', 'Identity', 'Configure')]
+        self.status = ShortcutStatus(self.menu, self.manager, self.tray, *actions)
+        self.tray.toolTip.side_effect = lambda: self.tray.setToolTip.call_args.args[0]
     def tearDown(self):
         self.status.dialog.close()
         self.menu.shutdown()
         self.menu.jobs.close()
-        self.tray.hide()
         app.aboutToQuit.disconnect(self.menu.shutdown)
 
     def test_actual_assignment_in_action_tooltip_status_and_mismatch_warning(self):

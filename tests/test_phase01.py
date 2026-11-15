@@ -272,26 +272,58 @@ class EntryTests(unittest.TestCase):
         self.assertIsNotNone(next_lock)
         next_lock.unlock()
 
-    def test_tray_and_shortcut_share_route_and_start_quietly(self):
+    def test_trayless_shortcut_route_and_quiet_start(self):
         with patch('main.GlobalShortcutManager', FakeShortcuts):
-            menu, shortcuts, tray, tray_menu = main.configure_application(app)
+            menu, shortcuts = main.configure_application(app)
         menu._show_toast = lambda _: None
         try:
             self.assertFalse(menu.isVisible())
             self.assertIsNone(menu._overlay)
             self.assertEqual(app.desktopFileName(), APP_ID)
+            self.assertFalse(app.quitOnLastWindowClosed())
+            from PySide6.QtWidgets import QSystemTrayIcon
+            self.assertEqual(app.findChildren(QSystemTrayIcon), [])
+            self.assertFalse(hasattr(menu, 'shortcut_status'))
             with patch('ui.capture_menu._portal_screenshot', new=AsyncMock(side_effect=RuntimeError('denied'))) as portal:
                 shortcuts.shortcut_activated.emit()
                 spin_until(lambda: not menu.busy)
-                tray_menu.actions()[0].trigger()
+                shortcuts.shortcut_activated.emit()
                 spin_until(lambda: not menu.busy)
                 self.assertEqual(portal.await_count, 2)
             self.assertFalse(menu.isVisible())
         finally:
             menu.shutdown()
             menu.jobs.close()
-            tray.hide()
             app.aboutToQuit.disconnect(menu.shutdown)
+
+    def test_last_visible_window_closed_keeps_trayless_event_loop_alive(self):
+        root = Path(__file__).resolve().parents[1]
+        script = """
+import main
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QWidget, QSystemTrayIcon
+app = QApplication([])
+menu, manager = main.configure_application(app)
+window = QWidget()
+window.show()
+QTimer.singleShot(20, window.close)
+def verify():
+    assert not window.isVisible()
+    assert not menu.isVisible()
+    assert not app.findChildren(QSystemTrayIcon)
+    print('ALIVE_WITHOUT_WINDOWS_OR_TRAY', flush=True)
+    app.quit()
+QTimer.singleShot(200, verify)
+try:
+    app.exec()
+finally:
+    menu.shutdown()
+    menu.jobs.close()
+"""
+        result = subprocess.run([sys.executable, '-c', script], cwd=root,
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ALIVE_WITHOUT_WINDOWS_OR_TRAY', result.stdout)
 
     def test_old_standalone_entry_delegates(self):
         with patch('main.main', return_value=17) as canonical:

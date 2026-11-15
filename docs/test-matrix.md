@@ -286,3 +286,15 @@ Stage 1 is now user-accepted: all six physical tests PASS. Stage 2 actual login 
 - PASS, protocol tray Quit/clean service stop/restart, duplicate prevention; restored one normal enabled/active app PID88627/NRestarts0/identityRegistered, actualCtrl+Alt+S. Config and packaged .deb unchanged. After bounded warm runs GC returns FDs20 in both versions/MainThread only; no hours-long memory claim.
 - NOT RUN, actual native public-color PNG/old-toolbar-exclusion fixture: initial scene did not match expected raw PNG colors, so baseline unestablished and later checks skipped. No raw pixels logged; existing controller cleanup/service restored. NOT RUN, new physical shortcut/perceived latency/real Window picker/cancel/physical Escape/external user-app paste/tray Quit; Stage2's older acceptance is not new sign-off.
 - Source fix is not in the retained Stage3.1 .deb; no package rebuilt or installed. [Full report/commands/acceptance](shortcut-latency-optimization.md), [evidence](shortcut-latency-evidence.txt). No further stage/Freeform/AI.
+
+
+## Application indicator removal — 2026-11-15
+
+Source: [trayless service follow-up](background-service-no-tray.md), [command/protocol evidence](background-service-no-tray-evidence.txt).
+
+- PASS automated: full suite192/21.786s, quiet two-object initializer, no QSystemTrayIcon/status presenter, repeat shortcut-signal routing, pending-capture shutdown, real Qt event-loop survives closing last window, existing main.py signal cleanup/duplicates/restart; mapping, screenshot modes, save integrity, OCR/clipboard and cancellation regressions retained.
+- PASS native protocol: application StatusNotifierItem removed from GNOME watcher, unrelated items preserved; Registry/Register/CreateSession/Bind/List success, actual assignmentCtrl+Alt+S (requestedAlt+Shift+S) unchanged; service enabled/active, repeated start keeps PID, deliberate crash recovers, normal stop does not restart, explicit restart closes session and registers again. Not physical icon/key confirmation.
+- PASS native programmatic: production Rectangle/Full Screen/repeat, saved PNG integrity, real English OCR and supplied Sinhala Unicode/ZWJ transfer; two independent external readers and Qt paste across focus changes; event loop/clipboard owner remains alive; native probe clean shutdown. Sinhala transfer does not assess recognition accuracy.
+- PASS syntax/import/whitespace; old Debian artifact hash unchanged.
+- FAIL initial restricted suite: four socket permission errors and two systemd parser failures. Authorized host full suite passed.
+- NOT RUN physical: top-bar visual/quiet startup, shortcut opens toolbar with no tray, Escape/repeated captures, Rectangle and Window external image paste, English OCR external text paste, clean logout/login and reboot. Use actual journal-reported key; verify service stop/restart using documented commands. Earlier-version physical acceptance remains historical.

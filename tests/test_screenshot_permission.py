@@ -217,17 +217,24 @@ class WindowAndQuitTests(unittest.TestCase):
             with self.assertRaises(ScreenshotPortalError):
                 asyncio.run(window.take_screenshot())
 
-    def test_quit_action_is_queued_to_application_not_capture_work(self):
+    def test_background_shutdown_cancels_pending_capture_without_tray(self):
         import main
         from test_phase01 import FakeShortcuts
-        with patch.object(main,'GlobalShortcutManager',FakeShortcuts):
-            menu,manager,tray,tray_menu=main.configure_application(app)
+        with patch.object(main, 'GlobalShortcutManager', FakeShortcuts):
+            menu, manager = main.configure_application(app)
         try:
-            with patch.object(app,'quit') as quit_app:
-                tray_menu.actions()[-1].trigger()
-                self.assertFalse(quit_app.called)
-                spin_until(lambda:quit_app.called)
-                quit_app.assert_called_once_with()
+            entered = []
+            async def pending(**kwargs):
+                entered.append(True)
+                await asyncio.sleep(60)
+            with patch('ui.capture_menu._portal_screenshot', pending):
+                manager.shortcut_activated.emit()
+                spin_until(lambda: bool(entered))
+                menu.shutdown()
+                menu.jobs.close()
+                self.assertFalse(menu.jobs.tasks)
+                self.assertIsNone(menu._overlay)
+                self.assertFalse(menu.isVisible())
         finally:
-            menu.shutdown();menu.jobs.close();tray.hide()
+            menu.shutdown(); menu.jobs.close()
             app.aboutToQuit.disconnect(menu.shutdown)
