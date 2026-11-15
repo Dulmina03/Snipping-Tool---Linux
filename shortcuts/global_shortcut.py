@@ -17,6 +17,7 @@ from PySide6.QtCore import QObject, Signal
 
 from utils.desktop_entry import APP_ID, ensure_desktop_entry
 from shortcuts.assignment import comparison
+from utils.capture_latency import signal_received
 
 
 logger = logging.getLogger(__name__)
@@ -623,6 +624,7 @@ class GlobalShortcutManager(QObject):
             session_handle, shortcut_id = message.body[:2]
 
             if session_handle == self.session_handle and shortcut_id == self.shortcut_id:
+                signal_received()
                 logger.info("Portal Activated signal for %s", shortcut_id)
                 self.shortcut_activated.emit()
 

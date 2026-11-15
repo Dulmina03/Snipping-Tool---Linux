@@ -53,6 +53,7 @@ from ui.display_overlay import DisplayOverlay, screen_fingerprint
 from capture.display_mapping import (Rect, DisplayMappingError, compatibility_mapping, read_gnome_layout)
 from utils.clipboard import copy_image_to_clipboard, copy_text_to_clipboard
 from utils.capture_diagnostics import trace, image_trace, timed
+from utils.capture_latency import CaptureLatency
 from utils.screenshot_files import copy_screenshot, save_png, cleanup_capture_source
 
 
@@ -293,6 +294,7 @@ class CaptureMenu(QWidget):
             return
         if self._shutting_down or self._overlay is not None or self.busy:
             return
+        self._capture_latency = CaptureLatency(getattr(self, "latency_listener", None))
         self.last_capture_path = None
         self.last_extracted_text = None
         self._clipboard_pending = None
@@ -304,17 +306,23 @@ class CaptureMenu(QWidget):
 
     @timed('activation_to_overlay_prepare')
     async def _launch_overlay(self, permission_retry=False):
+        latency = getattr(self, "_capture_latency", None) or CaptureLatency()
         try:
+            latency.mark("preparation_started")
             native_wayland = QGuiApplication.platformName() == 'wayland'
             layout_before = None
             mapping_error = None
             qt_before = screen_fingerprint(QGuiApplication.screens())
             if native_wayland:
                 try:
+                    latency.mark("layout_before_begin")
                     layout_before = await read_gnome_layout()
+                    latency.mark("layout_before_done")
                 except DisplayMappingError as error:
                     mapping_error = str(error)
+            latency.mark("portal_request_begin")
             source_path = await asyncio.wait_for(_portal_screenshot(interactive=False), timeout=140)
+            latency.mark("portal_returned")
             if permission_retry:
                 # Discard the consent capture: it may include our permission
                 # window. Recapture only after that real window has disappeared.
@@ -325,17 +333,20 @@ class CaptureMenu(QWidget):
             image_trace('portal_source', source_path)
             self._src_path = source_path
             bg_pixmap = QPixmap(str(source_path))
+            latency.mark("image_loaded")
             if bg_pixmap.isNull():
                 raise RuntimeError("Portal returned an unreadable screenshot.")
             overlay = None
             if native_wayland and layout_before is not None:
                 try:
                     layout_after = await read_gnome_layout()
+                    latency.mark("layout_after_done")
                     if layout_before != layout_after or qt_before != screen_fingerprint(QGuiApplication.screens()):
                         raise DisplayMappingError('Display layout changed during capture. Capture again.')
                     with Image.open(source_path) as image:
                         mapping = layout_after.mapping(image.size, image.info.get('Software', ''))
                     bg_pixmap.setDevicePixelRatio(1.)  # PNG pixels, not output-DPR units.
+                    latency.mark("mapping_completed")
                     overlay = DisplayOverlay(bg_pixmap, mapping)
                     overlay.mapping_failed.connect(self._on_mapping_failed)
                 except DisplayMappingError as error:
@@ -355,6 +366,8 @@ class CaptureMenu(QWidget):
                         overlay.winId()
                         overlay.windowHandle().setScreen(primary)
                     overlay._rectangle_mapping_error = mapping_error or 'Rectangle display mapping is unavailable.'
+            latency.mark("widgets_created")
+            latency.observe(overlay)
             self._overlay = overlay
             overlay.area_selected.connect(
                 lambda rect: self._on_area_selected(rect, source_path, overlay.capture_action))
@@ -365,6 +378,7 @@ class CaptureMenu(QWidget):
             overlay.cancelled.connect(self._on_cancelled)
             overlay.delivery_requested.connect(self._deliver_pending_clipboard)
             overlay.showFullScreenOverlay()
+            latency.mark("show_returned")
             if mapping_error:
                 self.status_label.setText(mapping_error)
                 self._show_toast(mapping_error)
