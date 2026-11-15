@@ -23,6 +23,31 @@ class PackagingTests(unittest.TestCase):
         self.addCleanup(self.scratch.cleanup)
         self.root = Path(self.scratch.name)
 
+    @staticmethod
+    def package_version():
+        return next(line.split(': ', 1)[1] for line in (ROOT / 'debian/control').read_text().splitlines()
+                    if line.startswith('Version: '))
+
+    def test_version_metadata_consistent_and_no_obsolete_tray_dependency(self):
+        version = self.package_version()
+        self.assertEqual((ROOT / 'debian/changelog').read_text().splitlines()[0],
+                         f'ai-snipping-tool ({version}) resolute; urgency=medium')
+        self.assertIn(version, (ROOT / 'debian/assets/ai-snipping-tool').read_text())
+        self.assertIn(version, (ROOT / 'debian/README.install').read_text())
+        self.assertNotIn('gnome-shell-extension-appindicator', (ROOT / 'debian/control').read_text())
+
+    def test_stage_copies_current_files_including_uncommitted_bytes(self):
+        wheel = self.fixture_wheel()
+        working = self.root / 'working'
+        working.mkdir()
+        dirty = b'# local unstaged source must reach package\n'
+        (working / 'main.py').write_bytes(dirty)
+        with patch.dict(builder.WHEEL, sha256=hashlib.sha256(wheel.read_bytes()).hexdigest()), \
+             patch.object(builder, 'ROOT', working), patch.object(builder, 'SOURCES', ['main.py']):
+            stage = self.root / 'dirty-stage'
+            builder.stage(stage, wheel)
+        self.assertEqual((stage / 'usr/lib/ai-snipping-tool/main.py').read_bytes(), dirty)
+
     def fixture_wheel(self):
         wheel = self.root / 'controlled.whl'
         with zipfile.ZipFile(wheel, 'w') as archive:
@@ -108,6 +133,10 @@ class PackagingTests(unittest.TestCase):
              patch.object(builder.urllib.request, 'urlopen', side_effect=AssertionError('network forbidden')):
             stage = self.root / 'stage'
             builder.stage(stage, wheel)
+        for name in builder.SOURCES:
+            self.assertEqual((stage / 'usr/lib/ai-snipping-tool' / name).read_bytes(),
+                             (ROOT / name).read_bytes(), name)
+        self.assertIn('utils/capture_latency.py', builder.SOURCES)
         self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
         files = [str(p.relative_to(stage)) for p in stage.rglob('*') if p.is_file()]
         for forbidden in ('tests/', '.git/', '.venv/', '__pycache__/', 'tessdata/', 'capture/native/', 'user_service.py', 'screen_capture.py'):
@@ -121,7 +150,7 @@ class PackagingTests(unittest.TestCase):
                 self.assertNotIn(b'/home/dulmina', file.read_bytes())
         result = subprocess.run([str(stage / 'usr/bin/ai-snipping-tool'),'--version'],text=True,capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('0.3.1~stage3.1-1', result.stdout)
+        self.assertIn(self.package_version(), result.stdout)
 
     def test_packaged_service_preserves_accepted_lifecycle_and_explicit_activation(self):
         unit = (ROOT / 'debian/assets/com.dulmina.aisnippingtool.service').read_text()

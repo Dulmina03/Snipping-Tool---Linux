@@ -16,6 +16,7 @@ def verify(package):
     info = subprocess.check_output(['dpkg-deb', '-f', str(package)], text=True)
     assert 'Package: ai-snipping-tool\n' in info
     assert 'Architecture: amd64\n' in info
+    expected_version = next(line.split(': ', 1)[1] for line in info.splitlines() if line.startswith('Version: '))
     data = subprocess.check_output(['dpkg-deb', '--fsys-tarfile', str(package)])
     with tarfile.open(fileobj=io.BytesIO(data)) as archive:
         for member in archive.getmembers():
@@ -65,6 +66,7 @@ def verify(package):
         subprocess.run(['desktop-file-validate', str(root / 'usr/share/applications/com.dulmina.aisnippingtool.desktop')], check=True)
         ET.parse(root / 'usr/share/icons/hicolor/scalable/apps/com.dulmina.aisnippingtool.svg')
         version = subprocess.check_output([str(root / 'usr/bin/ai-snipping-tool'), '--version'], text=True).strip()
+        assert version == f'AI Snipping Tool {expected_version}', (version, expected_version)
     print('PASS: control, root ownership, permissions, checksums, payload exclusions, no home paths, Python syntax, desktop, SVG, extracted launcher')
     print(version)
     print('SHA256 ' + hashlib.sha256(package.read_bytes()).hexdigest())

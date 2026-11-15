@@ -1,9 +1,9 @@
-AI Snipping Tool Stage 3.1 — private Ubuntu 26.04 amd64 prototype
+AI Snipping Tool Stage 3.2 — private Ubuntu 26.04 amd64 prototype
 
-INSTALLATION (fresh test machine/account first)
+INSTALLATION (disposable test machine/VM first; not the development host)
 The .deb makes no network requests, runs no pip and has no maintainer scripts.
 Preinstall/cache its declared Ubuntu dependencies. For an offline installation:
-  sudo apt --no-download install ./ai-snipping-tool_0.3.1~stage3.1-1_amd64.deb
+  sudo apt --no-download install ./ai-snipping-tool_0.3.2~stage3.2-1_amd64.deb
 Missing dependencies must be supplied from a prepared Ubuntu archive first.
 This small package does not contain an entire Ubuntu/Qt dependency mirror.
 Never run the GUI with sudo. Command: ai-snipping-tool
@@ -51,5 +51,9 @@ and explicitly restart. Never let both startup mechanisms compete.
 ACCEPTANCE
 This prototype is not yet clean-machine/physical-package accepted. Check quiet
 login startup, correct actual shortcut/overlay/Escape, Rectangle/Window image
-paste, English OCR paste, tray Quit staying stopped and reboot startup.
+paste, English OCR paste, service stop staying stopped and reboot startup.
+The application runs without a tray icon/menu or permanent background window.
+Use systemctl --user start/stop/restart com.dulmina.aisnippingtool.service for
+control; use disable --now to stop and disable future login startup if desired.
+Identity and actual shortcut assignment are in the service journal.
 No public release; project license remains unspecified by owner's choice.

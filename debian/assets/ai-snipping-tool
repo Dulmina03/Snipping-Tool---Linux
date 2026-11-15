@@ -9,7 +9,7 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 prefix = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(prefix / 'lib/ai-snipping-tool'))
 if sys.argv[1:] == ['--version']:
-    print('AI Snipping Tool 0.3.1~stage3.1-1')
+    print('AI Snipping Tool 0.3.2~stage3.2-1')
     raise SystemExit(0)
 if sys.argv[1:] == ['--check-session']:
     from utils.session_environment import session_problem
