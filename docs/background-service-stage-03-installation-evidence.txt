@@ -1,0 +1,208 @@
+Stage3.2 — 2026-11-15 selected commands/evidence. No host install/startup modification.
+Initial Git: feat/background-service HEAD7b1b5e0; status/cached diff empty.
+External6be6e3a/2ea28f3 appeared and were preserved; no agent stage/commit/merge/reset/push/switch.
+Read AGENTS and requested packaging/no-tray/toolbar/latency/handoff/matrix reports; inspected builder/validator/metadata/service/launcher and existing packaging tests.
+
+Build commands (offline, existing hash-pinned wheel):
+/usr/bin/python3 debian/build_deb.py --wheel /tmp/snipping-stage31-inputs/pytesseract-0.3.13-py3-none-any.whl --output dist/stage-03.2-validated
+Same command --output dist/stage-03.2-validated-repro
+/usr/bin/python3 debian/verify_deb.py dist/stage-03.2-validated/ai-snipping-tool_0.3.2~stage3.2-1_amd64.deb
+PASS control/root ownership/modes/checksums/exclusions/Python syntax/no home paths/desktop/SVG/extracted launcher, version matches control.
+Both SHA256fe18304aa2108689661ed4a67a76417eb1f03d4bb9c090a22b2d889742d69005; size54072bytes; Installed-Size226KiB.
+Original Stage3.1 SHA25639a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb unchanged.
+Earlier Stage3.2 intermediate builds a037a67e.../53928bytes retained; NOT final artifact.
+AST/byte comparison all builder.SOURCES plus source/metadata SHA hashes in background-service-stage-03-build-inputs.json; final current input check PASS.
+
+Dependency commands:
+dpkg-query -W production dependency package names; apt-cache policy same names (output appended below).
+apt-get -s install /absolute/path/to/final.deb : PASS, candidate+dbus-next+Sinhala,0 upgraded/0 removed.
+apt-get -s --no-download install /absolute/path/to/final.deb : exit100/uncached dependencies; no host mutation.
+Private archives python3-dbus-next0.2.3-6 SHA75ff5c688999c639d57ec14eac548cbdb910fd30b84c2f99687cb1b950e83af6,
+tesseract-ocr-sin1:4.1.0-2build1 SHA2643a613de40862b7936632fce0ab2a11f09ec9c9558891d4cacb30155b54dec, both match apt-cache show SHA256.
+Test-only apt-get download python3-pyside6.qttest libqt6test6 in /tmp/snipping-stage32-test-inputs:261kB fetched from configured Ubuntu archive, extracted not installed. No runtime dependency added.
+
+Regression commands:
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v
+Host198 PASS19.261s. Restricted run198/18.736s FAIL4 socket errors/2 systemd permission failures.
+System Python/PySide6 stack full suite:198 PASS18.936s with private QtTest library and binding search path, private pytesseract and Ubuntu dbus-next on PYTHONPATH; no venv required.
+Exact wrapper: QT_QPA_PLATFORM=offscreen LD_LIBRARY_PATH=/tmp/snipping-stage32-test-runtime/usr/lib/x86_64-linux-gnu PYTHONPATH=/tmp/snipping-stage32-isolation/validated-output/installed-root/usr/lib/ai-snipping-tool:/tmp/snipping-stage31-runtime/usr/lib/python3/dist-packages /usr/bin/python3 -c "import os,sys,PySide6,unittest; sys.path.insert(0,os.path.abspath('tests')); PySide6.__path__.append('/tmp/snipping-stage32-test-runtime/usr/lib/python3/dist-packages/PySide6'); import test_capture_latency; sys.path.insert(0,os.path.abspath('tests')); suite=unittest.defaultTestLoader.discover('tests'); result=unittest.TextTestRunner(verbosity=2).run(suite); sys.exit(not result.wasSuccessful())"
+Initial system183/17.520s failed2 missing QtTest-module imports. Custom wrapper then hit root/tests test_clipboard.py collision; putting tests first after capture_menu compatibility-path insertion corrected discovery, no tests skipped/changed to hide failures.
+
+Isolated actual installation wrapper (no host writes):
+bwrap --unshare-all --uid 0 --gid 0 --ro-bind / / --overlay-src /usr --overlay /tmp/snipping-stage32-isolation/validated-upper /tmp/snipping-stage32-isolation/validated-work /usr --overlay-src /var --tmp-overlay /var --overlay-src /etc --tmp-overlay /etc --bind /tmp/snipping-stage32-isolation/validated-dpkgdb /var/lib/dpkg --bind /tmp/snipping-stage32-isolation/validated-dpkg.log /var/log/dpkg.log --tmpfs /home --tmpfs /root --tmpfs /run --tmpfs /tmp --proc /proc --dev /dev --ro-bind /tmp/snipping-stage32-isolation/validated-inputs /tmp/inputs --bind /tmp/snipping-stage32-isolation/validated-output /tmp/out --chdir /tmp --clearenv --setenv PATH /usr/sbin:/usr/bin:/sbin:/bin --setenv DEBIAN_FRONTEND noninteractive --setenv LC_ALL C.UTF-8 /usr/bin/python3 /tmp/inputs/install_test.py
+Inside: dpkg --install dbus-next.deb sin.deb old.deb; old --version; dpkg --install final.deb; --version; dpkg --verify; dpkg --audit; root GUI/session guards; copy installed resources/models to private output; preservation sentinel; dpkg --remove; dpkg --install final.deb; dpkg --purge; dpkg --audit.
+No --force-depends, scripts or network. Host package metadata/runtime cloned; NOT fresh clean OS. No service manager/bus in namespace, so no packaged service activation/physical portal test.
+Preparation failures recorded: whole-root overlay invalid; nonexistent /inputs on ro root; host locks unreadable; rootless lower UID ownership unwritable; APT --no-download refused uncached files. Corrected seeded private writable parents and independent database/log allowed ordinary dpkg operations.
+Final install ledger:
+{"test": "isolated_dpkg_old_install", "status": "PASS", "dependency_checks": true, "network_namespace_isolated": true}
+{"test": "isolated_dpkg_upgrade", "status": "PASS", "version": "0.3.2~stage3.2-1"}
+{"test": "installed_guard_no_session_or_root_gui", "status": "PASS"}
+{"test": "isolated_remove_no_user_data_loss_or_package_payload", "status": "PASS"}
+{"test": "isolated_reinstall_current", "status": "PASS"}
+{"test": "isolated_purge_no_user_data_loss", "status": "PASS", "no_session_bus_exposed": true}
+{"test": "headless_limitation", "status": "PASS", "note": "Cloned Ubuntu 26.04 host runtime/database, copy-on-write private layers. Not a fresh minimal OS or graphical GNOME session; no service manager/portal startup/paste/login test."}
+
+Runtime smoke wrapper: bwrap read-only /, empty /home and /run, unshare-all, read-only private Ubuntu eng/sin models mounted at system tessdata, writable private smoke HOME/TMP, source checkout hidden, offscreen Qt, inaccessible DBUS_SESSION_BUS_ADDRESS. System Python loads actual installed resource snapshot; only private Ubuntu dbus-next supplied on PYTHONPATH.
+This plugin does not support raise()
+This plugin does not support raise()
+{"status": "PASS", "source_hidden": true, "app_read_only": true, "system_python": "/usr/bin/python3", "png_pixels_equal": true, "ocr_child_returned_text": true, "gui_clipboard_image_and_text": true, "no_tray": true, "segmented_actions": true, "idle_checkpoint": true, "note": "offscreen installed-resource fixture, not physical Wayland or clean-machine installation"}
+
+Real installed executable entry probe in same source-hidden context with private0700 XDG_RUNTIME_DIR:
+{"test": "installed_entry_duplicate_sigterm_restart", "attempt": 1, "status": "PASS", "source_hidden": true, "no_venv": true, "portal_bus_isolated": true}
+{"test": "installed_entry_duplicate_sigterm_restart", "attempt": 2, "status": "PASS", "source_hidden": true, "no_venv": true, "portal_bus_isolated": true}
+
+Initial entry probe had0775 runtime directory, Qt used fallback path; wrong expected lock assertion FAIL, corrected fixture PASS, no production change.
+
+Service parser: systemd-analyze --user verify /tmp/snipping-stage32-unit/com.dulmina.aisnippingtool.service (installed exec/WorkingDirectory mapped to snapshot): PASS; unrelated existing spice-vdagent StandardError-in-Install warning only.
+
+Host read-only verification: systemctl --user show com.dulmina.aisnippingtool.service, samePID138240, invocation7664161b8879476e94e3f1e85f40ebe6, enabled/active, user unit path unchanged. Unit SHA5212c21af2e8ac203bf51d352bd3b7d50bcdcafca783090a6e2bafe9682e06ce, user desktop SHAf7d6857517d07e3df9e7abf8ea49507cc6d6f08bd914321b2b6258a873417ce5. dpkg-query candidate/dbus-next/sin: still not installed on host. No stop/restart/disable/permission/binding changes.
+
+Configured repository policy:
+python3:
+  Installed: 3.14.3-0ubuntu2
+  Candidate: 3.14.3-0ubuntu2
+  Version table:
+ *** 3.14.3-0ubuntu2 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+        100 /var/lib/dpkg/status
+python3-pyside6.qtcore:
+  Installed: 6.10.2-6ubuntu1
+  Candidate: 6.10.2-6ubuntu1
+  Version table:
+ *** 6.10.2-6ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+python3-pyside6.qtgui:
+  Installed: 6.10.2-6ubuntu1
+  Candidate: 6.10.2-6ubuntu1
+  Version table:
+ *** 6.10.2-6ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+python3-pyside6.qtwidgets:
+  Installed: 6.10.2-6ubuntu1
+  Candidate: 6.10.2-6ubuntu1
+  Version table:
+ *** 6.10.2-6ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+python3-pil:
+  Installed: 12.1.1-2ubuntu1.4
+  Candidate: 12.1.1-2ubuntu1.5
+  Version table:
+     12.1.1-2ubuntu1.5 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute-updates/main amd64 Packages
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+ *** 12.1.1-2ubuntu1.4 100
+        100 /var/lib/dpkg/status
+     12.1.1-2ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+python3-dbus-next:
+  Installed: (none)
+  Candidate: 0.2.3-6
+  Version table:
+     0.2.3-6 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+python3-packaging:
+  Installed: 26.0-1
+  Candidate: 26.0-1
+  Version table:
+ *** 26.0-1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main i386 Packages
+        100 /var/lib/dpkg/status
+tesseract-ocr:
+  Installed: 5.5.0-1build1
+  Candidate: 5.5.0-1build1
+  Version table:
+ *** 5.5.0-1build1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+tesseract-ocr-eng:
+  Installed: 1:4.1.0-2build1
+  Candidate: 1:4.1.0-2build1
+  Version table:
+ *** 1:4.1.0-2build1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+        100 /var/lib/dpkg/status
+tesseract-ocr-sin:
+  Installed: (none)
+  Candidate: 1:4.1.0-2build1
+  Version table:
+     1:4.1.0-2build1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe i386 Packages
+xdg-desktop-portal:
+  Installed: 1.21.1+ds-1ubuntu3.1
+  Candidate: 1.21.1+ds-1ubuntu3.1
+  Version table:
+ *** 1.21.1+ds-1ubuntu3.1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute-updates/main amd64 Packages
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+        100 /var/lib/dpkg/status
+     1.21.1+ds-1ubuntu3 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+xdg-desktop-portal-gnome:
+  Installed: 50.0-0ubuntu1
+  Candidate: 50.0-0ubuntu1
+  Version table:
+ *** 50.0-0ubuntu1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+        100 /var/lib/dpkg/status
+qt6-wayland:
+  Installed: 6.10.2-4
+  Candidate: 6.10.2-4
+  Version table:
+ *** 6.10.2-4 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+        100 /var/lib/dpkg/status
+libglib2.0-bin:
+  Installed: 2.88.0-1ubuntu0.1
+  Candidate: 2.88.0-1ubuntu0.1
+  Version table:
+ *** 2.88.0-1ubuntu0.1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute-updates/main amd64 Packages
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+        100 /var/lib/dpkg/status
+     2.88.0-1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+systemd:
+  Installed: 259.9-0ubuntu0.1
+  Candidate: 259.9-0ubuntu0.1
+  Version table:
+ *** 259.9-0ubuntu0.1 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute-updates/main amd64 Packages
+        100 /var/lib/dpkg/status
+     259.5-0ubuntu3.4 500
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+     259.5-0ubuntu3 500
+        500 http://lk.archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+
+Normal resolver simulation:
+NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+The following packages were automatically installed and are no longer required:
+  gcc-11-base libasan6 nethogs nvidia-firmware-580-580.178.04
+  nvidia-firmware-595-595.91.07
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  python3-dbus-next tesseract-ocr-sin
+The following NEW packages will be installed:
+  ai-snipping-tool python3-dbus-next tesseract-ocr-sin
+0 upgraded, 3 newly installed, 0 to remove and 92 not upgraded.
+Inst python3-dbus-next (0.2.3-6 Ubuntu:26.04/resolute [all])
+Inst tesseract-ocr-sin (1:4.1.0-2build1 Ubuntu:26.04/resolute [all])
+Inst ai-snipping-tool (0.3.2~stage3.2-1 local-deb [amd64])
+Conf python3-dbus-next (0.2.3-6 Ubuntu:26.04/resolute [all])
+Conf tesseract-ocr-sin (1:4.1.0-2build1 Ubuntu:26.04/resolute [all])
+Conf ai-snipping-tool (0.3.2~stage3.2-1 local-deb [amd64])
+
+Physical packaged GNOME service activation/login/shortcut/capture/external paste/logout/reboot/removal-after-running-service NOT RUN. No clean graphical guest available (Docker daemon absent, /dev/kvm absent).

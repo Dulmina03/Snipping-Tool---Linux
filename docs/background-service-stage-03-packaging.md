@@ -1,3 +1,5 @@
+Current candidate (Stage3.2, 2026-11-15): **use `dist/stage-03.2-validated/ai-snipping-tool_0.3.2~stage3.2-1_amd64.deb`**. The refreshed trayless/segmented/scheduling build passed isolated dependency-checked install/upgrade/remove/purge and system-stack smoke/regressions. Clean graphical package acceptance remains pending; development service untouched. [Stage3.2 report, exact hash, dependencies and installation gate](background-service-stage-03-installation.md). The Stage3.1 artifact/instructions below are historical; do not use its tray or old candidate guidance for the refreshed build.
+
 # Background service Stage 3.1 — Ubuntu Debian packaging
 
 2026-11-15 (Asia/Colombo). **Local candidate built and inspected; NOT installed on this host. Clean Ubuntu installation/removal and packaged physical GNOME acceptance are NOT RUN.** The user confirms all nine Stage 2 physical tests PASS, including login registration/activation, captures/paste, OCR, Escape, Quit and reboot. This supersedes the older pending gate; it does not establish acceptance of the new package.
