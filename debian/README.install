@@ -2,8 +2,12 @@ AI Snipping Tool Stage 3.2 — private Ubuntu 26.04 amd64 prototype
 
 INSTALLATION (disposable test machine/VM first; not the development host)
 The .deb makes no network requests, runs no pip and has no maintainer scripts.
-Preinstall/cache its declared Ubuntu dependencies. For an offline installation:
-  sudo apt --no-download install ./ai-snipping-tool_0.3.2~stage3.2-1_amd64.deb
+Preinstall its declared Ubuntu dependencies (or provide their full offline bundle).
+Then install the local file without downloads, retaining dpkg dependency checks:
+  sudo dpkg --install ./ai-snipping-tool_0.3.2~stage3.2-1_amd64.deb
+APT --no-download may refuse uncached archives even with local file arguments;
+prepare its archive cache explicitly if choosing APT instead. Do not use
+--force-depends or system pip to work around missing dependencies.
 Missing dependencies must be supplied from a prepared Ubuntu archive first.
 This small package does not contain an entire Ubuntu/Qt dependency mirror.
 Never run the GUI with sudo. Command: ai-snipping-tool

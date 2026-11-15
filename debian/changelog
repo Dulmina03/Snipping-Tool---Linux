@@ -3,6 +3,7 @@ ai-snipping-tool (0.3.2~stage3.2-1) resolute; urgency=medium
   * Refresh local prototype with physically accepted capture/lifecycle fixes.
   * Include active/idle scheduling, trayless startup and segmented actions.
   * Remove obsolete AppIndicator recommendation; keep explicit user activation.
+  * Document dependency-checked offline installation using local archives.
   * No public redistribution license has been selected.
 
  -- Dulmina03 <dulminajayasiri@gmail.com>  Sun, 15 Nov 2026 09:00:00 +0000
