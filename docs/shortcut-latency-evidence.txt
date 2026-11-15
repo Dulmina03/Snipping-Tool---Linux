@@ -1,0 +1,293 @@
+2026-11-15 Asia/Colombo. Shortcut latency task. Initial clean main95b81bf, feat/background-service identical. Standing user authorization used for switch; first automatic review timed out without execution, permitted retry succeeded. No edits on main; no agent stage/commit/reset/merge/push.
+
+$ git status --short
+?? docs/shortcut-latency-evidence.txt
+?? tests/native_capture_freshness_probe.py
+exit=0
+
+$ git branch --show-current
+feat/background-service
+exit=0
+
+$ git log -6 --oneline
+4bb819b Implement shortcut-to-capture latency optimization
+161ec8e feat: enhance capture latency tracking and diagnostics integration
+a3fa2d2 feat: add tests for scheduling and readiness in Qt environment
+a0428d3 feat: add CaptureLatency utility for monitoring capture readiness timings
+95b81bf Implement Stage 3.1 packaging for ai-snipping-tool
+39b4cd0 Implement Stage 3.1 packaging for ai-snipping-tool
+exit=0
+
+$ git diff --cached --stat
+exit=0
+SHA256 175e30aff69732c0bb3f5f5f88d9ee95ec62cf27f9325d614e2acfd9fbad974e utils/async_jobs.py
+SHA256 c954efa2bbd87e3946ec4e3c0a8929f6fe15616aa987b2bd4617e876ff5f34d2 utils/capture_latency.py
+SHA256 96acc2830ace629b4d7e7b36544b9bae601329bee447c25a9da1d285f1eb2498 ui/capture_menu.py
+SHA256 7fb054f5d5915b5fea9780874feb2010713fbf7711e0abb2a4483414d77333ed capture/screenshot_portal_request.py
+SHA256 277e9447138e1a91d9382da29d6a6998ab7c1a1ec1b748e5f2afc8442d60b9ef shortcuts/global_shortcut.py
+SHA256 f59b160d7ad74ad6c06801721124cba324fedbfbc483648e1ac786cc24786921 tests/shortcut_latency_probe.py
+
+Read-only original scheduler: git show a0428d3:utils/async_jobs.py > /tmp/snipping-latency-original-jobs.py; SHA256 ee91091ca256978a22f3ce3bf858ce8df87080171dd2aaea46e568dfd1abe70f.
+Fixture: QT_QPA_PLATFORM=offscreen .venv/bin/python tests/shortcut_latency_probe.py OUTPUT --count 41; baseline adds --scheduler-source /tmp/snipping-latency-original-jobs.py. Native: same probe --native --count 21 in collected systemd user service, --setenv=QT_QPA_PLATFORM=wayland, genuine manager session. Final samples serialized; no concurrent regressions/clipboard probe. Five cold pairs --count 1 each; Qt app/desktop name matches main.APP_ID.
+Native command template: systemd-run --user --wait --pipe --collect --unit=snipping-latency-LABEL --property=WorkingDirectory=/home/dulmina/Projects/ai-snipping-tool --setenv=QT_QPA_PLATFORM=wayland /home/dulmina/Projects/ai-snipping-tool/.venv/bin/python tests/shortcut_latency_probe.py /tmp/snipping-latency-LABEL.json --native --count 21 [--scheduler-source /tmp/snipping-latency-original-jobs.py]. Actual CLI passes --count and value as separate argv.
+
+/tmp/snipping-latency-controlled-before-fixture.log:
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+{"output": "/tmp/snipping-latency-controlled-before-fixture.json", "count": 41, "summary": {"callback_dispatched": {"n": 40, "median": 0.3810115, "p95": 0.573317}, "image_loaded": {"n": 40, "median": 54.702468999999994, "p95": 79.746334}, "overlay_interactive": {"n": 40, "median": 75.443174, "p95": 102.830491}, "portal_request_begin": {"n": 40, "median": 1.266296, "p95": 9.157141}, "portal_returned": {"n": 40, "median": 21.462734, "p95": 29.395569}, "preparation_started": {"n": 40, "median": 1.1802899999999998, "p95": 9.054479}, "show_returned": {"n": 40, "median": 67.3530685, "p95": 93.933263}, "toolbar_first_paint": {"n": 40, "median": 71.084879, "p95": 98.633759}, "toolbar_paint_processed": {"n": 40, "median": 75.40336400000001, "p95": 102.780609}, "toolbar_visible": {"n": 40, "median": 67.068686, "p95": 93.664923}, "widgets_created": {"n": 40, "median": 66.207315, "p95": 92.970577}}}
+
+/tmp/snipping-latency-controlled-after-fixture.log:
+Call to org.freedesktop.portal.Settings.ReadAll failed QDBusError("org.freedesktop.DBus.Error.Disconnected", "Not connected to D-Bus server")
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+This plugin does not support raise()
+{"output": "/tmp/snipping-latency-controlled-after-fixture.json", "count": 41, "summary": {"callback_dispatched": {"n": 40, "median": 0.43672900000000003, "p95": 0.696562}, "image_loaded": {"n": 40, "median": 42.425304, "p95": 51.78964}, "overlay_interactive": {"n": 40, "median": 62.086569999999995, "p95": 80.540391}, "portal_request_begin": {"n": 40, "median": 2.0456435, "p95": 2.518031}, "portal_returned": {"n": 40, "median": 9.338753, "p95": 9.76611}, "preparation_started": {"n": 40, "median": 1.928898, "p95": 2.392566}, "show_returned": {"n": 40, "median": 53.642336, "p95": 69.482794}, "toolbar_first_paint": {"n": 40, "median": 57.5856955, "p95": 73.89385}, "toolbar_paint_processed": {"n": 40, "median": 62.055211, "p95": 80.491847}, "toolbar_visible": {"n": 40, "median": 53.379163500000004, "p95": 69.164482}, "widgets_created": {"n": 40, "median": 52.67053, "p95": 68.169411}}}
+
+/tmp/snipping-latency-delivery-before-native.log:
+Running as unit: snipping-latency-delivery-before-native.service; invocation ID: 57897c9c82274fa689277e96e0401c4c
+{"output": "/tmp/snipping-latency-delivery-before-native.json", "count": 21, "summary": {"callback_dispatched": {"n": 20, "median": 0.3484125, "p95": 0.539894}, "image_loaded": {"n": 20, "median": 805.5191675000001, "p95": 817.84799}, "layout_after_done": {"n": 20, "median": 897.2198840000001, "p95": 909.205715}, "layout_before_begin": {"n": 20, "median": 5.4792355, "p95": 6.892033}, "layout_before_done": {"n": 20, "median": 106.151637, "p95": 118.212236}, "mapping_completed": {"n": 20, "median": 898.1306770000001, "p95": 909.870809}, "overlay_interactive": {"n": 19, "median": 979.418889, "p95": 1015.1286}, "portal_connected": {"n": 20, "median": 146.23985349999998, "p95": 158.015043}, "portal_identity_registered": {"n": 20, "median": 175.857713, "p95": 187.632166}, "portal_method_call": {"n": 20, "median": 206.19287350000002, "p95": 218.206574}, "portal_request_begin": {"n": 20, "median": 106.1858805, "p95": 118.235222}, "portal_response_received": {"n": 20, "median": 765.0983265, "p95": 767.62106}, "portal_response_signal": {"n": 20, "median": 754.9947589999999, "p95": 758.142612}, "portal_returned": {"n": 20, "median": 765.349065, "p95": 767.869025}, "preparation_started": {"n": 20, "median": 5.345653, "p95": 6.788756}, "show_returned": {"n": 20, "median": 910.3979375, "p95": 921.689181}, "toolbar_first_paint": {"n": 20, "median": 930.0867029999999, "p95": 952.067852}, "toolbar_paint_processed": {"n": 20, "median": 951.0308279999999, "p95": 978.101915}, "toolbar_visible": {"n": 20, "median": 910.142914, "p95": 921.454824}, "widgets_created": {"n": 20, "median": 909.4726089999999, "p95": 920.731911}}}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 22.971s
+             CPU time consumed: 5.629s
+                   Memory peak: 190M (swap: 0B)
+
+/tmp/snipping-latency-delivery-after-native.log:
+Running as unit: snipping-latency-delivery-after-native.service; invocation ID: 96be53aa8b4943079a3fa76ed3318461
+{"output": "/tmp/snipping-latency-delivery-after-native.json", "count": 21, "summary": {"callback_dispatched": {"n": 20, "median": 0.304602, "p95": 0.517026}, "image_loaded": {"n": 20, "median": 644.407094, "p95": 687.770167}, "layout_after_done": {"n": 20, "median": 659.6283965, "p95": 701.299993}, "layout_before_begin": {"n": 20, "median": 1.9064320000000001, "p95": 2.318566}, "layout_before_done": {"n": 20, "median": 26.4858585, "p95": 33.397161}, "mapping_completed": {"n": 20, "median": 660.358028, "p95": 701.965406}, "overlay_interactive": {"n": 19, "median": 744.127131, "p95": 781.604184}, "portal_connected": {"n": 20, "median": 32.2944575, "p95": 38.864}, "portal_identity_registered": {"n": 20, "median": 39.407894, "p95": 47.849112}, "portal_method_call": {"n": 20, "median": 43.0114545, "p95": 51.78742}, "portal_request_begin": {"n": 20, "median": 26.50825, "p95": 33.418353}, "portal_response_received": {"n": 20, "median": 583.519612, "p95": 626.051884}, "portal_response_signal": {"n": 20, "median": 582.6587334999999, "p95": 625.218658}, "portal_returned": {"n": 20, "median": 583.753799, "p95": 626.342458}, "preparation_started": {"n": 20, "median": 1.8088255, "p95": 2.209089}, "show_returned": {"n": 20, "median": 672.6323645, "p95": 713.199743}, "toolbar_first_paint": {"n": 20, "median": 694.393202, "p95": 735.950718}, "toolbar_paint_processed": {"n": 20, "median": 716.6590545, "p95": 756.614009}, "toolbar_visible": {"n": 20, "median": 672.384652, "p95": 712.960098}, "widgets_created": {"n": 20, "median": 671.7529995, "p95": 712.339956}}}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 17.974s
+             CPU time consumed: 6.051s
+                   Memory peak: 191.3M (swap: 0B)
+
+/tmp/snipping-latency-identity-driver.log:
+initial PID 79642
+{"protocol_tray_quit": "sent", "pid": 79642}
+{"corrected_service_stop_seconds": 0.02029550899987953, "state": "inactive"}
+PASS delivery-before-native
+PASS delivery-after-native
+PASS cold-before-0
+PASS cold-after-0
+PASS cold-before-1
+PASS cold-after-1
+PASS cold-before-2
+PASS cold-after-2
+PASS cold-before-3
+PASS cold-after-3
+PASS cold-before-4
+PASS cold-after-4
+restored 82163 active enabled
+
+/tmp/snipping-latency-delivery-clipboard.log:
+Running as unit: snipping-latency-delivery-clipboard.service; invocation ID: 96ea76dbf3ee4895bdcb2da9ce4ec9f3
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.host.portal.Registry.Register connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.host.portal.Registry.Register elapsed=0.003s error=none
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.AddMatch connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.AddMatch elapsed=0.002s error=none
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.Properties.Get connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.Properties.Get elapsed=0.001s error=none
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.Introspectable.Introspect connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.DBus.Introspectable.Introspect elapsed=0.002s error=none
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.CreateSession connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.CreateSession elapsed=0.005s error=none
+INFO shortcuts.global_shortcut: Portal response operation=CreateSession code=0
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts elapsed=0.002s error=none
+INFO shortcuts.global_shortcut: Portal response operation=ListShortcuts code=0
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; remembered binding=False
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.BindShortcuts connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.BindShortcuts elapsed=0.004s error=none
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ShortcutsChanged
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Portal response operation=BindShortcuts code=0
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts elapsed=0.023s error=none
+INFO shortcuts.global_shortcut: Portal response operation=ListShortcuts code=0
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.GlobalShortcuts.ListShortcuts elapsed=0.008s error=none
+INFO shortcuts.global_shortcut: Portal response operation=ListShortcuts code=0
+INFO shortcuts.global_shortcut: Shortcut requested=ALT+SHIFT+s; actual=Press <Control><Alt>s; source=ListShortcuts
+WARNING shortcuts.global_shortcut: Desktop assigned a different capture shortcut: requested=ALT+SHIFT+s; actual=Press <Control><Alt>s
+{"test": "rectangle", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "fullscreen", "status": "PASS", "saved_integrity": true, "size": [1920, 1080], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "rectangle_repeat", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "png_pixels_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "english_ocr", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+{"test": "unicode_transfer", "status": "PASS", "saved_integrity": true, "size": [1181, 301], "first_reader": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "after_focus_change": {"reader_active": true, "pass": true, "utf8_equal": true, "paste_equal": true}, "event_loop_alive": true}
+INFO main: Tray Quit action received; scheduling QApplication.quit
+INFO main: QApplication aboutToQuit emitted
+INFO main: Shutdown: stopping capture jobs
+INFO main: Shutdown: closing shortcut portal session
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.Session.Close connection=:1.2060 app_id=com.dulmina.aisnippingtool started
+INFO shortcuts.global_shortcut: Portal operation=org.freedesktop.portal.Session.Close elapsed=0.003s error=none
+INFO main: Shutdown complete
+{"test": "shutdown", "status": "PASS", "thread_alive": false}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 27.321s
+             CPU time consumed: 17.827s
+                   Memory peak: 216.8M (swap: 0B)
+
+/tmp/snipping-latency-freshness.log:
+Running as unit: snipping-latency-freshness.service; invocation ID: a7859cb1178f4196b5e6d7841746873f
+{"status": "NOT RUN", "reason": "Public scene does not match raw PNG at baseline; focus/color-management fixture not established"}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 1.584s
+             CPU time consumed: 1.007s
+                   Memory peak: 86.8M (swap: 0B)
+
+/tmp/snipping-latency-regressions.log summary:
+ERROR: test_actual_main_duplicate_start_signal_shutdown_and_restart (test_phase01.EntryTests.test_actual_main_duplicate_start_signal_shutdown_and_restart)
+Ran 191 tests in 23.292s
+FAILED (errors=1)
+
+/tmp/snipping-latency-final-regressions.log summary:
+FAIL: test_close_during_suspended_io_cancels_once_and_stops_timer (test_capture_latency.SchedulingTests.test_close_during_suspended_io_cancels_once_and_stops_timer)
+Ran 191 tests in 19.057s
+FAILED (failures=1)
+
+/tmp/snipping-latency-final-regressions2.log summary:
+Ran 191 tests in 18.844s
+OK
+
+/tmp/snipping-latency-final-focused2.log summary:
+Ran 9 tests in 1.287s
+OK
+
+Full regression command: QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -v. Authorized host access needed for existing Unix-socket/service parser tests.
+First full191 failed real-process SIGTERM timeout (timer completely stopped idle); next191 failed timer still active after close (done callback restarted it); final191 PASS/18.844s after100ms idle signal checkpoint and closing guard. Nine focused tests PASS/1.287s. No swallowed test failures.
+Native clipboard command: normal service deliberately stopped, systemd-run --user --wait --pipe --collect --unit=snipping-latency-delivery-clipboard --property=WorkingDirectory=/home/dulmina/Projects/ai-snipping-tool --setenv=QT_QPA_PLATFORM=wayland /home/dulmina/Projects/ai-snipping-tool/.venv/bin/python tests/production_clipboard_probe.py; original service started afterward.
+Additional native pixel fixture command: same temporary-service pattern, tests/native_capture_freshness_probe.py. NOT RUN: baseline public fullscreen scene did not match exact expected PNG color at sampled coordinates (focus/color management/scene presentation not established). No later pixel/toolbar exclusion claim inferred. It performed no desktop settings changes, did not log raw pixels, closed its scene and restored the service.
+PID-verified DBusMenu Quit/Inspect helper initially missed name@path format; fixed helper only. This is protocol interaction, not a physical tray click. Native stop/restart/duplicate and old invocation Shutdown complete verified.
+{
+  "repeated_start_same_pid": "82163",
+  "clean_restart_new_pid": "86213",
+  "restart_to_registered_seconds": 1.2575113709999641,
+  "old_shutdown_complete": true,
+  "single_instance_pids": [
+    86213
+  ],
+  "state": "active",
+  "enabled": "enabled",
+  "restarts": "0",
+  "fragment": "/home/dulmina/.config/systemd/user/com.dulmina.aisnippingtool.service",
+  "tray": {
+    "pid": 86213,
+    "identity": "com.dulmina.aisnippingtool",
+    "labels": [
+      "Capture (Ctrl+Alt+S)",
+      "Shortcut status: Registered \u2014 different shortcut\u2026",
+      "Application identity: Registered",
+      "Configure Shortcut (unavailable)",
+      "Quit"
+    ]
+  }
+}
+Unchanged, not rebuilt/installed package SHA256 39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb
+Python py_compile on all modified/new production/test modules PASS; git diff --check PASS. No startup unit/enablement/shortcut assignment/permission/toolbar/OCR/clipboard/save implementation changes.
+
+Final service/read-only inspection after all probes:
+{
+  "ActiveState": "active",
+  "FragmentPath": "/home/dulmina/.config/systemd/user/com.dulmina.aisnippingtool.service",
+  "UnitFileState": "enabled",
+  "MainPID": "88627",
+  "NRestarts": "0",
+  "tray": {
+    "pid": 88627,
+    "identity": "com.dulmina.aisnippingtool",
+    "labels": [
+      "Capture (Ctrl+Alt+S)",
+      "Shortcut status: Registered \u2014 different shortcut\u2026",
+      "Application identity: Registered",
+      "Configure Shortcut (unavailable)",
+      "Quit"
+    ]
+  },
+  "single_instance_pids": [
+    88627
+  ]
+}
+
+Final provenance observation: feat/background-service HEAD4bb819b; external a0428d3/a3fa2d2/161ec8e/4bb819b preserved. Index empty. Agent-authored follow-up report/handoff/matrix edits, evidence and opt-in native freshness probe remain unstaged. No agent staging/commit/reset/merge/push. All modified/new Python modules compile, git diff --check passes; retained .deb SHA39a189ad278921cd68cd68b9caf86f027b64659dca609f1b7193c433e1c2e2eb unchanged.
